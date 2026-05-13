@@ -10,11 +10,19 @@
     const money = window.SSDGame.state.current.wallet.money;
     const owned = new Set((girl.wardrobe || []).map(w => w.id));
 
+    const isNude = girl.currentOutfit === 'nude';
     el.innerHTML = `
       <div class="panel">
         <h2>👗 ${girl.name}'s wardrobe</h2>
         <p class="small muted">Currently wearing: <b>${(girl.wardrobe || []).find(w => w.id === girl.currentOutfit)?.displayName || 'default'}</b></p>
-        <a href="#room?girl=${girl.id}" class="btn-small">← back to her hold</a>
+        <div class="btn-row">
+          <a href="#room?girl=${girl.id}" class="btn-small">← back to her hold</a>
+          <button class="btn-small ${isNude ? '' : 'btn-primary'}" data-derobe>${isNude ? '👗 Re-dress (default outfit)' : '🍑 Derobe — strip her fully nude'}</button>
+        </div>
+        <p class="small muted" style="margin-top:8px">
+          Derobe puts <code>nude</code> at position 2 of the image prompt — front-loaded so Pollinations
+          can't bury it as a one-word tail token. Outfit description is suppressed entirely. Free, always available.
+        </p>
       </div>
 
       <div class="panel">
@@ -71,6 +79,19 @@
         catch (e) { alert(e.message); }
       };
     });
+    const derobeBtn = el.querySelector('[data-derobe]');
+    if (derobeBtn) {
+      derobeBtn.onclick = () => {
+        try {
+          if (girl.currentOutfit === 'nude') {
+            window.SSDGame.wardrobe.equip(girl.id, 'default');
+          } else {
+            window.SSDGame.wardrobe.derobe(girl.id);
+          }
+          window.SSDRouter.handle();
+        } catch (e) { alert(e.message); }
+      };
+    }
   }
 
   window.SSDRouter.register('wardrobe', render);

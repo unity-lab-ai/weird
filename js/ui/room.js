@@ -79,6 +79,7 @@
           <div class="btn-row">
             <button id="record-toggle" class="btn-small">${window.SSDGame.film.isRecording() && window.SSDGame.film.activeSession().girlId === girl.id ? '⏹ Stop recording' : '🎬 Start recording'}</button>
             <button id="selfie-btn" class="btn-small">📸 Demand selfie</button>
+            <button id="derobe-btn" class="btn-small ${girl.currentOutfit === 'nude' ? 'btn-primary' : ''}" title="${girl.currentOutfit === 'nude' ? 'Currently nude — click to put default outfit back on' : 'Strip her nude (front-loads nudity in image prompts)'}">🍑 ${girl.currentOutfit === 'nude' ? 'Re-dress' : 'Derobe (nude)'}</button>
             <button id="heal-btn" class="btn-small">❤️‍🩹 Heal (reset damage)</button>
             <button class="btn-small" data-mode="sexy">Mode: Sexy</button>
             <button class="btn-small" data-mode="hurtme">Mode: Hurt Me</button>
@@ -422,6 +423,28 @@
         window.SSDGame.damage.heal(girl.id);
         window.SSDRouter.handle();
       }
+    };
+
+    // Derobe / Re-dress toggle — equip the built-in 'nude' pseudo-outfit OR revert to 'default'.
+    // Triggers room-scene image regen via the existing body-state-hash watcher in streamOllamaResponse.
+    el.querySelector('#derobe-btn').onclick = () => {
+      if (girl.currentOutfit === 'nude') {
+        window.SSDGame.wardrobe.equip(girl.id, 'default');
+      } else {
+        window.SSDGame.wardrobe.derobe(girl.id);
+      }
+      // Force-regen the profile image since the outfit just flipped.
+      if (window.SSDGame.imaging && window.SSDGame.imaging.isAvailable()) {
+        window.SSDGame.imaging.generateFor(girl.id, { situation: 'profile', forceRegenerate: true })
+          .then(result => {
+            if (result?.url) {
+              const slot = el.querySelector('#profile-img-slot');
+              if (slot) slot.innerHTML = `<img src="${result.url}" alt="${girl.name}" class="gen-img profile-img" />`;
+            }
+          })
+          .catch(() => {});
+      }
+      window.SSDRouter.handle();
     };
 
     // Mic-in button for voice turns

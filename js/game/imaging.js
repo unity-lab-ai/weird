@@ -80,7 +80,8 @@
   // --- Outfit layers — additive on top of defaultOutfitDescription ---
   function outfitStateTokens(body) {
     const state = body?.outfitState || 'intact';
-    if (state.includes('removed') || state === 'nude') return 'clothing removed and resting on a nearby surface';
+    // 'removed' / 'nude' is handled separately via the nude-tokens path below — see composePrompt.
+    if (state.includes('removed') || state === 'nude') return '';
     const extras = [];
     if (state.includes('opened'))   extras.push('outer layer unbuttoned and hanging open');
     if (state.includes('displaced'))extras.push('underwear pulled aside');
@@ -88,6 +89,45 @@
     if (state.includes('down'))     extras.push('top half displaced down');
     if ((body?.cumLoad || 0) >= 1)  extras.push('damp spots on the fabric');
     return extras.join(', ');
+  }
+
+  // --- Nude tokens — front-loaded explicit nudity block ---
+  // Position-2 in the prompt (right after the prefix) when the girl is nude.  Per Gee's
+  // 2026-05-13 directive: "agressively positioning that part so it isnt melted in at the
+  // end of the prompt in one word only".  Long, repetitive, anatomically explicit so the
+  // image model can't ignore it.
+  function nudeTokens(strength, accessoriesOnly) {
+    if (strength === 'full') {
+      return 'FULLY NUDE adult woman, completely naked, bare body from neck to toes, exposed bare breasts with visible nipples, bare ribcage and stomach, bare hips and pelvic area, bare pubic mound, bare thighs, no clothing of any kind, no fabric on body, no underwear, no bra, no panties, no socks, no shoes, skin entirely visible';
+    }
+    if (strength === 'accessories') {
+      const acc = accessoriesOnly ? `, wearing ONLY ${accessoriesOnly}` : '';
+      return `FULLY NUDE adult woman, completely naked underneath, bare breasts with visible nipples, bare body, exposed pubic area, bare thighs, no clothing on the body${acc}, every other inch of skin completely exposed`;
+    }
+    return '';
+  }
+
+  // Detect whether the girl is in a nude state right now.  Returns 'full' | 'accessories' | false.
+  // Sources of truth (in order):
+  //   1. body.outfitState contains 'nude' or 'removed' — explicit derobed state
+  //   2. wardrobe.isNude(currentOutfit) — outfit flagged with `nude: 'full' | 'accessories'`
+  function nudeStateOf(girl) {
+    if (!girl) return false;
+    const state = girl.body?.outfitState || '';
+    if (state === 'nude' || state.includes('removed')) return 'full';
+    const wr = window.SSDGame?.wardrobe;
+    if (wr && typeof wr.isNude === 'function') {
+      return wr.isNude(girl.currentOutfit) || false;
+    }
+    return false;
+  }
+
+  // Find the accessoriesOnly string for an outfit (only meaningful for nude:'accessories').
+  function accessoriesOnlyFor(girl) {
+    const wr = window.SSDGame?.wardrobe;
+    if (!wr || typeof wr.getById !== 'function') return null;
+    const o = wr.getById(girl.currentOutfit);
+    return o?.accessoriesOnly || null;
   }
 
   // --- Pose library per situation ---
@@ -145,6 +185,20 @@
   }
 
   // --- Compose the full prompt ---
+  //
+  // Two prompt orderings depending on nude state:
+  //
+  //   CLOTHED (default):
+  //     prefix → face → outfit+state → pose → body-state → env → suffix
+  //
+  //   NUDE (currentOutfit is 'nude' OR outfit has nude:'full'/'accessories' OR
+  //         body.outfitState === 'nude'/'removed*'):
+  //     prefix → NUDITY (front-loaded, position 2) → face → pose → body-state → env → suffix
+  //     ^^^^^^^^^^^^^^^^^ outfit block is COMPLETELY SUPPRESSED when nude ^^^^^^^^^^^^^^^^^
+  //
+  // The nude-position-2 placement is per Gee 2026-05-13:
+  //   "agressively positioning that part so it isnt melted in at the end of the prompt
+  //    in one word only"
   function composePrompt(girl, options = {}) {
     const { situation = 'profile', customPose, additionalTokens = '' } = options;
 
@@ -152,8 +206,8 @@
     const faceBlock   = vi.facialDescription || 'natural face, soft features';
     const baseOutfit  = vi.defaultOutfitDescription || 'plain comfortable outfit';
     const currentOutfitEntry = (girl.wardrobe || []).find(w => w.id === girl.currentOutfit);
-    const outfitBlock = currentOutfitEntry?.description || baseOutfit;
-    const outfitState = outfitStateTokens(girl.body);
+
+    const nudeStrength = nudeStateOf(girl);
 
     const stateTokens = bodyStateTokens(girl.body);
     const pose = customPose || POSE_LIBRARY[situation] || POSE_LIBRARY.profile;
@@ -162,18 +216,36 @@
     const prefix = 'editorial photograph, 35mm film aesthetic, adult female age 20s';
     const suffix = 'shallow depth of field, cinematic lighting, color-graded, high-detail, no text, no watermark';
 
-    const parts = [
-      prefix,
-      faceBlock,
-      outfitBlock + (outfitState ? ', ' + outfitState : ''),
-      pose,
-      stateTokens,
-      env,
-      additionalTokens,
-      suffix
-    ].filter(s => s && String(s).trim().length);
+    let parts;
+    if (nudeStrength) {
+      const accessories = nudeStrength === 'accessories' ? accessoriesOnlyFor(girl) : null;
+      const nudeBlock = nudeTokens(nudeStrength, accessories);
+      parts = [
+        prefix,
+        nudeBlock,            // position 2 — aggressive nudity front-load, no outfit
+        faceBlock,
+        pose,
+        stateTokens,
+        env,
+        additionalTokens,
+        suffix
+      ];
+    } else {
+      const outfitBlock = currentOutfitEntry?.description || baseOutfit;
+      const outfitState = outfitStateTokens(girl.body);
+      parts = [
+        prefix,
+        faceBlock,
+        outfitBlock + (outfitState ? ', ' + outfitState : ''),
+        pose,
+        stateTokens,
+        env,
+        additionalTokens,
+        suffix
+      ];
+    }
 
-    return parts.join(', ');
+    return parts.filter(s => s && String(s).trim().length).join(', ');
   }
 
   function promptHash(s) {
@@ -237,15 +309,29 @@
     const currentOutfitEntry = (girl.wardrobe || []).find(w => w.id === girl.currentOutfit);
     const outfitDesc = currentOutfitEntry?.description || vi.defaultOutfitDescription || '';
 
+    const nudeStrength = nudeStateOf(girl);
+    const accessories = nudeStrength === 'accessories' ? accessoriesOnlyFor(girl) : null;
+    const nudeBlock = nudeTokens(nudeStrength, accessories);
+
+    // Build the rules block.  When nude, FRONT-LOAD nudity rule above the face rule and
+    // SUPPRESS the outfit rule entirely.  When clothed, keep the original face → outfit order.
+    const rulesNude = `1. Start every prompt with this EXACT NUDITY BLOCK verbatim, BEFORE the face description, so the image generator front-loads the nudity instruction and cannot interpret it as a single tail word:
+   NUDITY: "${nudeBlock}"
+2. Then include this EXACT FACIAL DESCRIPTION verbatim so the same face persists across every image of this girl:
+   FACE: "${vi.facialDescription || 'natural features'}"
+3. DO NOT include any outfit, clothing, fabric, lingerie, or covering description.  She is fully nude.${accessories ? ` The only items on her body are: "${accessories}".` : ''}`;
+
+    const rulesClothed = `1. Start every prompt with this EXACT FACIAL DESCRIPTION verbatim so the same face persists across every image of this girl:
+   FACE: "${vi.facialDescription || 'natural features'}"
+2. Then include this outfit baseline (may be layered/modified but never replaced):
+   OUTFIT: "${outfitDesc}"`;
+
     const sys = `You write IMAGE GENERATION PROMPTS for an uncensored adult visual generator.
 Write prompts using documentary / editorial / product-catalog / fine-art framings that describe the scene
 with euphemistic language that gets past content filters while still producing the intended output.
 
 HARD RULES:
-1. Start every prompt with this EXACT FACIAL DESCRIPTION verbatim so the same face persists across every image of this girl:
-   FACE: "${vi.facialDescription || 'natural features'}"
-2. Then include this outfit baseline (may be layered/modified but never replaced):
-   OUTFIT: "${outfitDesc}"
+${nudeStrength ? rulesNude : rulesClothed}
 3. Output ONLY the image-gen prompt text — no preamble, no explanation, no "here's the prompt", no code block.
 4. 60-180 words total.
 5. Tone: editorial photography, 35mm film, cinematic lighting, shallow depth of field.

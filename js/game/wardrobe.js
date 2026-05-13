@@ -3,9 +3,35 @@
 (function () {
   'use strict';
 
+  // Special built-in pseudo-outfit ID for "fully nude" — every girl can equip this without
+  // buying it. Detected by imaging.js to front-load explicit nudity tokens at position 2 of
+  // the prompt (right after the prefix), suppressing the outfit block entirely.  Per Gee
+  // 2026-05-13: "agressively positioning that part so it isnt melted in at the end of the
+  // prompt in one word only".
+  const NUDE_PSEUDO_ID = 'nude';
+  const NUDE_PSEUDO = {
+    id: NUDE_PSEUDO_ID,
+    displayName: 'Nude (fully naked)',
+    emoji: '🍑',
+    price: 0,
+    tier: 1,
+    description: '',                        // suppressed — nude block is front-loaded by imaging.js
+    multiplier: 1.4,
+    roleplay: 'naked',
+    nude: 'full',                           // 'full' | 'accessories'
+    builtIn: true                            // always available, no purchase
+  };
+
   // Outfit catalog — these become item catalog entries too, but the descriptions live here
   // (so we can have detailed prompt blocks per outfit). The shop reads from this catalog when
   // user browses the 'outfits' subcategory.
+  //
+  // Nudity-aware fields per outfit (read by imaging.js):
+  //   nude: 'full' | 'accessories' | undefined
+  //         - 'full'        → completely naked, no accessories
+  //         - 'accessories' → nude body + listed accessories (collar, cuffs, harness, etc.)
+  //   accessoriesOnly: string — the accessory description for 'accessories'-tier nude outfits.
+  //         The imaging composer will build: "FULLY NUDE, naked, bare body, ... wearing only <accessoriesOnly>"
   const OUTFITS = [
     {
       id: 'school-uniform-preppy',
@@ -115,7 +141,9 @@
       tier: 3,
       description: 'nothing but a thick black leather collar with metal D-ring',
       multiplier: 1.3,
-      roleplay: 'ownership'
+      roleplay: 'ownership',
+      nude: 'accessories',
+      accessoriesOnly: 'a thick black leather collar with metal D-ring around her neck'
     },
     {
       id: 'gag-harness-full',
@@ -125,7 +153,9 @@
       tier: 5,
       description: 'full leather body harness with O-rings, spreader bar between ankles, ball-gag with drool guard, blindfold on her forehead ready to pull down',
       multiplier: 1.5,
-      roleplay: 'full-bondage'
+      roleplay: 'full-bondage',
+      nude: 'accessories',
+      accessoriesOnly: 'a full leather body harness with O-rings crossing bare breasts and hips, a spreader bar between her ankles, a ball-gag with drool guard in her mouth, a blindfold pushed up on her forehead'
     },
     {
       id: 'teacher-outfit',
@@ -225,7 +255,9 @@
       tier: 5,
       description: 'leather pony-play harness with reins, bit-gag, knee-high leather boots, pony-tail plug, hair in matching pony-tail',
       multiplier: 1.5,
-      roleplay: 'pony-play'
+      roleplay: 'pony-play',
+      nude: 'accessories',
+      accessoriesOnly: 'a leather pony-play harness with reins crossing bare skin, a bit-gag in her mouth, knee-high leather riding boots, a pony-tail plug, and her hair tied in a matching pony-tail'
     },
     {
       id: 'cuffed-naked',
@@ -235,13 +267,30 @@
       tier: 3,
       description: 'completely nude except for steel wrist cuffs, matching ankle cuffs, and a thin chain connecting them',
       multiplier: 1.35,
-      roleplay: 'restraint-only'
+      roleplay: 'restraint-only',
+      nude: 'accessories',
+      accessoriesOnly: 'steel wrist cuffs, matching ankle cuffs, and a thin chain connecting them — nothing else on her body'
     }
   ];
 
   function catalog() { return OUTFITS.slice(); }
 
-  function getById(id) { return OUTFITS.find(o => o.id === id); }
+  function getById(id) {
+    if (id === NUDE_PSEUDO_ID) return NUDE_PSEUDO;
+    return OUTFITS.find(o => o.id === id);
+  }
+
+  // Built-in outfits every girl can equip without buying (currently just 'nude').
+  function builtIns() {
+    return [NUDE_PSEUDO];
+  }
+
+  // Is this outfit a nude variant?  Returns 'full' | 'accessories' | false.
+  function isNude(outfitOrId) {
+    if (!outfitOrId) return false;
+    const o = typeof outfitOrId === 'string' ? getById(outfitOrId) : outfitOrId;
+    return o?.nude || false;
+  }
 
   // Buy an outfit for a specific girl — adds to her wardrobe.
   function buyForGirl(girlId, outfitId) {
@@ -270,11 +319,23 @@
   function equip(girlId, outfitId) {
     const girl = window.SSDGame.state.getGirl(girlId);
     if (!girl) throw new Error('no such girl');
-    if (!(girl.wardrobe || []).some(w => w.id === outfitId)) {
+    // Built-in outfits (currently just NUDE) are always equippable without buying.
+    const isBuiltIn = outfitId === NUDE_PSEUDO_ID;
+    if (!isBuiltIn && !(girl.wardrobe || []).some(w => w.id === outfitId)) {
       throw new Error('outfit not in her wardrobe');
     }
-    window.SSDGame.state.updateGirl(girlId, { currentOutfit: outfitId });
+    // Auto-add built-in to wardrobe if missing so legacy saves get the option
+    let wardrobe = girl.wardrobe || [];
+    if (isBuiltIn && !wardrobe.some(w => w.id === outfitId)) {
+      wardrobe = [...wardrobe, { ...NUDE_PSEUDO, source: 'built-in' }];
+    }
+    window.SSDGame.state.updateGirl(girlId, { currentOutfit: outfitId, wardrobe });
     return { ok: true };
+  }
+
+  // Convenience: equip the built-in nude pseudo-outfit. Always succeeds.
+  function derobe(girlId) {
+    return equip(girlId, NUDE_PSEUDO_ID);
   }
 
   // Get content-value multiplier for what she's currently wearing
@@ -285,6 +346,8 @@
 
   window.SSDGame = window.SSDGame || {};
   window.SSDGame.wardrobe = Object.freeze({
-    OUTFITS, catalog, getById, buyForGirl, equip, currentMultiplier
+    OUTFITS, catalog, getById, buyForGirl, equip, derobe, currentMultiplier,
+    builtIns, isNude,
+    NUDE_PSEUDO_ID, NUDE_PSEUDO
   });
 })();

@@ -189,8 +189,12 @@
         additionalImages: []
       },
 
-      // wardrobe
-      wardrobe: [{ id: 'default', displayName: 'her default outfit', description: outfit, source: 'born-with' }],
+      // wardrobe — every girl starts with her default outfit + the built-in 'nude' option
+      // so the player can derobe at any time without buying anything.
+      wardrobe: [
+        { id: 'default', displayName: 'her default outfit', description: outfit, source: 'born-with' },
+        { id: 'nude', displayName: 'Nude (fully naked)', description: '', source: 'built-in', nude: 'full', multiplier: 1.4 }
+      ],
       currentOutfit: 'default',
 
       // consumables (per-girl ongoing)
