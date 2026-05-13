@@ -1,0 +1,47 @@
+# === LAW #1 — local dev tooling folder must NEVER ship to the public repo ===
+# No AI-vendor attribution anywhere in this code or documents.
+.claude/
+.claude/**
+
+# === Secrets / local dev overrides ===
+.env
+.env.local
+.env.*.local
+js/env.local.js
+
+# === Save data + cache ===
+cache/
+save.json
+server/save.json
+server/save/*.json
+server/state.json
+server/roster.json
+server/memory.jsonl
+
+# === Node (if/when we add tooling) ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# === OS / editor cruft ===
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# === Build outputs (if/when we add a bundler) ===
+dist/
+build/
+.cache/
+
+# === Personal user-data files ===
+# Pollinations auth — user-specific
+.claude/pollinations-user.json
+
+# === Logs ===
+*.log
+logs/

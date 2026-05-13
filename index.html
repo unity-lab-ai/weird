@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEX SLAVE DUNGEON</title>
+  <meta name="description" content="Persistent city-builder — dungeon harem evil taboo — hunt your prey. Runs locally on your machine via Ollama + Kokoro. No data leaves your box." />
+  <meta name="robots" content="noindex,nofollow" />
+
+  <link rel="stylesheet" href="css/landing.css" />
+</head>
+<body>
+
+  <!-- Env injection — optional, gitignored. No failure if absent. -->
+  <script src="js/env.local.js" onerror="console.debug('[env] no env.local.js — normal for deploy')"></script>
+
+  <!-- Core config + modules. Non-module scripts in load-dependency order. -->
+  <script src="js/config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/voices/catalog.js"></script>
+  <script src="js/templates/ollama-templates.js"></script>
+  <script src="js/assets/catalog.js"></script>
+  <script src="js/assets/loader.js"></script>
+  <script src="js/setup/detector.js"></script>
+  <script src="js/setup/installer.js"></script>
+  <script src="js/setup/models.js"></script>
+  <script src="js/setup/ollama-repair.js"></script>
+  <script src="js/setup/kokoro.js"></script>
+  <script src="js/ui/ollama-repair-overlay.js"></script>
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="version" id="game-version">v0.0.1</div>
+    <button id="open-settings-btn" title="Settings">⚙️ Settings</button>
+    <h1 id="game-title">SEX SLAVE DUNGEON</h1>
+    <p class="tag" id="game-tagline">persistent city-builder — dungeon harem evil taboo — hunt your prey</p>
+  </header>
+
+  <main class="container">
+
+    <!-- Status dashboard -->
+    <section class="card" aria-label="Status">
+      <h2>⚡ Status</h2>
+      <div id="status-dash"></div>
+    </section>
+
+    <!-- Step 1: Ollama setup -->
+    <section class="card" aria-label="Ollama setup">
+      <h2>🦙 Ollama (local LLM — the brain)</h2>
+      <div id="ollama-setup">
+        <p class="small muted">Detecting…</p>
+      </div>
+    </section>
+
+    <!-- Step 2: Model pull -->
+    <section class="card" aria-label="Model pull">
+      <h2>📦 Model</h2>
+      <div id="model-setup">
+        <p class="small muted">Waiting for Ollama…</p>
+      </div>
+    </section>
+
+    <!-- Step 3: Kokoro -->
+    <section class="card" aria-label="Kokoro TTS">
+      <h2>🎙️ Kokoro TTS (in-browser voices)</h2>
+      <div id="kokoro-setup">
+        <p class="small muted">Preparing…</p>
+      </div>
+    </section>
+
+    <!-- Step 4: Pollinations -->
+    <section class="card" aria-label="Pollinations">
+      <h2>🖼️ Pollinations (optional — images)</h2>
+      <div id="polly-setup">
+        <p class="small muted">Waiting…</p>
+      </div>
+      <p class="small muted" style="margin-top:10px">
+        <b>Key type matters:</b> browser-side use needs a <code>pk_</code> publishable key
+        (rate-limited, 1 image/hour/IP on free tier). <code>sk_</code> secret keys are
+        server-side only and Pollinations will reject them from the browser with 403.
+        Get your key at <a href="https://enter.pollinations.ai" target="_blank" rel="noopener">enter.pollinations.ai</a>.
+        <br>If the key fails, the game falls back to the legacy free endpoint automatically.
+      </p>
+    </section>
+
+    <!-- Launch -->
+    <div class="launch-row">
+      <button id="launch-btn" disabled>🔒 Finish setup to launch</button>
+    </div>
+
+    <!-- Info -->
+    <section class="card" aria-label="About">
+      <h2>ℹ️ How this works</h2>
+      <p class="small">
+        Everything in <strong>SEX SLAVE DUNGEON</strong> runs <strong>on your machine</strong>.
+        The static site you're looking at is served from GitHub Pages — zero backend.
+        <strong>Ollama</strong> runs your local LLM (the girls' minds).
+        <strong>Kokoro</strong> runs in your browser for voice (models cached in your browser storage).
+        <strong>Pollinations</strong> (optional) generates images via your own key.
+        Your save data lives in your browser's IndexedDB. Export / import anytime from Settings.
+      </p>
+      <p class="small muted">
+        This is adult fiction. All characters are 18+. Content is taboo, extreme, uncensored. If that's not for you, close the tab.
+      </p>
+    </section>
+
+  </main>
+
+  <!-- Settings slide-out -->
+  <aside class="settings-panel" aria-label="Settings">
+    <div id="settings-body"></div>
+  </aside>
+
+  <footer>
+    <span>SEX SLAVE DUNGEON — everything local, no telemetry, no tracking, your box your rules.</span>
+  </footer>
+
+  <!-- UI controllers load last -->
+  <script src="js/ui/settings.js"></script>
+  <script src="js/ui/landing.js"></script>
+</body>
+</html>
