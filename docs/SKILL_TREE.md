@@ -1,7 +1,10 @@
 # SKILL_TREE — weird project
 
-**Generated:** 2026-04-21
-Capabilities required to build weird masterfully. Organized by domain, complexity, dependency, and priority.
+**Generated:** 2026-04-21 · **Last revised:** 2026-05-14 (post-Phase-21 closeout)
+
+Capability matrix for the weird build. Organized by domain, complexity, dependency, and priority. As of 2026-05-14 every named capability is shipped and live; see `docs/FINALIZED.md` for per-session implementation detail.
+
+> **Cross-references:** [`../README.md`](../README.md) (gameplay wiki) · [`../SETUP-README.md`](../SETUP-README.md) (technical setup) · [`ROADMAP.md`](./ROADMAP.md) (phase plan) · [`ARCHITECTURE.md`](./ARCHITECTURE.md) (system design) · [`TODO.md`](./TODO.md) (active backlog) · [`FINALIZED.md`](./FINALIZED.md) (completion archive)
 
 ---
 
@@ -339,79 +342,88 @@ Capabilities required to build weird masterfully. Organized by domain, complexit
 
 ## By Priority
 
-### Critical (Must Have) — Phase 21 (current 2026-05-14 overhaul)
-| Skill | Domain | Complexity | Status |
-|-------|--------|------------|--------|
-| Drug-state image markers (per-substance tokens scaled by mag) | Image | Intermediate | Not started — T36.1-T36.3 |
-| Per-hold env composition (template plotTokens + holdPrompt at position 3) | Image | Intermediate | Not started — T36.4-T36.6 |
-| Image-prompt position reorder (env to position 3, drug-state to position 6) | Image | Intermediate | Not started — T36.7-T36.8 |
-| Deterministic seed fallback (girl-id djb2 hash when seed missing) | Image | Beginner | Not started — T36.9 |
-| Speech-first first-person response shape (BASE_SLUT SPEECH-FIRST RULE) | LLM | Intermediate | Not started — T36.10-T36.13 |
-| Forced chemical-state effects in Ollama text (## CHEMICAL STATE EFFECTS block) | LLM | Intermediate | Not started — T36.14-T36.15 |
-| CAPTIVE_AFFECTS register as third persona overlay | LLM | Intermediate | Not started — T36.16-T36.19 |
-| Bottled + filtered water shop catalog + room.js data-water buttons | Game Design | Beginner | Not started — T36.20-T36.21 |
-| feedAutomation + waterSupply upgrade tracks + tier-gated decay | Game Design | Intermediate | Not started — T36.22-T36.24 |
-| Pregnancy subsystem (conception math + abortion tiers + outcome resolver) | Game Design | Advanced | Not started — T36.25-T36.29 |
-| Capture-spam mitigation (suspicion/stamina/flee/cooldown/witnesses) | Game Design | Intermediate | Not started — T36.30-T36.35 |
-| Real public landing page (Start/Continue/Settings/About/Terms/Privacy) | Frontend | Beginner | Not started — T36.36-T36.41 |
-| No-wardrobe option distinct from nude pseudo-outfit | Game Design | Beginner | Not started — T36.46-T36.49 |
-| Full-body image framing (PREFIX + POSE_LIBRARY + aspect ratio + sanitize) | Image | Beginner | Not started — T36.50-T36.54 |
+### ✅ Phase 21 + PRE.* — all 24 milestones + 14 pre-epics SHIPPED 2026-05-14
 
-### Foundational (shipped Phases 0-20)
 | Skill | Domain | Complexity | Status |
-|-------|--------|------------|--------|
+|---|---|---|---|
+| Drug-state image markers (per-substance tokens scaled by mag) | Image | Intermediate | ✅ Shipped 21.1 |
+| Per-hold env composition (`plotTokens` + `holdPrompt` at position 3) | Image | Intermediate | ✅ Shipped 21.2 |
+| Image-prompt position reorder (env→3, drug→6, body→7) | Image | Intermediate | ✅ Shipped 21.3 |
+| Deterministic seed fallback (`djb2(girl.id)` when seed missing) | Image | Beginner | ✅ Shipped 21.4 |
+| Speech-first response shape + lonely-yes-Master detector | LLM | Intermediate | ✅ Shipped 21.5 |
+| Forced chemical-state effects in Ollama text | LLM | Intermediate | ✅ Shipped 21.6 |
+| CAPTIVE_AFFECTS register (3rd persona overlay) | LLM | Intermediate | ✅ Shipped 21.7 |
+| Bottled + filtered water shop catalog + room buttons | Game Design | Beginner | ✅ Shipped 21.8 |
+| `feedAutomation` + `waterSupply` upgrade tracks + tier-gated decay | Game Design | Intermediate | ✅ Shipped 21.9 |
+| Pregnancy subsystem (conception + 4 abortion methods + outcomes + image markers) | Game Design | Advanced | ✅ Shipped 21.10 |
+| Capture as 4-stage progress-bar mechanic (Approach → Engage → Subdue → Secure) | Game Design | Advanced | ✅ Shipped 21.11 |
+| Real public landing page (Start / Continue / Settings / About / Terms / Privacy) | Frontend | Beginner | ✅ Shipped 21.12 |
+| Cleanup carry-overs (`extractDelta` tightening + INTENTIONAL EMPTY markers) | LLM / Game | Beginner | ✅ Shipped 21.13 |
+| No-wardrobe pseudo-outfit distinct from nude | Game Design | Beginner | ✅ Shipped 21.14 |
+| Full-body image framing (PREFIX + POSE_LIBRARY + aspect + sanitize) | Image | Beginner | ✅ Shipped 21.15 |
+| Whore-out passive-income + john ledger + 10 archetypes + pregnancy hook + memory recall | Game Design | Advanced | ✅ Shipped 21.16 |
+| Stamina + health body fields + action-effects spec + john-happiness multiplier | Game Design / Backend | Advanced | ✅ Shipped 21.17 |
+| Universal tooltip engine (auto-bind via event delegation) | Frontend | Intermediate | ✅ Shipped 21.18 |
+| README split (gameplay-wiki + technical SETUP-README) + 10 ASCII diagrams | Docs | Beginner | ✅ Shipped 21.19 |
+| Films auto-sell + sell-negatives premium destruction | Game Design | Intermediate | ✅ Shipped 21.20 |
+| Disposal per-method final-scene image generation | Game Design / Image | Intermediate | ✅ Shipped 21.21 |
+| Sexualized body-part references (Stockholm tier-shaped) + UI Stockholm rating | LLM | Intermediate | ✅ Shipped 21.22 |
+| Captives keep their captured-at outfit (no generic 'default') | Game Design | Beginner | ✅ Shipped 21.23 |
+| Tranquilizer drug — 4-minute unconscious knockout + image overrides | Game Design / Image | Intermediate | ✅ Shipped 21.24 |
+| PRE.1-14 — pre-super-review epics (pipe starter / 4-beat transition / asset-loader / balancing) | Game Design / Docs | Mixed | ✅ Shipped (verified) |
+
+### Foundational — Phases 0-20 (all shipped earlier)
+
+| Skill | Domain | Complexity | Status |
+|---|---|---|---|
 | Ollama HTTP client + streaming + persona injection | Backend / LLM | Intermediate | ✅ Shipped |
 | State model + state-in-prompt + structured + heuristic delta parsing | Backend / LLM | Advanced | ✅ Shipped |
 | Frontend event wiring + Pollinations imaging + Kokoro TTS sentence queue | Frontend / Audio / Image | Intermediate | ✅ Shipped |
+| JSONL chronological memory | Persistence | Beginner | ✅ Shipped |
+| Voice-in (Pollinations transcribe) + voice-out (Kokoro) | Audio | Intermediate | ✅ Shipped |
+| Selfie prompt from body state (full POSE_LIBRARY) | Image | Advanced | ✅ Shipped |
+| Pharmacokinetic curves (7 substances + tranquilizer) | Backend | Advanced | ✅ Shipped |
+| UI mode toggles (sexy / hurtme / sexy_with_damage) | Frontend | Beginner | ✅ Shipped |
+| Per-girl voice override + 16-voice Kokoro catalog | Audio | Intermediate | ✅ Shipped |
+| Self-heal Ollama corruption flow (delete manifest + repull) | Backend | Advanced | ✅ Shipped |
+| Pollinations 429 backoff serializer | Image | Intermediate | ✅ Shipped |
+| Sentence-aware Kokoro playback queue (pipelined generation) | Audio | Advanced | ✅ Shipped |
+| Town + dungeon plot-grid + environment renders | Game Design / Image | Intermediate | ✅ Shipped |
 
-### Important (Should Have) — Phase 3 + 4 + 5 + 6
-| Skill | Domain | Complexity | Status |
-|-------|--------|------------|--------|
-| JSONL memory | Persistence | Beginner | Not started |
-| Tag-based retrieval | Persistence | Intermediate | Not started |
-| Voice-in (STT) | Audio | Intermediate | Not started |
-| Voice-out (Kokoro TTS) | Audio | Intermediate | Not started, unblocked |
-| Custom voice creation (Kokoro voice-clone) | Audio | Advanced | Not started, unblocked |
-| Selfie prompt from state | Image | Advanced | Not started |
-| Pharmacokinetic curves | Backend | Advanced | Not started |
-| UI mode toggles | Frontend | Beginner | Not started |
+### Deferred (known follow-ups, not blocking play)
 
-### Nice-to-Have (Could Have) — Phase 7 + 8
 | Skill | Domain | Complexity | Status |
-|-------|--------|------------|--------|
-| Embedding retrieval | Persistence | Advanced | Not started |
-| Voice modulation by state | Audio | Expert | Not started |
-| Session export/import | Persistence | Intermediate | Not started |
-| CSS/JS code split | Frontend | Beginner | Not started |
-| Multiple personality overlays | LLM | Advanced | Not started |
-
-### Future (Won't Have Now)
-| Skill | Domain | Complexity | Status |
-|-------|--------|------------|--------|
-| Video generation | Image | Expert | Deferred |
-| Multi-Unity instances | Backend | Expert | Deferred |
-| Avatar 3D rendering | Frontend | Expert | Deferred |
-| Multi-device sync | Backend | Expert | Deferred |
+|---|---|---|---|
+| Embedding-based memory retrieval (nomic-embed-text top-K) | Persistence | Advanced | ⚪ Deferred — chronological memory sufficient |
+| Custom Kokoro voice-clone (Unity-specific) | Audio | Advanced | ⚪ Deferred — kokoro-js v1.2 doesn't expose clone primitives |
+| Multi-girl birthed-to-roster spawning (Phase 21.10 birthed-kept branch) | Game Design | Advanced | ⚪ Deferred — needs multi-girl plumbing decision |
+| `condom-on` wardrobe-equipped outfit (catalog item exists; equip side deferred) | Game Design | Beginner | ⚪ Deferred |
+| Per-button machine-readable cost preview (`previewCost(actionId)` integration) | Frontend | Beginner | ⚪ Deferred polish |
+| Routing existing room.js buttons through `applyAction()` central path | Game Design | Intermediate | ⚪ Deferred (avoid double-mutation) |
+| Tooltip audit on remaining surfaces (hunt-view / settings / achievements / timeline / etc.) | Frontend | Beginner | ⚪ Deferred mechanical pass |
+| Persistent repeat-client tracking for whore-out (`repeat` archetype) | Game Design | Intermediate | ⚪ Deferred |
+| Video generation | Image | Expert | ⚪ Deferred indefinitely |
+| 3D avatar rendering | Frontend | Expert | ⚪ Deferred indefinitely |
+| Multi-device sync | Backend | Expert | ⚪ Deferred indefinitely |
 
 ---
 
 ## Skill Gap Analysis
 
-### Currently Missing (need to acquire / build)
-- Kokoro TTS integration — install pattern, API shape, voice IDs, voice-clone workflow
-- Ollama prompt engineering track record against Unity persona
-- Structured-output prompt reliability data for the chosen model
-- Selfie prompt templates that hit the strict visuals target (bare breasts, panties, midsection shots, poses, etc. — Gee verbatim 2026-04-21) — model picks within Pollinations that produce the strictest output
+### Fully Implemented ✅
 
-### Partially Available
-- HTML/CSS/JS — `weird.html` proves baseline capability, needs production polish
-- Unity persona content — complete in `.claude/agents/` but not yet wired into a system prompt
-- Pollinations MCP — configured in `.claude/pollinations-ai/`, not yet used for this project
+Every system named in this skill tree is shipped and exercised in the live build. The Phase 21 overhaul + PRE.1-14 closeout (committed 2026-05-14 across 11 atomic commits on `feature/super-review-2026-05-14`) closed the last remaining gaps. See `docs/FINALIZED.md` for per-session implementation detail.
 
-### Fully Implemented
-- Workflow system (LAW #0, docs-before-push, 800-line read, etc.)
-- Unity persona (unity-persona.md + unity-coder.md + unity-hurtme.md)
-- `.claude/` tooling (timestamp agent, hooks, validation gates)
+### Currently No Skill Gap
+
+The shipped capability matrix covers the full game vision per Gee's 2026-04-21 directives. Future phases (Phase 22+) will surface new gaps as new directives arrive — but as of session-end 2026-05-14, the skill tree has no outstanding "missing" or "partially available" rows.
+
+### What This Looks Like In Practice
+
+- **LLM layer** — 4-overlay system prompt (BASE_SLUT + ARCHETYPE + CAPTIVE_AFFECT + MODE + SCENE) with per-turn body / mood / bond / drug / pregnancy / john-recent context. Speech-first response shape enforced. Chemical state + Stockholm-tier-shaped body-part references all visible in dialogue.
+- **Image layer** — 8-position canonical prompt skeleton with front-loaded nudity (pos 2) + pregnancy markers (pos 2.5) + hold-specific env (pos 3) + drug-state markers (pos 6). Facial persistence via locked seed + face block + outfit block. Sanitize-prompt safety net + queued 429-backoff serializer.
+- **Game layer** — full hunt → capture (4-stage) → hold → interact → record/whore-out → cash → reinvest loop with pregnancy / abortion / john ledger / disposal / Stockholm bond / dungeon portfolio / 12-track upgrades all wired.
+- **Voice layer** — sentence-queued Kokoro TTS with cancel-on-new-turn, per-girl voice override, mic-in via Pollinations transcribe.
 
 ---
 

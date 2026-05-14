@@ -1,10 +1,10 @@
-# SEX SLAVE DUNGEON — Gameplay Wiki
+# 🔗 SEX SLAVE DUNGEON — Gameplay Wiki
 
 > *persistent city-builder — dungeon harem evil taboo — hunt your prey with the purchased tools and items*
 
 A massive multi-page text+emoji adult game where you run a sex-slave operation. Start in a basic dungeon, hunt girls across town, capture them with progressively better tools, hold them in upgradeable rooms, form Stockholm bonds, record films, sell them on the slave market, dispose of the ones you tire of. Every captive has her own persona driven by a real local LLM with persistent body state, drug pharmacokinetics, pregnancy, and a memory of every john she's seen.
 
-**For setup / deployment / troubleshooting → [SETUP-README.md](./SETUP-README.md).**
+> **Cross-references:** [`SETUP-README.md`](./SETUP-README.md) (technical setup) · [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) (system design) · [`docs/ROADMAP.md`](./docs/ROADMAP.md) (phase plan) · [`docs/SKILL_TREE.md`](./docs/SKILL_TREE.md) (capability matrix) · [`docs/TODO.md`](./docs/TODO.md) (active backlog) · [`docs/FINALIZED.md`](./docs/FINALIZED.md) (completion archive)
 
 ---
 

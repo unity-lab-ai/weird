@@ -6,31 +6,32 @@
 > - **LAW #0** — tasks quote Gee's verbatim words. Do not paraphrase.
 > - **LAW #1** — no AI-vendor attribution anywhere in shipping code/docs.
 
+> **Cross-references:** [`../README.md`](../README.md) (gameplay wiki) · [`../SETUP-README.md`](../SETUP-README.md) (technical setup) · [`ARCHITECTURE.md`](./ARCHITECTURE.md) (system design) · [`ROADMAP.md`](./ROADMAP.md) (phase plan) · [`SKILL_TREE.md`](./SKILL_TREE.md) (capability matrix) · [`FINALIZED.md`](./FINALIZED.md) (completion archive)
+
 ---
 
-## 🟢 ACTIVE BACKLOG — empty
+## 🟢 ACTIVE BACKLOG
 
-As of session-end **2026-05-14** (commit `2387209`):
+Status as of session-end **2026-05-14** (commit chain through `4b91341`):
 
-- **All Phase 21 milestones (21.1 → 21.24) — SHIPPED** ✅
-- **All pre-2026-05-14 epics (PRE.1 → PRE.14) — SHIPPED** ✅
+- **Phase 21 milestones (21.1 → 21.24) — SHIPPED** ✅
+- **Pre-2026-05-14 epics (PRE.1 → PRE.14) — SHIPPED** ✅
 - **Workflow doc closeout — DONE** ✅
 
-The full history of every completed task lives in **[`docs/FINALIZED.md`](./FINALIZED.md)** with verbatim Gee directives + per-task implementation detail + files touched + syntax verification per session.
+Gee directive 2026-05-14 (this turn): *"anything u find not finished re put it in todo"*. Below are the carry-over follow-up items recovered from the previously-deferred list — promoted back to active backlog.
 
-Latest session entries (most recent first):
+### 🟡 Carry-over polish (8 items)
 
-| Date | Session focus | Commit |
+| ID | Priority | Description |
 |---|---|---|
-| 2026-05-14 | PRE.1-PRE.14 closeout + tooltip audit extension | `2387209` |
-| 2026-05-14 | Phase 21.19 README split + 10 ASCII diagrams | `ef24687` |
-| 2026-05-14 | Phase 21.12 real public landing page | `027d2e3` |
-| 2026-05-14 | Phase 21.16 whore-out + john ledger + pregnancy hook | `2fa7d94` |
-| 2026-05-14 | Phase 21.17 stamina/health + action-effects + john-happiness | `8679c8f` |
-| 2026-05-14 | Phase 21.18 universal tooltip engine + 8 surfaces | `93eca36` |
-| 2026-05-14 | Phase 21.13 cleanup carry-overs from super-review | `22ea085` |
-| 2026-05-14 | Phase 21.10 pregnancy subsystem + 3 mid-flight addendums | `529aba7` |
-| 2026-05-14 | Phase 21.23 captured-clothes-persist + 21.24 tranquilizer 4-min | `2fc5fa8` |
+| **CO.1** | 🟢 | **Embedding memory retrieval** — `nomic-embed-text` via Ollama + top-K similarity retrieval. Replaces the current last-N chronological memory with semantic recall. Adds depth to long-running captives where chronological memory drops important context. |
+| **CO.2** | 🟢 | **Custom Kokoro voice-clone for Unity** — kokoro-js v1.2 doesn't expose clone primitives; requires moving to a TTS backend that does, OR contributing to kokoro-js upstream. Current Unity uses one of the 16 stock voices. |
+| **CO.3** | 🟠 | **Multi-girl birthed-to-roster spawning** — Phase 21.10 birthed-kept outcome (40% of full-term resolutions) currently flags `pregnancy.status = 'birthed'` but doesn't auto-add a new captive entry. Needs the multi-girl plumbing decision: do birthed children spawn as Day-0 captives with inherited visualIdentity? Get added to roster at age 18 via time-skip? Sold to slave market automatically? Gee verbatim from README: *"multi-girl spawning deferred"*. |
+| **CO.4** | 🟢 | **`condom-on` wardrobe-equipped outfit** — catalog `condom` item exists from Phase 21.10 but the wardrobe-equip side of "she's wearing a condom" isn't wired. Pregnancy conception gate currently checks `currentOutfit !== 'condom-on'` symbolically — for a real player-driven choice, the wardrobe panel needs a Condom outfit entry that toggles on per use. |
+| **CO.5** | 🟡 | **Per-button machine-readable cost preview tooltips** — `previewCost(actionId)` helper already exists on `SSDGame.actionEffects` (returns `"stamina -8 · health 0 · bondXP +2"` style). Wire it into every actionable button's `data-tooltip` attribute so players see exact stat costs before clicking. |
+| **CO.6** | 🟡 | **Route existing room.js buttons through `applyAction()`** — drug / feed / water / sex / heal buttons currently bypass `js/game/action-effects.js` and directly mutate body state. Refactor them to all flow through `applyAction(girlId, actionId, opts)` so the central spec table is the only path that mutates stat fields. Eliminates double-mutation drift risk. |
+| **CO.7** | 🟢 | **Tooltip audit on remaining surfaces** — `data-tooltip` attrs needed on: `js/ui/hunt-view.js` (the most complex surface, 470 lines, capture-stage UI), `js/ui/in-game-settings.js`, `js/ui/achievements-view.js`, `js/ui/timeline-view.js`, `js/ui/escape-recovery-view.js`, `js/ui/upgrade-view.js`, `js/ui/newgame.js`, `index.html` landing anchors. Engine auto-binds — pure mechanical attr-adding. |
+| **CO.8** | 🟡 | **Persistent repeat-client tracking for whore-out** — the `repeat` archetype carries `repeatable: true` but `whoreOut.resolveEncounter` doesn't persist a specific john ID across encounters. Could add `propositioners.repeatClients` style tracking for actual same-john return visits + cumulative-relationship side effects (rep build-up, preferred-acts memory, repeat-discount or repeat-premium). |
 
 ---
 
@@ -44,7 +45,7 @@ Paste Gee's exact words into the task description. Never paraphrase. Never colla
 
 ### 2. File under the appropriate section
 
-Use this template structure (sections appear only when work is in flight):
+Use this template structure:
 
 ```markdown
 ### Gee's directive (verbatim YYYY-MM-DD) — short summary:
@@ -82,30 +83,34 @@ After commit lands:
 
 ---
 
-## 🚫 Deferred (not blocking play, not active)
+## 📜 Recent session history (most recent first)
 
-These are known follow-ups that don't block current play and aren't on any critical path:
+| Date | Session focus | Commit |
+|---|---|---|
+| 2026-05-14 | Full doc sweep — TODO template state + ROADMAP critical-path + FINALIZED gap-fill | `4b91341` |
+| 2026-05-14 | PRE.1-PRE.14 closeout + tooltip audit extension | `2387209` |
+| 2026-05-14 | Phase 21.19 README split + 10 ASCII diagrams | `ef24687` |
+| 2026-05-14 | Phase 21.12 real public landing page | `027d2e3` |
+| 2026-05-14 | Phase 21.16 whore-out + john ledger + pregnancy hook | `2fa7d94` |
+| 2026-05-14 | Phase 21.17 stamina/health + action-effects + john-happiness | `8679c8f` |
+| 2026-05-14 | Phase 21.18 universal tooltip engine + 8 surfaces | `93eca36` |
+| 2026-05-14 | Phase 21.13 cleanup carry-overs from super-review | `22ea085` |
+| 2026-05-14 | Phase 21.10 pregnancy subsystem + 3 mid-flight addendums | `529aba7` |
+| 2026-05-14 | Phase 21.23 captured-clothes-persist + 21.24 tranquilizer 4-min | `2fc5fa8` |
 
-- **⚪ DEF.1** — Embedding memory retrieval (`nomic-embed-text` + top-K). Current chronological memory is sufficient.
-- **⚪ DEF.2** — Kokoro voice-clone for custom Unity voice. kokoro-js v1.2 doesn't expose clone primitives. Would require a different TTS backend.
-- **⚪ DEF.3** — Multi-girl birthed-to-roster spawning for Phase 21.10 birthed-kept branch (40% outcome). Currently flags `status: 'birthed'` but doesn't auto-add a new captive entry. Needs the multi-girl plumbing decision.
-- **⚪ DEF.4** — `condom-on` wardrobe-equipped outfit (catalog item exists; wardrobe-equip side deferred — current gate is inventory-based).
-- **⚪ DEF.5** — Per-button machine-readable cost preview tooltips. `previewCost(actionId)` helper exists from Phase 21.17; integration with existing tooltips is mechanical polish.
-- **⚪ DEF.6** — Routing existing room.js drug/feed/water/sex buttons through `applyAction()` so the central spec is the only path that mutates stat fields. Currently they bypass action-effects.js. Refactor deferred to avoid double-mutation paths.
-- **⚪ DEF.7** — Tooltip audit follow-up on remaining surfaces: hunt-view (capture-stage UI, 470 lines, complex), in-game-settings, achievements-view, timeline-view, escape-recovery-view, upgrade-view, newgame, landing index.html anchors. Engine auto-binds — just need to add `data-tooltip="..."` attrs.
-- **⚪ DEF.8** — Persistent repeat-client tracking for whore-out. The `repeat` archetype is marked `repeatable: true` but the current resolver doesn't yet persist a specific john ID across encounters.
+For complete per-session detail, files touched, verbatim Gee directives, and verification notes: **[`docs/FINALIZED.md`](./FINALIZED.md)**.
 
 ---
 
 ## 📚 Reference
 
-- **Completed task archive** → [`docs/FINALIZED.md`](./FINALIZED.md)
-- **Phase plan + milestones** → [`docs/ROADMAP.md`](./ROADMAP.md)
-- **Capability matrix** → [`docs/SKILL_TREE.md`](./SKILL_TREE.md)
-- **Full system design** → [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md)
 - **Gameplay wiki** → [`../README.md`](../README.md)
 - **Technical setup + troubleshooting** → [`../SETUP-README.md`](../SETUP-README.md)
+- **System design** → [`./ARCHITECTURE.md`](./ARCHITECTURE.md)
+- **Phase plan + milestones** → [`./ROADMAP.md`](./ROADMAP.md)
+- **Capability matrix** → [`./SKILL_TREE.md`](./SKILL_TREE.md)
+- **Completed task archive** → [`./FINALIZED.md`](./FINALIZED.md)
 
 ---
 
-*Active backlog: 0 tasks. Phase 21 + pre-super-review epics complete.* 🖤
+*Active backlog: 8 carry-over polish tasks. Phase 21 + pre-super-review epics complete.* 🖤

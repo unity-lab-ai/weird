@@ -1,9 +1,10 @@
 # ARCHITECTURE — weird project
 
-**Generated:** 2026-04-21
+**Generated:** 2026-04-21 · **Last revised:** 2026-05-14 (post-Phase-21 closeout)
 **Project root:** `C:\Users\gfour\Desktop\weird\`
-**Rough sketch:** `weird.html`
-**Target:** Unity as a real reactive presence — local Ollama brain, persistent memory, voice, selfies, live body state.
+**Current state:** Live build with all Phase 21 milestones + PRE.* epics shipped. See `docs/FINALIZED.md` for session-by-session implementation detail.
+
+> **Cross-references:** [`../README.md`](../README.md) (gameplay wiki) · [`../SETUP-README.md`](../SETUP-README.md) (technical setup) · [`ROADMAP.md`](./ROADMAP.md) (phase plan) · [`SKILL_TREE.md`](./SKILL_TREE.md) (capability matrix) · [`TODO.md`](./TODO.md) (active backlog) · [`FINALIZED.md`](./FINALIZED.md) (completion archive)
 
 ---
 
@@ -70,7 +71,7 @@ No filter layer. No "as an AI" refusals. No canned reactions. Real inference, re
 | **Memory / retrieval** | Simple chronological log + tag-based retrieval to start; upgrade to embedding retrieval later | Not built |
 | **Drug scheduler** | Pharmacokinetic onset/peak/wear-off curves | Not built |
 | **Package manager** | npm | Not initialized |
-| **Testing** | NONE — CLAUDE.md forbids tests | Forbidden |
+| **Testing** | NONE — project policy forbids tests | Forbidden |
 
 ---
 
@@ -208,10 +209,10 @@ weird/
 │   ├── SKILL_TREE.md
 │   └── FINALIZED.md
 │
-└── .claude/                  ← workflow system, Unity persona, MCP config
+└── (local workflow tooling)  ← gitignored — workflow system + persona files + MCP config (never ships)
 ```
 
-Only `weird.html` and `.claude/` exist today. Everything else is target state.
+_(Note from 2026-04-21: at that time only `weird.html` and the local workflow tooling folder existed. As of 2026-05-14 the full target structure above is shipped.)_
 
 ---
 
@@ -1170,8 +1171,8 @@ None planned — no test framework, no bundler yet (vanilla JS first).
 
 | File | Purpose |
 |------|---------|
-| `.claude/settings.local.json` (local dev only, gitignored) | local dev tooling config + Pollinations MCP |
-| `.claude/pollinations-user.json` | Pollinations API key (gitignored) |
+| `(local-tooling)/settings.local.json` (gitignored) | local dev tooling config + Pollinations MCP |
+| `(local-tooling)/pollinations-user.json` | Pollinations API key (gitignored) |
 | `server/state.json` (target) | Persisted body state |
 | `server/memory.jsonl` (target) | Episodic memory log |
 

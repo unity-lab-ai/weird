@@ -1,7 +1,8 @@
-# SETUP-README — SEX SLAVE DUNGEON
+# 🛠 SETUP-README — SEX SLAVE DUNGEON
 
 > Technical setup, deployment, troubleshooting, and architecture diagrams.
-> For **gameplay wiki + every game system in the build**, see [README.md](./README.md).
+
+> **Cross-references:** [`README.md`](./README.md) (gameplay wiki — every game system) · [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) (system design) · [`docs/ROADMAP.md`](./docs/ROADMAP.md) (phase plan) · [`docs/SKILL_TREE.md`](./docs/SKILL_TREE.md) (capability matrix) · [`docs/TODO.md`](./docs/TODO.md) (active backlog) · [`docs/FINALIZED.md`](./docs/FINALIZED.md) (completion archive)
 
 ---
 
