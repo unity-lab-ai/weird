@@ -145,10 +145,16 @@
         if (chunk) { raw += chunk; if (onChunk) onChunk(chunk, raw); }
       } catch {}
     }
-    // DO NOT truncate the streamed response — user already watched it arrive.
-    // num_predict in baseOptions() caps length at the model level. Trust the stream.
-    const parsed = window.SSDTemplates.extractDelta(raw);
-    return { raw, parsed };
+    // Apply truncateResponse AFTER stream completes — caps runaway narration
+    // at 50 words / 3 sentences while preserving the <delta>...</delta> block.
+    // Enforces the SPEECH-FIRST RULE shape at the model-output boundary so
+    // long third-person asterisk-narrations get trimmed before reaching delta-parse
+    // and TTS. The user sees the full stream arrive then watches it collapse to
+    // the speech-first shape when the bubble finalizes — that visible collapse is
+    // intentional, it teaches the right output shape.
+    const truncated = truncateResponse(raw, { maxSentences: 3, maxWords: 50 });
+    const parsed = window.SSDTemplates.extractDelta(truncated);
+    return { raw: truncated, parsed };
   }
 
   // High-level: run a turn for a girl — assembles full prompt, streams, returns parsed.

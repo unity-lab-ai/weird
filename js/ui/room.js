@@ -245,6 +245,17 @@
           if (voiceToggleOn && window.SSDKokoro && window.SSDKokoro.isReady()) {
             // Strip asterisk-action tokens so TTS doesn't pronounce "asterisk gasps asterisk"
             const speakable = clean.replace(/\*[^*]*\*/g, '').replace(/\s+/g, ' ').trim();
+            // Lonely-yes-Master detector — if the spoken portion after asterisk-stripping
+            // is <= 3 words, the model violated the SPEECH-FIRST RULE (asterisk action led,
+            // spoken line was a single trailing "Yes Master"). Surface a NotifyToast so the
+            // user knows TTS got starved instead of silently mumbling.
+            const speakableWords = speakable.split(/\s+/).filter(w => w.length > 0);
+            if (speakableWords.length > 0 && speakableWords.length <= 3) {
+              console.warn('[tts] lonely-yes-Master detected — spoken portion <= 3 words after asterisk strip:', JSON.stringify(speakable));
+              if (window.SSDNotify) {
+                window.SSDNotify.show(`🔇 TTS only got ${speakableWords.length} word${speakableWords.length === 1 ? '' : 's'} — model violated SPEECH-FIRST RULE (asterisk action led). Try /unity or a better-tuned model.`, { type: 'warn', durationMs: 4500 });
+              }
+            }
             if (speakable.length > 0) {
               // Validate voiceId against the live catalog — legacy saves may have an invalid voiceId
               // (e.g., af_jadzia which was removed when we discovered it's not a real Kokoro voice).

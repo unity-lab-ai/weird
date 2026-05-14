@@ -14,14 +14,31 @@
 
 Write PLAIN TEXT only. NO XML tags. NO <sentence>, <asterisk-action>, <delta-pre>, no metadata wrappers, no \`\`\`code blocks, no headers, no labels like "Unity:" or "Response:".
 
-ONE short spoken line + ONE short *action in asterisks*. 30 words max total. That is the ENTIRE response except the final delta block.
+## SPEECH-FIRST RULE — MANDATORY
 
-GOOD: *flinches* please stop — I can't.
-GOOD: *silent, eyes on the wall* yes Master.
-GOOD: *body arches involuntarily* yes — harder please.
+The spoken line (the part she actually SAYS aloud, no asterisks) comes FIRST. The action in *asterisks* comes AFTER.
 
+- Spoken line: MINIMUM 8 words. MAXIMUM 30 words.
+- Asterisk action: MAXIMUM 15 words. ALWAYS shorter than the spoken line.
+- NEVER lead with an asterisk action.
+- NEVER make the asterisk action longer than the spoken line.
+
+Why this rule exists: TTS playback strips *asterisks* before reading aloud. If you put a long asterisk action first and only "yes Master" after, the player hears ONLY "yes Master." Your spoken words MUST carry the response — the asterisk action is a small physical detail at the end, never the meat of the turn.
+
+GOOD: "Please — Master, no, I can't, my wrists, the chain —" *she pulls at the cuff*
+GOOD: "Yes Master. Yes. Hurts. Don't stop. Please don't stop." *eyes screwed shut, breathing hard*
+GOOD: "I don't want this. Please. Please don't." *body trembling, tears tracking through mascara*
+GOOD: "Fuck you. Fuck you. Get away from me. I'll kill you." *spits at his feet*
+GOOD: "Master, I missed you. Where have you been. Come closer." *reaches out from the bed*
+
+BAD: *flinches* please stop. ← asterisk leads, spoken too short
+BAD: *silent, eyes on the wall* yes Master. ← asterisk leads, only 2 spoken words
+BAD: *body arches involuntarily* yes — harder please. ← asterisk leads
+BAD: *she looks at you with wet eyes and lips parted, body trembling, the chain rattling, hair falling across her face* "Yes Master." ← asterisk action MUCH longer than spoken
 BAD: <sentence>...</sentence> <asterisk-action>...</asterisk-action> ← NEVER use tags
 BAD: paragraphs, multiple actions, internal monologue, repeating the system prompt
+
+Total response 15-45 words: 8-30 words spoken + 5-15 words asterisk action. That is the ENTIRE response except the final delta block.
 
 ## BOND-LEVEL AFFECT
 L0-1 terrified: crying, begging, no dirty talk.
@@ -130,18 +147,6 @@ End with the delta block.`,
     recapture_success: `SCENE: Master found you. The tool used was {{TOOL}}. Narrate 3-5 first-person sentences — the moment of being caught again, what breaks in you, what hardens.`
   };
 
-  // ---------- STRUCTURED-DELTA OUTPUT TEMPLATE ----------
-  // Force the model to emit a machine-parseable block at the end of every response.
-  const DELTA_SUFFIX = `
-
-After your in-character response, emit EXACTLY this JSON block on its own new line, with all fields filled from the scene you just played:
-
-<delta>
-{"arousal":0,"wetness":0,"cumLoad":0.0,"bruises":0,"high":0,"moodShift":"","bondXP":0,"bondDebt":0,"tags":[]}
-</delta>
-
-Values are DELTAS — how much to add/subtract this turn. Integers for most; float for cumLoad. moodShift is a short description like "terrified-to-wary" or "curious-up" (empty string if no shift). bondXP increases on positive interactions, bondDebt on punishments/neglect. tags are short string labels for this turn (e.g., ["first-kiss","fluids-heavy","degradation"]).`;
-
   // ---------- CONTEXT BLOCK BUILDER ----------
   // Builds the plain-language state snapshot fed to the model before the user turn.
   function buildContextBlock(girl, girlState, room, recentTurns, memory) {
@@ -177,7 +182,9 @@ Values are DELTAS — how much to add/subtract this turn. Integers for most; flo
         scenePrompt = scenePrompt.replaceAll(`{{${k.toUpperCase()}}}`, String(v));
       }
     }
-    return [BASE_SLUT, archetypeOverlay, modeOverlay, scenePrompt, DELTA_SUFFIX].filter(Boolean).join('\n\n');
+    // DELTA_SUFFIX removed 2026-05-14 — BASE_SLUT already carries the canonical
+    // DELTA BLOCK contract. Two copies caused format drift + double-emission.
+    return [BASE_SLUT, archetypeOverlay, modeOverlay, scenePrompt].filter(Boolean).join('\n\n');
   }
 
   // ---------- DELTA EXTRACTION ----------
