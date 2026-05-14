@@ -4,6 +4,27 @@
   'use strict';
 
   async function render(el) {
+    try {
+      await renderInner(el);
+    } catch (err) {
+      // Surface render failures visibly instead of leaving a blank/stale panel.
+      // Without this, a missing global or bad reference would silently abort the
+      // settings page and the player would see whatever was rendered last.
+      console.error('[settings] render failed:', err);
+      el.innerHTML = `
+        <div class="panel" style="background:#3a0a14;border:2px solid #ff3060;">
+          <h2 style="color:#ff7aa8;">⚠️ Settings failed to render</h2>
+          <p>JavaScript error during settings render. Most likely cause: <b>stale browser cache</b> after a code update.</p>
+          <p><b>Try first:</b> hard-refresh the page — Ctrl+Shift+R (Windows/Linux) or Cmd+Shift+R (Mac).</p>
+          <p><b>If that doesn't fix it:</b> open DevTools (F12) → Console tab → reload → paste the red error here.</p>
+          <pre style="background:#1a0a14;padding:10px;border-radius:4px;overflow:auto;font-size:0.85rem;">${String(err && err.stack || err).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre>
+          <a href="#dashboard" class="btn-small">← back to dashboard</a>
+        </div>
+      `;
+    }
+  }
+
+  async function renderInner(el) {
     const cfg = window.DMTHConfig;
     const voices = window.DMTHVoices.VOICES;
     const catalog = cfg.OLLAMA.modelCatalog;
