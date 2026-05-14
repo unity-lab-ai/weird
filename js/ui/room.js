@@ -3,6 +3,37 @@
 (function () {
   'use strict';
 
+  // POST-REVIEW.2 + POST-REVIEW.4 fix (2026-05-14) — module-scoped per-girl in-memory
+  // caches that survive state.onChange re-renders of the room template. Without these,
+  // typing in the Custom Pose textarea or the result image were both wiped every time
+  // the 30-second tick fired and triggered a re-render.
+  const customPoseDrafts = new Map();    // girlId → draft text
+  const customPoseResults = new Map();   // girlId → { url, staging, ts }
+
+  // POST-REVIEW.1 fix (2026-05-14) — button-action-ID mapping for drug/feed/water
+  // handlers so they route through applyAction. 11 ACTIONS entries (drug-coke, drug-weed,
+  // drug-mdma, drug-acid, drug-whiskey, drug-ketamine, drug-tranquilizer, feed-basic,
+  // feed-gourmet, water-bottled, water-filtered) were previously dead code because the
+  // room.js handlers bypassed applyAction and mutated state directly. Same bug class as
+  // SR.1 was for mood — declared in spec, never applied to state.
+  const DRUG_ACTION_MAP = {
+    coke:        'drug-coke',
+    weed:        'drug-weed',
+    mdma:        'drug-mdma',
+    acid:        'drug-acid',
+    whiskey:     'drug-whiskey',
+    ketamine:    'drug-ketamine',
+    tranquilizer:'drug-tranquilizer'
+  };
+  const FEED_ACTION_MAP = {
+    'basic-meal':   'feed-basic',
+    'gourmet-meal': 'feed-gourmet'
+  };
+  const WATER_ACTION_MAP = {
+    'bottled-water': 'water-bottled',
+    'filtered-water':'water-filtered'
+  };
+
   function render(el, params) {
     const girlId = params.girl || window.SSDGame.state.current?.settings?.activeGirlId;
     const girl = window.SSDGame.state.getGirl(girlId);
@@ -217,16 +248,26 @@
             // free-form scene description; Ollama composes a full prompt with all the
             // existing guardrails (8-position canonical ordering, adult-floor, full-body
             // framing, nudity / pregnancy / drug markers); Pollinations fires.
+            // POST-REVIEW.2 + POST-REVIEW.4 — restore draft text + result image from
+            // module-scoped per-girl caches so state.onChange re-renders don't wipe them.
+            const draft = customPoseDrafts.get(girl.id) || '';
+            const lastResult = customPoseResults.get(girl.id);
+            const lastResultHtml = lastResult && lastResult.url ? `
+              <div class="panel">
+                <img src="${lastResult.url}" alt="${girl.name} custom pose" class="gen-img" onerror="this.outerHTML='<a href=\\'${lastResult.url}\\' target=\\'_blank\\' class=\\'img-link-fallback\\'>🔗 ${girl.name}</a>'" />
+                <p class="small muted">${girl.name} · custom pose: "${(lastResult.staging || '').slice(0, 80)}${(lastResult.staging || '').length > 80 ? '…' : ''}"</p>
+                <p class="small"><a href="${lastResult.url}" target="_blank" rel="noopener">🔗 open in tab</a> · <a href="#gallery?girl=${girl.id}">🖼️ view gallery</a></p>
+              </div>` : '';
             return `<div class="panel" style="margin-top:8px">
               <h3>🎨 Custom pose / scene</h3>
               <p class="small muted">Describe the scene + pose you want. Ollama composes a valid image prompt with all guardrails — you stage her how you want.</p>
-              <textarea id="custom-pose-in" rows="3" placeholder="e.g. 'kneeling on the bed, looking up at the camera with submissive eyes, biting her lower lip, hands clasped between her thighs, soft warm bedroom lighting'"></textarea>
+              <textarea id="custom-pose-in" rows="3" placeholder="e.g. 'kneeling on the bed, looking up at the camera with submissive eyes, biting her lower lip, hands clasped between her thighs, soft warm bedroom lighting'">${draft.replace(/</g, '&lt;')}</textarea>
               <div class="btn-row" style="margin-top:6px">
                 <button id="custom-pose-fire" class="btn-small btn-primary" data-tooltip="Send your description to Ollama → composed prompt → Pollinations generation. Image appears below + saves to gallery.">🎨 Generate custom pose</button>
                 <button id="custom-pose-clear" class="btn-small" data-tooltip="Clear the input box.">Clear</button>
                 <span class="small muted" id="custom-pose-status"></span>
               </div>
-              <div id="custom-pose-slot"></div>
+              <div id="custom-pose-slot">${lastResultHtml}</div>
             </div>`;
           })()}
         </section>
@@ -523,17 +564,22 @@
     });
 
     // Feed buttons
+    // POST-REVIEW.1 fix (2026-05-14) — applyAction fires FIRST for spec-driven
+    // stamina/health/mood/arousal/bondXP deltas; legacy stock+tier bump follows.
     el.querySelectorAll('[data-feed]').forEach(b => {
       b.onclick = () => {
         const itemId = b.dataset.feed;
         try {
           window.SSDGame.shop.use(itemId, { girlId: girl.id, action: 'feed' });
-          const cs = { ...girl.consumables };
+          const actionId = FEED_ACTION_MAP[itemId];
+          if (actionId && window.SSDGame.actionEffects?.applyAction) {
+            window.SSDGame.actionEffects.applyAction(girl.id, actionId);
+          }
+          const refreshed = window.SSDGame.state.getGirl(girl.id);
+          const cs = { ...refreshed.consumables };
           cs.food.stock = (cs.food.stock || 0) + (itemId === 'gourmet-meal' ? 7 : 3);
           cs.food.tier = Math.max(cs.food.tier || 0, itemId === 'gourmet-meal' ? 3 : 1);
           window.SSDGame.state.updateGirl(girl.id, { consumables: cs });
-          const newBond = { ...girl.bond, bondXP: girl.bond.bondXP + (itemId === 'gourmet-meal' ? 3 : 1) };
-          window.SSDGame.state.updateGirl(girl.id, { bond: newBond });
         } catch (e) { alert(e.message); }
       };
     });
@@ -547,14 +593,17 @@
         const itemId = b.dataset.water;
         try {
           window.SSDGame.shop.use(itemId, { girlId: girl.id, action: 'water' });
-          const cs = { ...girl.consumables };
+          // POST-REVIEW.1 fix — applyAction first for spec deltas
+          const actionId = WATER_ACTION_MAP[itemId];
+          if (actionId && window.SSDGame.actionEffects?.applyAction) {
+            window.SSDGame.actionEffects.applyAction(girl.id, actionId);
+          }
+          const refreshed = window.SSDGame.state.getGirl(girl.id);
+          const cs = { ...refreshed.consumables };
           if (!cs.water) cs.water = { tier: 0, stock: 0, decayPerTick: 1, unitCost: 1 };
           cs.water.stock = (cs.water.stock || 0) + (itemId === 'filtered-water' ? 12 : 6);
           cs.water.tier = Math.max(cs.water.tier || 0, itemId === 'filtered-water' ? 2 : 1);
           window.SSDGame.state.updateGirl(girl.id, { consumables: cs });
-          const xpGain = itemId === 'filtered-water' ? 2 : 1;
-          const newBond = { ...girl.bond, bondXP: girl.bond.bondXP + xpGain };
-          window.SSDGame.state.updateGirl(girl.id, { bond: newBond });
         } catch (e) { alert(e.message); }
       };
     });
@@ -618,6 +667,9 @@
     });
 
     // Drug buttons
+    // POST-REVIEW.1 fix (2026-05-14) — applyAction first for spec stamina/health/mood/
+    // arousal/wetness deltas; drug-scheduler.offer() runs second to add to activeDrugs
+    // curve + consume inventory.
     el.querySelectorAll('[data-drug]').forEach(b => {
       b.onclick = () => {
         try {
@@ -626,6 +678,10 @@
           // still-speaking voice.
           if (b.dataset.drug === 'tranquilizer' && window.SSDVoiceQueue) {
             window.SSDVoiceQueue.cancel();
+          }
+          const actionId = DRUG_ACTION_MAP[b.dataset.drug];
+          if (actionId && window.SSDGame.actionEffects?.applyAction) {
+            window.SSDGame.actionEffects.applyAction(girl.id, actionId);
           }
           const r = window.SSDGame.drugs.offer(girl.id, b.dataset.drug);
           window.SSDGame.state.appendTurn(girl.id, 'user', `*offers ${b.dataset.drug}*`);
@@ -755,11 +811,20 @@
 
     // NEW.1 (2026-05-14) — Custom pose handler. User text → Ollama-as-prompt-writer →
     // Pollinations. Stashed in image history automatically via the generateFor pipeline.
+    // POST-REVIEW.2 — wire input event to update the draft cache on every keystroke so
+    // typing survives state.onChange re-renders.
+    const customTextarea = el.querySelector('#custom-pose-in');
+    if (customTextarea) {
+      customTextarea.addEventListener('input', () => {
+        customPoseDrafts.set(girl.id, customTextarea.value);
+      });
+    }
     const customClearBtn = el.querySelector('#custom-pose-clear');
     if (customClearBtn) {
       customClearBtn.onclick = () => {
         const ta = el.querySelector('#custom-pose-in');
         if (ta) ta.value = '';
+        customPoseDrafts.delete(girl.id);
       };
     }
     const customFireBtn = el.querySelector('#custom-pose-fire');
@@ -774,6 +839,9 @@
           if (status) status.textContent = 'Pollinations not configured — paste a pk_ key in Settings';
           return;
         }
+        // POST-REVIEW.3 — when Ollama is unavailable, composePrompt fallback now accepts
+        // userStaging as customPose so it still produces a real prompt instead of silently
+        // discarding the user's staging text.
         customFireBtn.disabled = true;
         if (status) status.textContent = '⏳ Ollama composing prompt + Pollinations generating…';
         if (slot) slot.innerHTML = `<div class="panel"><p class="small muted">Generating custom pose…</p></div>`;
@@ -781,9 +849,13 @@
           const result = await window.SSDGame.imaging.generateFor(girl.id, {
             situation: 'custom-pose',
             userStaging: text,
+            customPose: text,   // fallback path uses customPose if Ollama is down
             forceRegenerate: true
           });
           if (result?.url) {
+            // POST-REVIEW.4 — persist result to module-scoped cache so state.onChange
+            // re-renders restore it from the template render path.
+            customPoseResults.set(girl.id, { url: result.url, staging: text, ts: Date.now() });
             if (slot) slot.innerHTML = `
               <div class="panel">
                 <img src="${result.url}" alt="${girl.name} custom pose" class="gen-img" onerror="this.outerHTML='<a href=\\'${result.url}\\' target=\\'_blank\\' class=\\'img-link-fallback\\'>🔗 ${girl.name}</a>'" />

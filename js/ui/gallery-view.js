@@ -97,6 +97,35 @@
       thumb.onclick = () => showLightbox(Number(thumb.dataset.idx));
     });
 
+    // POST-REVIEW.5 fix (2026-05-14) — blob-based download. The <a download> attribute is
+    // only honored same-origin per HTML5 spec; Pollinations URLs are cross-origin and
+    // would otherwise open inline. fetch→blob→objectURL→click forces a real download
+    // even cross-origin (assuming CORS allows the GET). Falls back to direct href on
+    // fetch error so worst-case is the original open-in-tab behavior.
+    lbDownload.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      const url = lbDownload.href;
+      const filename = lbDownload.download || `image-${Date.now()}.jpg`;
+      try {
+        const resp = await fetch(url, { mode: 'cors' });
+        if (!resp.ok) throw new Error('fetch status ' + resp.status);
+        const blob = await resp.blob();
+        const objUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(objUrl), 10000);
+      } catch (err) {
+        // CORS-blocked or network — fall back to opening in a new tab so the user can
+        // right-click → Save As manually.
+        console.debug('[gallery] blob download failed, falling back to open:', err);
+        window.open(url, '_blank');
+      }
+    });
+
     el.querySelector('#lightbox-close').onclick = hideLightbox;
     overlay.onclick = (ev) => {
       // Click outside the main image area = close. Inside the figure = stay open.

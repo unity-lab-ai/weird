@@ -319,19 +319,35 @@
   // Position-6 drug-state placement is per Gee 2026-05-14: "i want the drug use forced or
   // other wise to show effects in images and ollama text responses".
   function composePrompt(girl, options = {}) {
-    const { situation = 'profile', customPose, additionalTokens = '' } = options;
+    // POST-REVIEW.3 fix (2026-05-14) — userStaging fallback for Ollama-unavailable path.
+    // composePromptViaOllama threads userStaging into the system prompt directly; here in
+    // the hardcoded fallback we accept the same option and treat it as customPose (slot 5)
+    // + additionalTokens (slot 8) so the user's scene description never gets silently
+    // discarded when Ollama is down.
+    const { situation = 'profile', customPose, additionalTokens = '', userStaging } = options;
+    const effectivePose = userStaging || customPose;
+    const effectiveAdditional = userStaging
+      ? (additionalTokens ? `${additionalTokens}, ${userStaging}` : userStaging)
+      : additionalTokens;
 
     const vi = girl.visualIdentity || {};
     const faceBlock   = vi.facialDescription || 'natural face, soft features';
     const baseOutfit  = vi.defaultOutfitDescription || 'plain comfortable outfit';
-    const currentOutfitEntry = (girl.wardrobe || []).find(w => w.id === girl.currentOutfit);
+    // POST-REVIEW.7 fix (2026-05-14) — condom-on is a state overlay, not a visible outfit.
+    // When equipped, render her in her PREVIOUS outfit (tracked at equip time) so the image
+    // matches what she actually looks like. The contraception flag stays effective for the
+    // pregnancy gate via girl.currentOutfit === 'condom-on' check.
+    const effectiveOutfitId = girl.currentOutfit === 'condom-on'
+      ? (girl.previousOutfit || 'default')
+      : girl.currentOutfit;
+    const currentOutfitEntry = (girl.wardrobe || []).find(w => w.id === effectiveOutfitId);
 
     const nudeStrength = nudeStateOf(girl);
 
     const stateTokens = bodyStateTokens(girl.body);
     const drugTokens  = drugStateTokens(girl.body);
     const pregTokens  = pregnancyTokens(girl.pregnancy);
-    const pose = customPose || POSE_LIBRARY[situation] || POSE_LIBRARY.profile;
+    const pose = effectivePose || POSE_LIBRARY[situation] || POSE_LIBRARY.profile;
     const env = envTokens({
       situation,
       dungeonId: girl.assignedDungeonId,
@@ -358,7 +374,7 @@
         pose,                 // 5
         drugTokens,           // 6 — drug-state visible markers
         stateTokens,          // 7 — body-state (arousal/wetness/cum/bruises)
-        additionalTokens,     // 8
+        effectiveAdditional,  // 8 — user-staging text appended here when present
         suffix                // 9
       ];
     } else {
@@ -389,7 +405,7 @@
         pose,                                                                     // 5
         drugTokens,                                                               // 6 — drug-state visible markers
         stateTokens,                                                              // 7 — body-state (arousal/wetness/cum/bruises)
-        additionalTokens,                                                         // 8
+        effectiveAdditional,                                                      // 8 — user-staging text appended here when present
         suffix                                                                    // 9
       ];
     }

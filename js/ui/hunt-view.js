@@ -142,8 +142,9 @@
       const desc = cap.STAGE_DESCRIPTIONS[stageKey];
       const resistance = archResist[stageKey] || 25;
       if (eligible.length === 0) {
+        // POST-REVIEW.6 fix (2026-05-14) — consistency with the populated branch's tooltip
         return `
-          <div class="capture-stage-row">
+          <div class="capture-stage-row" data-tooltip="${label}: ${desc}. No qualifying tool in inventory for this stage — visit the shop OR pick a different target whose archetype has lower ${stageKey} resistance.">
             <div class="capture-stage-head"><b>${label}</b> <span class="muted small">— ${desc}</span></div>
             <div class="capture-stage-body"><span class="danger small">no tool in inventory for this stage — <a href="#shop">shop →</a></span></div>
             <div class="capture-stage-foot small muted">${girl.name}'s ${stageKey} resistance: <b>${resistance}</b></div>

@@ -381,7 +381,14 @@
         : CONDOM_PSEUDO;
       wardrobe = [...wardrobe, { ...builtIn, source: 'built-in' }];
     }
-    window.SSDGame.state.updateGirl(girlId, { currentOutfit: outfitId, wardrobe });
+    // POST-REVIEW.7 fix (2026-05-14) — condom-on is a STATE OVERLAY, not a visible
+    // outfit. Track previousOutfit at equip time so the image-prompt path can render
+    // her in her real outfit while the conception gate reads the condom-on flag.
+    const patch = { currentOutfit: outfitId, wardrobe };
+    if (outfitId === CONDOM_PSEUDO_ID) {
+      patch.previousOutfit = girl.currentOutfit || 'default';
+    }
+    window.SSDGame.state.updateGirl(girlId, patch);
     return { ok: true };
   }
 
