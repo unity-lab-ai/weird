@@ -977,7 +977,34 @@ Memory starts simple: a chronological JSONL log of turns. Retrieval: tag-filter 
 ### Hunting pattern
 The user goes *"huntinG"* (Gee verbatim) by picking a location from the outside world map. The `hunting.mjs` engine rolls a spawn table for that location — mix of regulars, rare encounters, and template-generated unique girls. User picks one, chooses approach type (talk / charm / bribe / attempt-capture-with-tool-from-inventory), and the outcome resolves against the girl's stats + public/private context + current player inventory + suspicion state. Harder locations spawn more vibrant / higher-rarity girls. Capture success moves the girl from "in the wild" to "captive in your dungeon".
 
-### Capture-as-progress-bar mechanic pattern (REFORMULATED 2026-05-14)
+### Capture-as-progress-bar mechanic pattern (REFORMULATED + SHIPPED 2026-05-14)
+
+Engine lives in `js/game/capture.js` exposing `SSDGame.capture` with:
+- `STAGES = ['approach','engage','subdue','secure']` + `STAGE_LABELS` + `STAGE_DESCRIPTIONS`
+- `STAGE_CLEAR_THRESHOLD = 60` (stages clear at progress ≥ 60%)
+- `SINGLE_USE_TOOLS` set (chemicals + duct-tape/rope/zip-ties consume per-stage)
+- `CAPTURE_TOOL_IDS` (11 tools: pipe / rohypnol / chloroform / ether / ketamine / duct-tape / rope / zip-ties / handcuffs / shackles / harness)
+- `runAttempt({girl, toolPerStage, locationId})` — main entry. Walks stages, calls `resolveStage` per stage, stops on first non-clear. Returns `{outcome, stages, failedAtStage, witness, playerSkill, consumed, consequences}`.
+- `resolveStage({stageKey, toolId, girl, locationId, playerSkill, witness})` — per-stage math: `progress = toolBonus*2 + playerSkill - resistance - locDifficulty + RNG - witnessPenalty`. Clamped 0-100. Returns `{stageKey, toolId, toolBonus, resistance, progress, cleared, reason}`.
+- `rollWitness({locationId})` — fires ONCE per attempt; if true, applies -30 progress penalty across every stage.
+- `eligibleToolsForStage(stageKey)` — inventory ∩ stage-stat > 0.
+- `getPlayerSkill()` / `getToolStages(toolId)` / `getArchetypeResistance(archetypeId)` lookups.
+
+Per-tool stage profile lives on each capture tool in `js/assets/catalog.js` as `captureStages: { approach, engage, subdue, secure }` (0-50 per stage).
+
+Per-archetype stage resistance lives in `js/game/hunt.js` as `ARCHETYPE_CAPTURE_RESISTANCE` const, exposed on `SSDGame.hunt`. 11 archetypes mapped.
+
+UI lives in `js/ui/hunt-view.js` `renderApproach`. Per-stage tool dropdown filtered by `eligibleToolsForStage`, "Begin Attempt" button triggers `runAttempt`, 4 stacked progress bars animate sequentially via `animateProgressBar` (~600ms each). Cleared bars go green; failed gray. Per-stage summary + consequences inline. CSS classes in `css/game.css`: `.capture-stage-grid`, `.capture-stage-row`, `.capture-progress-row`, `.capture-progress-bar`, `.cleared`, `.failed`.
+
+Outcome resolver hooks:
+- **Stage 4 (Secure) clear → success path** — calls existing `SSDGame.hunt.escortToHold(girl)` to assign her to an open dungeon hold, then `composeSceneVars` + `playTransitionSequence` chain the existing 4-beat capture transition narrative (subdue → transport → arrival → first conscious moment). All reused unchanged from the pre-21.11 implementation.
+- **Failure path (any stage hits < 60%)** — girl escapes, `girl.wariness +1` (next encounter harder), `wallet.suspicionByLocation[locId] +2` (or +5 if witness present), `notoriety +2` if witness saw it. Witness pool rolls ONCE per attempt and carries through every stage as a flat -30 progress penalty.
+
+Spam dies as a play pattern because tools are stage-specific. Mashing one tool advances ONE meter; the other three stages still need their own qualifying tool. Players plan loadouts. Old `attemptCapture()` in `hunt.js` retained with deprecation comment for backward-compat (external callers / debug utilities); the hunt UI no longer calls it.
+
+---
+
+### Capture-as-progress-bar (legacy design notes, kept for context)
 
 Gee verbatim 2026-05-14 (original addendum): *"the capture girls part needs worked out better currntly i jsut spam items until their caught"*.
 Gee verbatim 2026-05-14 (reformulation): *"phase 21.11 isnt exactly right its just that the capture a girl process needs to have like progress bar with true mechanics to it not just something random thats not truew to the tools and options said think about it and how u need to reformulate this task"*.

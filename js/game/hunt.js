@@ -114,6 +114,27 @@
     'underground-complex':   'the security door seals behind her with a professional hiss, recessed lighting, polished concrete reflecting'
   };
 
+  // --- Archetype capture-stage resistance (Phase 21.11, 2026-05-14) ---
+  // Per-archetype per-stage resistance weights (0-50) for the 4-stage capture mechanic
+  // (Approach → Engage → Subdue → Secure). Read by `js/game/capture.js` via
+  // `window.SSDGame.hunt.ARCHETYPE_CAPTURE_RESISTANCE`. Library/barista = low across the
+  // board (easy captures). Street/gym = high subdue (fights dirty / physical strength).
+  // Sorority = high engage (alerts others). Club/model = high approach (crowded + public).
+  // Higher number = harder stage for that archetype.
+  const ARCHETYPE_CAPTURE_RESISTANCE = {
+    library:  { approach: 10, engage: 10, subdue: 15, secure: 15 },
+    club:     { approach: 35, engage: 30, subdue: 20, secure: 20 },
+    street:   { approach: 25, engage: 25, subdue: 40, secure: 30 },
+    sorority: { approach: 25, engage: 40, subdue: 25, secure: 20 },
+    gym:      { approach: 30, engage: 30, subdue: 50, secure: 35 },
+    barista:  { approach: 15, engage: 15, subdue: 15, secure: 15 },
+    office:   { approach: 20, engage: 25, subdue: 20, secure: 20 },
+    waitress: { approach: 25, engage: 25, subdue: 30, secure: 25 },
+    nurse:    { approach: 25, engage: 30, subdue: 25, secure: 25 },
+    model:    { approach: 35, engage: 35, subdue: 30, secure: 25 },
+    unity_seed: { approach: 5, engage: 5, subdue: 5, secure: 5 }
+  };
+
   // --- Archetype difficulty (WOMAN TYPE factor) — 0=easy, 1=very hard ---
   const ARCHETYPE_DIFFICULTY = {
     barista: 0.25,
@@ -201,7 +222,11 @@
     };
   }
 
-  // Resolve a capture attempt.
+  // Resolve a single-tool capture attempt.
+  // SUPERSEDED Phase 21.11 (2026-05-14) by `window.SSDGame.capture.runAttempt()` — the new
+  // 4-stage progress-bar mechanic. This function is retained for backward compatibility
+  // (external callers / debug utilities) but the hunt UI no longer calls it. New game code
+  // should use `SSDGame.capture.runAttempt({girl, toolPerStage, locationId})` instead.
   // Returns { outcome: 'success'|'partial-fail'|'fail'|'critical-fail', ... }
   function attemptCapture({ girl, toolId, locationId }) {
     const tool = window.SSDAssets.getById('item', toolId);
@@ -291,6 +316,7 @@
     TOOL_FLAVOR,
     ARCHETYPE_DIFFICULTY,
     ARCHETYPE_REACTION,
+    ARCHETYPE_CAPTURE_RESISTANCE,
     LOCATION_EXPOSURE,
     LOCATION_FLAVOR,
     HIDEOUT_ARRIVAL

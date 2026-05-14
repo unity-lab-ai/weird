@@ -136,28 +136,32 @@
       category: 'item', subcategory: 'sedation',
       prompt: 'product photograph on plain background of a single small glass medical vial of clear liquid, rubber-stopper top, pharmacy-grade labeling slightly blurred, professional commerce photography',
       cost: 180, tier: 2,
-      notes: 'Capture tool. +0.35 capture bonus.'
+      captureStages: { approach: 0, engage: 30, subdue: 15, secure: 0 },
+      notes: 'Capture tool. Engage 30 + slow Subdue 15. Single-use per stage. Drop it in her drink before she clocks it.'
     },
     {
       id: 'chloroform', displayName: 'Clear Solvent Bottle', emoji: '⚗️',
       category: 'item', subcategory: 'sedation',
       prompt: 'studio product shot of a small amber glass laboratory bottle with ground-glass stopper, clear liquid inside, plain white backdrop, science-supplies catalog style',
       cost: 220, tier: 2,
-      notes: 'Capture tool. +0.40 capture bonus. Smells obvious if wasted.'
+      captureStages: { approach: 0, engage: 25, subdue: 35, secure: 0 },
+      notes: 'Capture tool. Engage 25 + heavy Subdue 35. Single-use. Smells obvious if wasted.'
     },
     {
       id: 'ether', displayName: 'Anesthetic Solution', emoji: '🧪',
       category: 'item', subcategory: 'sedation',
       prompt: 'clinical product photograph of a small brown-glass bottle marked with a simple label, stoppered, placed on a white lab bench, professional medical-supply catalog composition',
       cost: 300, tier: 3,
-      notes: 'Capture tool. +0.50 capture bonus. Fast-acting.'
+      captureStages: { approach: 0, engage: 40, subdue: 30, secure: 0 },
+      notes: 'Capture tool. Strong Engage 40 + Subdue 30. Single-use. Fast-acting.'
     },
     {
       id: 'ketamine', displayName: 'Veterinary Bottle', emoji: '🐴',
       category: 'item', subcategory: 'sedation',
       prompt: 'product shot of a small amber veterinary medicine bottle with clinical label partially obscured, placed next to a small bag of white crystalline powder on a dark surface, muted documentary photography',
       cost: 450, tier: 4,
-      notes: 'Capture tool. +0.60. Requires contacts to acquire.'
+      captureStages: { approach: 0, engage: 0, subdue: 50, secure: 0 },
+      notes: 'Capture tool. Heavy Subdue 50. Single-use. Requires contacts to acquire.'
     },
 
     // --- BLUNT ---
@@ -166,7 +170,8 @@
       category: 'item', subcategory: 'blunt',
       prompt: 'product photograph of a short length of weathered lead pipe with threaded ends on a plain white background, hardware-salvage catalog style',
       cost: 15, tier: 0,
-      notes: 'Starter blunt-weapon subdue tool. Cheap, quick, messy. Low success rate, high suspicion if witnessed.'
+      captureStages: { approach: 10, engage: 0, subdue: 25, secure: 0 },
+      notes: 'Starter blunt-weapon. Stealth Approach 10 + blunt Subdue 25. Reusable across stages. Cheap, messy, high suspicion if witnessed.'
     },
 
     // --- RESTRAINT-GRADE ---
@@ -175,42 +180,48 @@
       category: 'item', subcategory: 'restraint',
       prompt: 'product photograph of a single roll of heavy-duty silver duct tape on a plain white background, professional commerce photography, commercial grade industrial',
       cost: 5, tier: 1,
-      notes: 'Restraint basic. Crude but effective.'
+      captureStages: { approach: 0, engage: 0, subdue: 0, secure: 30 },
+      notes: 'Restraint basic. Secure 30. Single-use per stage. Crude but effective.'
     },
     {
       id: 'rope', displayName: 'Nylon Rope Coil', emoji: '🪢',
       category: 'item', subcategory: 'restraint',
       prompt: 'product shot of a coiled length of black nylon rope on a plain white backdrop, commercial hardware catalog style',
       cost: 12, tier: 1,
-      notes: 'Restraint basic. Versatile.'
+      captureStages: { approach: 0, engage: 5, subdue: 5, secure: 25 },
+      notes: 'Restraint basic. Secure 25 + slight Engage/Subdue. Single-use per stage. Versatile.'
     },
     {
       id: 'zip-ties', displayName: 'Heavy-Duty Zip Ties', emoji: '🔗',
       category: 'item', subcategory: 'restraint',
       prompt: 'product photograph of a bundle of heavy-duty black plastic zip ties fanned out on a plain white background, commercial hardware catalog style',
       cost: 8, tier: 2,
-      notes: 'Restraint tier-2. Single-use.'
+      captureStages: { approach: 0, engage: 0, subdue: 0, secure: 25 },
+      notes: 'Restraint tier-2. Secure 25. Single-use per stage.'
     },
     {
       id: 'handcuffs', displayName: 'Steel Cuffs', emoji: '🔒',
       category: 'item', subcategory: 'restraint',
       prompt: 'product photograph of a pair of chrome-plated steel handcuffs on a plain white background, commercial security-equipment catalog style',
       cost: 45, tier: 3,
-      notes: 'Restraint tier-3. Reusable, secure.'
+      captureStages: { approach: 0, engage: 0, subdue: 0, secure: 40 },
+      notes: 'Restraint tier-3. Strong Secure 40. Reusable.'
     },
     {
       id: 'shackles', displayName: 'Steel Shackles', emoji: '⛓️',
       category: 'item', subcategory: 'restraint',
       prompt: 'product photograph of heavy steel leg shackles with a short connecting chain on a plain white backdrop, industrial-security catalog style',
       cost: 120, tier: 4,
-      notes: 'Restraint tier-4. Install in room.'
+      captureStages: { approach: 0, engage: 0, subdue: 10, secure: 35 },
+      notes: 'Restraint tier-4. Secure 35 + slight Subdue 10. Reusable. Install in room.'
     },
     {
       id: 'harness', displayName: 'Full Body Harness Rig', emoji: '🧍',
       category: 'item', subcategory: 'restraint',
       prompt: 'product photograph of a complex black leather body harness with metal rings, displayed on a dress form against a plain studio backdrop, tasteful product catalog composition',
       cost: 320, tier: 5,
-      notes: 'Restraint tier-5. Install in deluxe+ rooms.'
+      captureStages: { approach: 0, engage: 5, subdue: 10, secure: 40 },
+      notes: 'Restraint tier-5. Max Secure 40 + slight Engage/Subdue. Reusable. Install in deluxe+ rooms.'
     },
 
     // --- CONTAINMENT ---

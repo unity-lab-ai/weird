@@ -162,3 +162,21 @@ button, .btn-small, .btn-primary { min-height: 38px; padding-left: 14px; padding
   from { opacity: 0; transform: translateX(40px); }
   to   { opacity: 1; transform: translateX(0); }
 }
+
+/* Phase 21.11 — Capture-as-progress-bar mechanic UI */
+.capture-stage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.capture-stage-row { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
+.capture-stage-head { margin-bottom: 6px; }
+.capture-stage-body { margin-bottom: 4px; }
+.capture-stage-foot { font-size: 0.78rem; }
+.capture-progress-grid { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.capture-progress-row { display: grid; grid-template-columns: 180px 1fr; gap: 12px; align-items: center; padding: 4px 0; }
+.capture-progress-label { font-size: 0.88rem; }
+.capture-tool-badge { font-size: 1.1rem; }
+.capture-progress-bar-wrap { position: relative; height: 22px; background: #000; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.capture-progress-bar { height: 100%; background: linear-gradient(90deg, #c72c2c, #ff8c00); transition: width 0.15s linear; }
+.capture-progress-row.cleared .capture-progress-bar { background: linear-gradient(90deg, #1f9d55, #53d68a); }
+.capture-progress-row.failed  .capture-progress-bar { background: linear-gradient(90deg, #444, #777); }
+.capture-progress-pct { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--mono); font-size: 0.78rem; color: #fff; text-shadow: 0 0 3px #000; }
+.capture-stage-summary { padding: 4px 0; }
+.capture-mech-summary  { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
