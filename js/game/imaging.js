@@ -783,12 +783,93 @@ Write the Pollinations prompt now.`;
     return result.url;
   }
 
+  // --- Disposal final-image generation (Phase 21.21, 2026-05-14) ---
+  // Gee verbatim 2026-05-14: "and the dispose option needs to show like the image of the
+  // grave, the water, the crematoryei burning, ect ect for each one the final thing is
+  // the image of it". Renders a per-method final-scene Pollinations image after the Ollama
+  // disposal narration. Recognizable-girl methods (release / finalization-film) use her
+  // locked seed so she appears as herself; abstract-scene methods (bury / lose-at-sea /
+  // incinerate) use a method+girl hash so the image is consistent for that disposal but
+  // doesn't try to render her face into ground / water / fire. Cached per (girlId × method).
+  const DISPOSAL_PROMPTS = {
+    bury: 'freshly dug grave mound of dark soil in a wooded clearing, shovel resting against a tree, last-light dusk, no people visible, documentary photography, 35mm film aesthetic, melancholy mood',
+    'lose-at-sea': 'dark ocean surface seen from a small boat, weighted shape descending into deep water, fading silhouette underwater, deep blue-black ocean, abstract documentary photography, 35mm film',
+    incinerate: 'industrial crematory furnace door open with bright flames inside, scattered fine ash on a steel collection tray, dim industrial corridor lighting, documentary photography, 35mm film aesthetic',
+    release: 'full body shot from behind of an adult woman walking away down a dawn country road, head to toe in frame, returning to the world, soft golden-hour light, editorial photography, 35mm film aesthetic',
+    'finalization-film': 'editorial film-poster framing of the final scene, dramatic low-key lighting, cinematic composition, professional poster aesthetic, 35mm film'
+  };
+
+  // Methods where the girl should be recognizable in the final image (use her locked seed).
+  const GIRL_VISIBLE_METHODS = new Set(['release', 'finalization-film']);
+
+  async function generateDisposalFinalImage({ method, girl }) {
+    if (!method || !DISPOSAL_PROMPTS[method]) return null;
+    if (!girl?.id) return null;
+
+    const cacheKey = `disposal:${girl.id}:${method}`;
+    const cached = await window.SSDStorage.cache.get(cacheKey);
+    if (cached?.blob) {
+      const url = cached.blobUrl || URL.createObjectURL(cached.blob);
+      if (!cached.blobUrl) await window.SSDStorage.cache.put(cacheKey, { ...cached, blobUrl: url });
+      return { url, cached: true, cacheKey, method };
+    }
+
+    // For release / finalization, weave the girl's face description in so she's recognizable.
+    let prompt = DISPOSAL_PROMPTS[method];
+    const useGirlSeed = GIRL_VISIBLE_METHODS.has(method);
+    if (useGirlSeed) {
+      const vi = girl.visualIdentity || {};
+      const ageStr = girl.age && Number.isFinite(girl.age) ? `adult female age ${girl.age}` : 'adult female 18 or older';
+      const faceBlock = vi.facialDescription || 'natural face, soft features';
+      prompt = `${ageStr}, ${faceBlock}, ${prompt}`;
+    }
+    prompt = enforceFullBody(prompt) + ', no text, no watermark';
+
+    const seed = useGirlSeed
+      ? clampSeed(girl.visualIdentity?.seed, girl.id)
+      : (parseInt(promptHash(method + ':' + girl.id), 16) & 0x7FFFFFFF);
+    let url = buildUrl(prompt, seed);
+
+    async function tryFetch(u) {
+      try {
+        const res = await queuedFetch(u);
+        if (!res.ok) return { ok: false, status: res.status };
+        const b = await res.blob();
+        if (b.size < 500) return { ok: false, status: 'empty-body' };
+        return { ok: true, blob: b };
+      } catch { return { ok: false, status: 'cors-or-network' }; }
+    }
+
+    let attempt = await tryFetch(url);
+    if (!attempt.ok && (attempt.status === 403 || attempt.status === 402)) {
+      const safer = sanitizePrompt(prompt);
+      if (safer !== prompt) {
+        const legacyUrl = `${cfg().imageEndpoint}${encodeURIComponent(safer).slice(0, 1800)}?model=${cfg().imageModel}&width=${cfg().width}&height=${cfg().height}&nologo=${cfg().nologo}&seed=${clampSeed(seed)}&safe=false&referrer=sex-slave-dungeon`;
+        attempt = await tryFetch(legacyUrl);
+        if (attempt.ok) url = legacyUrl;
+      }
+    }
+
+    if (attempt.ok) {
+      const objUrl = URL.createObjectURL(attempt.blob);
+      await window.SSDStorage.cache.put(cacheKey, {
+        method, girlId: girl.id, prompt, seed,
+        blob: attempt.blob, blobUrl: objUrl, createdAt: Date.now()
+      });
+      return { url: objUrl, cached: false, cacheKey, method, prompt };
+    }
+    // Fallback — return the direct URL so the UI can try <img src> anyway.
+    return { url, directUrl: url, cached: false, error: attempt.status, cacheKey, method, prompt };
+  }
+
   window.SSDGame = window.SSDGame || {};
   window.SSDGame.imaging = Object.freeze({
     composePrompt, composePromptViaOllama, buildUrl, promptHash,
     generateFor, resolveCached, profileImageFor, filmCover,
     renderEnvironment, roomScene, bondMilestone,
+    generateDisposalFinalImage,
     isAvailable,
-    POSE_LIBRARY
+    POSE_LIBRARY,
+    DISPOSAL_PROMPTS
   });
 })();

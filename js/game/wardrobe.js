@@ -15,7 +15,7 @@
     emoji: '🍑',
     price: 0,
     tier: 1,
-    description: '',                        // suppressed — nude block is front-loaded by imaging.js
+    description: '',                        // <<INTENTIONAL EMPTY — DO NOT FILL IN>> imaging.js suppresses the outfit block entirely when nude:full, replacing it with the front-loaded nudeTokens() block at prompt position 2. Filling this in would force the suppressed-outfit string back into composition and break the position-2 front-load contract for nudity.
     multiplier: 1.4,
     roleplay: 'naked',
     nude: 'full',                           // 'full' | 'accessories'

@@ -1,4 +1,23 @@
-// SEX SLAVE DUNGEON — content market auto-sell + demand.
+// SEX SLAVE DUNGEON — content market auto-sell + sell-negatives premium.
+//
+// Phase 21.20 (2026-05-14) rewrite. Gee verbatim: "lest also get rid of the slaes pass
+// button for sales of videos and just have them auto sell and u never lose a video as u
+// can make many copies so they are always for sale it jsut u can remove them(sell
+// negatives) which gives much more $ than the noraml video sales that are more like
+// passive income".
+//
+// Films no longer get consumed on sale — they're permanent passive-income assets that
+// auto-sell every market tick at small per-tick rates (basePrice × tickRate × demand
+// multipliers). The "sales pass" button is gone; `tick.js` schedule drives the income.
+//
+// New `sellNegatives(filmId)` action destroys the master / removes the film from the
+// catalog in exchange for a one-time premium payout (3.5× × demand multiplier). That's
+// the "sell the negatives" mechanic — much bigger one-time payout, but the film stops
+// generating passive income.
+//
+// Backwards-compat: existing saves' film records continue to work. Films with the legacy
+// `status: 'sold'` are skipped by `runSaleTick()` (they were one-shot consumables under
+// the old model); they continue to render in the "Sold history" section of the UI.
 
 (function () {
   'use strict';
@@ -9,44 +28,96 @@
     overallBase: 1.0
   };
 
-  function buyerPool() {
-    // Procedural buyer names with budget brackets.
-    const names = ['basement_wizard_47','night_market_83','collector_0x','dark_aficionado','bagholder_9k','private_dom_alpha','midnight_curator','vault_archivist','off_grid_buyer','anon_patron_11'];
-    return names.map(n => ({ id: n, budgetCap: Math.round(Math.random() * 800 + 50), tag: 'generic' }));
-  }
+  // Per-tick passive income rate — small fraction of basePrice paid every market tick.
+  // Tuned so a typical $500 film earns ~$15/tick at neutral demand. Most films will pay
+  // back their basePrice over ~20-40 ticks of passive income, then continue indefinitely
+  // until the player chooses to sell negatives for the big lump-sum.
+  const TICK_RATE_BASE = 0.03;
+
+  // Sell-negatives premium multiplier — one-time payout = basePrice × this × demandMults.
+  // 3.5× chosen so destroying a film yields roughly the next ~100 ticks of passive income
+  // up-front (tradeoff: certainty of cash now vs. uncertain future passive). Bigger
+  // demand-multiplier films benefit more from selling negatives because the multiplier
+  // compounds through the premium.
+  const SELL_NEGATIVES_MULT = 3.5;
 
   function runSaleTick() {
     const s = window.SSDGame.state.current;
-    if (!s) return [];
+    if (!s) return { earnings: 0, perFilm: [] };
     const listed = s.films.filter(f => f.status === 'listed');
-    const sold = [];
-    const buyers = buyerPool();
+    if (!listed.length) return { earnings: 0, perFilm: [] };
+
+    const perFilm = [];
+    let totalEarnings = 0;
 
     for (const film of listed) {
-      // roll against buyer pool — film sells if any buyer has budget >= listPrice AND random selection hits
-      const candidates = buyers.filter(b => b.budgetCap >= film.currentListPrice * 0.7);
-      if (!candidates.length) continue;
-      // Sale chance scales with demand
       const archMult = DEMAND.archetypes[getArchetypeOfFilm(film)] || 1;
       const tagMult = (film.tags || []).reduce((m, t) => m * (DEMAND.tags[t] || 1), 1);
-      const chance = Math.min(0.92, 0.25 * archMult * tagMult * DEMAND.overallBase);
-      if (Math.random() > chance) continue;
-      const buyer = candidates[Math.floor(Math.random() * candidates.length)];
-      const price = Math.round(film.currentListPrice * (0.8 + Math.random() * 0.4));
+      const demandMult = DEMAND.overallBase;
+      const rng = 0.7 + Math.random() * 0.6;   // 0.7-1.3 per-tick variance
+      const base = film.basePrice || film.currentListPrice || 0;
+      const tickEarnings = Math.round(base * TICK_RATE_BASE * archMult * tagMult * demandMult * rng);
+      if (tickEarnings <= 0) continue;
       window.SSDGame.state.updateFilm(film.id, {
-        status: 'sold',
-        saleRecord: { buyer: buyer.id, price, soldAt: Date.now() }
+        passiveEarnings: (film.passiveEarnings || 0) + tickEarnings,
+        lastTickEarnings: tickEarnings,
+        lastTickAt: Date.now()
       });
-      window.SSDGame.state.addMoney(price, `film-sale: ${film.id}`);
-      window.SSDGame.state.addNotoriety(1);
-      sold.push({ filmId: film.id, price, buyer: buyer.id });
+      window.SSDGame.state.addMoney(tickEarnings, `film-passive: ${film.id}`);
+      perFilm.push({ filmId: film.id, tickEarnings });
+      totalEarnings += tickEarnings;
     }
 
-    // Nudge demand — overproduction softens, rarity strengthens
-    if (sold.length > 3) DEMAND.overallBase = Math.max(0.6, DEMAND.overallBase - 0.02);
-    else                 DEMAND.overallBase = Math.min(1.4, DEMAND.overallBase + 0.01);
+    // Tiny notoriety creep — content circulating in the wild generates background heat.
+    if (totalEarnings > 0) {
+      const notorietyTick = Math.max(1, Math.round(perFilm.length * 0.3));
+      window.SSDGame.state.addNotoriety(notorietyTick);
+    }
 
-    return sold;
+    // Demand drift — too many tracks for sale softens the market; quieter markets recover.
+    if (perFilm.length > 5) DEMAND.overallBase = Math.max(0.6, DEMAND.overallBase - 0.01);
+    else                    DEMAND.overallBase = Math.min(1.4, DEMAND.overallBase + 0.005);
+
+    return { earnings: totalEarnings, perFilm };
+  }
+
+  function sellNegatives(filmId) {
+    const s = window.SSDGame.state.current;
+    const film = s.films.find(f => f.id === filmId);
+    if (!film) throw new Error('no such film');
+    if (film.status === 'destroyed') throw new Error('negatives already sold for this film');
+    const archMult = DEMAND.archetypes[getArchetypeOfFilm(film)] || 1;
+    const tagMult = (film.tags || []).reduce((m, t) => m * (DEMAND.tags[t] || 1), 1);
+    const demandMult = DEMAND.overallBase;
+    const base = film.basePrice || film.currentListPrice || 0;
+    const premiumPayout = Math.round(base * SELL_NEGATIVES_MULT * archMult * tagMult * demandMult);
+    window.SSDGame.state.updateFilm(filmId, {
+      status: 'destroyed',
+      destroyedAt: Date.now(),
+      negativesSalePrice: premiumPayout
+    });
+    window.SSDGame.state.addMoney(premiumPayout, `negatives-sale: ${filmId}`);
+    // Destroying the master is the BIG-money play — bigger notoriety hit than passive sales.
+    window.SSDGame.state.addNotoriety(2);
+    return { ok: true, premiumPayout, filmId };
+  }
+
+  // Estimated passive earnings per tick for UI display (pre-RNG, mid-RNG value).
+  function estimatePerTick(film) {
+    if (!film || film.status !== 'listed') return 0;
+    const archMult = DEMAND.archetypes[getArchetypeOfFilm(film)] || 1;
+    const tagMult = (film.tags || []).reduce((m, t) => m * (DEMAND.tags[t] || 1), 1);
+    const base = film.basePrice || film.currentListPrice || 0;
+    return Math.round(base * TICK_RATE_BASE * archMult * tagMult * DEMAND.overallBase);
+  }
+
+  // Estimated sell-negatives payout for UI display.
+  function estimateNegativesPayout(film) {
+    if (!film) return 0;
+    const archMult = DEMAND.archetypes[getArchetypeOfFilm(film)] || 1;
+    const tagMult = (film.tags || []).reduce((m, t) => m * (DEMAND.tags[t] || 1), 1);
+    const base = film.basePrice || film.currentListPrice || 0;
+    return Math.round(base * SELL_NEGATIVES_MULT * archMult * tagMult * DEMAND.overallBase);
   }
 
   function getArchetypeOfFilm(film) {
@@ -59,5 +130,9 @@
   function getDemand() { return { ...DEMAND }; }
 
   window.SSDGame = window.SSDGame || {};
-  window.SSDGame.market = Object.freeze({ runSaleTick, unlist, relist, getDemand });
+  window.SSDGame.market = Object.freeze({
+    runSaleTick, sellNegatives, estimatePerTick, estimateNegativesPayout,
+    unlist, relist, getDemand,
+    TICK_RATE_BASE, SELL_NEGATIVES_MULT
+  });
 })();

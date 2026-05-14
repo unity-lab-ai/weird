@@ -117,19 +117,27 @@
 - [ ] **T36.48** 🟠 Update `imaging.js` `composePrompt()` + `composePromptViaOllama()` HARD RULES to handle the no-wardrobe state — front-loaded position 2 block emphasizing "completely stripped, no garments of any kind, no accessories of any kind, no jewelry, no collar, no restraints, no anything on her body, raw nakedness, fully exposed" — distinct from NUDE_PSEUDO's "FULLY NUDE adult woman" framing in that it explicitly bans accessories too.
 - [ ] **T36.49** 🟡 Girl-gen update — every new girl spawns with `default` + `nude` + `none` in her wardrobe so all three options are usable immediately, no buy required.
 
-#### Milestone 21.20 — Films auto-sell + sell-negatives premium action (~2h, Gee verbatim 2026-05-14: *"lest also get rid of the slaes pass button for sales of videos and just have them auto sell and u never lose a video as u can make many copies so they are always for sale it jsut u can remove them(sell negatives) which gives much more $ than the noraml video sales that are more like passive income"*)
-- [ ] **T36.82** 🟠 Delete "Sales pass" button trigger from `js/ui/market-view.js`; surface "🔄 Auto-selling on tick" status instead
-- [ ] **T36.83** 🟠 Rewrite `SSDGame.market.runSaleTick()` — films no longer consumed on sale; each tick generates `payout = basePrice × tickRate` per listed film
-- [ ] **T36.84** 🟠 Add `sellNegatives(filmId)` on `SSDGame.market` — premiumPayout = basePrice × 3.5 × demandMultiplier; removes film from `films` array
-- [ ] **T36.85** 🟠 Films UI in `market-view.js` — per-film passive-earnings ticker + "💣 Sell negatives — $X" button with confirm-dialog
-- [ ] **T36.86** 🟡 Backwards-compat on existing saves (tickRate field optional)
+#### Milestone 21.20 — Films auto-sell + sell-negatives premium action (~2h) — SHIPPED 2026-05-14
+- [x] **T36.82** 🟠 "Sales pass" button + `#run-tick` handler removed; UI surfaces "🔄 Auto-selling on tick — $X / tick (N listed)" status line; `tick.js` schedule still drives `runSaleTick()`
+- [x] **T36.83** 🟠 `runSaleTick()` rewritten — films stay 'listed' forever; each tick pays `basePrice × TICK_RATE_BASE (0.03) × demand × RNG(0.7-1.3)`; updates `passiveEarnings` + `lastTickEarnings` + `lastTickAt`
+- [x] **T36.84** 🟠 `sellNegatives(filmId)` exposed — premium = `basePrice × SELL_NEGATIVES_MULT (3.5) × demand`; sets status 'destroyed' + `destroyedAt` + `negativesSalePrice`; +2 notoriety hit
+- [x] **T36.85** 🟠 Films UI shows per-film ≈ per tick + last tick + lifetime passive + 💣 Sell negatives button with confirm-dialog; new "Negatives sold" section + legacy "Sales history" section for backwards-compat
+- [x] **T36.86** 🟡 Backwards-compat — legacy 'sold' films still render in their own section; `runSaleTick` reads `basePrice` / `currentListPrice` with safe defaults
+- [x] **Bonus** — `estimatePerTick(film)` + `estimateNegativesPayout(film)` helpers exposed
 
-#### Milestone 21.21 — Disposal method final-image generation per method (~1-2h, Gee verbatim 2026-05-14: *"and the dispose option needs to show like the image of the grave, the water, the crematoryei burning, ect ect for each one the final thing is the image of it"*)
-- [ ] **T36.87** 🟠 Per-method final-scene image prompts in `imaging.js` — bury (grave + shovel), drown (sinking body), cremate (furnace flames), release (walking away to dawn), finalization-film (editorial poster)
-- [ ] **T36.88** 🟠 `generateDisposalFinalImage({method, girl})` composes with girl's locked face/seed + method environment + final-state body markers
-- [ ] **T36.89** 🟠 `dispose-view.js` renders the generated image at the bottom of the disposal flow after Ollama narration
-- [ ] **T36.90** 🟡 Cache per `(girlId × method)` in IDB as permanent record
-- [ ] **T36.91** 🟢 Image-pipeline guarantees enforced (adult age, full-body framing, sanitize fallback)
+#### Milestone 21.21 — Disposal method final-image generation per method (~1-2h) — SHIPPED 2026-05-14
+- [x] **T36.87** 🟠 `DISPOSAL_PROMPTS` map covers 5 methods (bury / lose-at-sea / incinerate / release / finalization-film). `trade` has no entry — girl alive in slave market.
+- [x] **T36.88** 🟠 `generateDisposalFinalImage({method, girl})` on `SSDGame.imaging`. `GIRL_VISIBLE_METHODS` set (release/finalization) uses locked seed + face + age; abstract methods use method+id hash seed.
+- [x] **T36.89** 🟠 `dispose-view.js` placeholder slot + async swap-in `<figure>` after narration. Pollinations-unavailable falls back gracefully (empty slot).
+- [x] **T36.90** 🟡 IDB cache key `disposal:${girl.id}:${method}` via `SSDStorage.cache.put`.
+- [x] **T36.91** 🟢 Adult-age + `enforceFullBody` + `sanitizePrompt` + `queuedFetch` all honored.
+- [x] **Bonus** — `.dispose-final-image-slot` + `.dispose-final-img` CSS in `game.css`.
+
+#### Milestone 21.22 — Sexualized body-part references in dialogue, bond-tiered + Stockholm surfacing (~1h, Gee verbatim 2026-05-14: *"we also need gilr to mention thir tits, ass, and vag and other sexualized things in different ways as they agree or fight back eect ect in the meta prompts .. ie the girls all should have a stockholm rating or what ever so over time and with actions they become more complient"*)
+> Note: the "Stockholm rating" is the existing `girl.bond.bondLevel` 0-9 mechanic — just needs explicit "Stockholm L{n}" surfacing in UI.
+- [ ] **T36.92** 🔴 Add `## SEXUALIZED BODY-PART REFERENCES` block to `BASE_SLUT` — body parts (tits/ass/pussy/cunt/thighs/mouth/throat/clit/nipples) named in dialogue with tone shaped by bond tier
+- [ ] **T36.93** 🟠 Surface bond as "Stockholm L{n}" in UI (room/roster/dispose/dashboard/hunt) alongside existing bond-name label
+- [ ] **T36.94** 🟠 Verify per-bond-tier prompt instructions get reinforced via mood/bond overlay in `buildSystemPrompt()`
 
 #### Milestone 21.19 — README split: gameplay-wiki README + technical SETUP-README (~3-4h, Gee verbatim 2026-05-14: *"we need to also remake the readem into just a gameplay and game playout and design with the images... so that the readme is gamepaly only like wiki with everything thats in the game in the readme, then make a setupreadme that has all the code , setup, and technical information for the game layout in both amazingly and beautifully with some ascii write ups for explinations and beauty, add this to the todo"*)
 - [ ] **T36.76** 🟠 Audit existing README, split gameplay vs technical content, migrate accordingly, verify GitHub Pages still uses README.md as repo browse landing
@@ -199,11 +207,11 @@
 - **DOC close-out:** 8 tasks (~20 min)
 - **FINALIZED migration:** 2 tasks (~10 min)
 - **Atomic commit:** 1 task (~2 min)
-- **Phase 21 implementation:** 91 tasks (T36.1-T36.91) across 21 milestones (~33-42h estimated)
+- **Phase 21 implementation:** 94 tasks (T36.1-T36.94) across 22 milestones (~34-43h estimated)
 - **Pre-2026-05-14 open epics:** 14 tasks (PRE.1-PRE.14) (~6-10h estimated)
 - **Deferred:** 2 items (not active backlog)
 
-**GRAND TOTAL ACTIVE BACKLOG: 116 tasks. Estimated ~39-52 hours of focused implementation.** (Phase 21 grew with 6 new milestones added 2026-05-14 mid-session: 21.16 whore-out + 21.17 stamina/health + 21.18 universal tooltips + 21.19 README/SETUP-README split + 21.20 films auto-sell/sell-negatives + 21.21 disposal final-images. Plus T36.75 pregnancy image-trait extension on 21.10.)
+**GRAND TOTAL ACTIVE BACKLOG: 119 tasks. Estimated ~40-53 hours of focused implementation.** (Phase 21 grew with 7 new milestones added 2026-05-14 mid-session: 21.16 whore-out + 21.17 stamina/health + 21.18 universal tooltips + 21.19 README/SETUP-README split + 21.20 films auto-sell/sell-negatives + 21.21 disposal final-images + 21.22 sexualized body-refs/Stockholm. Plus T36.75 pregnancy image-trait extension on 21.10.)
 
 ---
 
@@ -621,34 +629,40 @@ After Phases A-G ship the game produces images where the captive's chemical stat
 
 > *"lest also get rid of the slaes pass button for sales of videos and just have them auto sell and u never lose a video as u can make many copies so they are always for sale it jsut u can remove them(sell negatives) which gives much more $ than the noraml video sales that are more like passive income"*
 
-### Epic: Films auto-sell + sell-negatives premium action `(M)` — HIGH (Phase 21.20)
+### Epic: Films auto-sell + sell-negatives premium action `(M)` — HIGH — SHIPPED 2026-05-14 (Phase 21.20)
 
-Films become passive-income assets — infinite-copies model. "Sales pass" button goes away. Films auto-sell every market tick at small per-tick rates without ever being consumed. New "💣 Sell negatives" per-film action destroys the master and removes the film from circulation in exchange for a one-time premium payout (3.5× × demand multiplier).
-
-- [ ] **Kill the sales-pass button** — `js/ui/market-view.js` no longer has the click-to-run sales pass. Replaced with "🔄 Auto-selling on tick" status text and a per-film passive-earnings ticker.
-- [ ] **Rewrite `runSaleTick()`** in `js/game/market.js` — sale NO LONGER consumes the film. Each tick, every listed film generates `payout = basePrice × tickRate` (tickRate small, 0.02-0.05 by demand). Film stays in catalog forever.
-- [ ] **`sellNegatives(filmId)` action** — `SSDGame.market.sellNegatives` computes `premiumPayout = basePrice × 3.5 × demandMultiplier`, removes the film from `films` array, logs a one-shot event.
-- [ ] **Films UI updates** — per-film passive-earnings ticker (live updates from state) + big "💣 Sell negatives — $X" button per film with confirm-dialog ("destroys master, removes from catalog — proceed?").
-- [ ] **Backwards-compat** — existing saves' film records continue to work. `runSaleTick()` reads new tickRate field with safe default if missing.
+- [x] **Sales-pass button killed** — `js/ui/market-view.js` no longer has the click-to-run sales pass. Replaced with "🔄 Auto-selling on tick — $X / tick (N listed)" status text + per-film ≈-per-tick + last-tick + lifetime-passive tickers.
+- [x] **`runSaleTick()` rewritten** in `js/game/market.js` — films stay 'listed' forever, each tick pays `basePrice × TICK_RATE_BASE (0.03) × archMult × tagMult × demandMult × RNG(0.7-1.3)`, updates `passiveEarnings`/`lastTickEarnings`/`lastTickAt`.
+- [x] **`sellNegatives(filmId)`** — `premiumPayout = basePrice × SELL_NEGATIVES_MULT (3.5) × archMult × tagMult × demandMult`. Sets status 'destroyed' + records timestamp + price. +2 notoriety hit. Confirm-dialog in UI.
+- [x] **Films UI** — per-film passive-earnings tickers + 💣 Sell negatives button + new "Negatives sold" history section + legacy "Sales history" section for back-compat.
+- [x] **Backwards-compat** — legacy 'sold' films render in their own section; safe defaults for missing fields. `estimatePerTick` + `estimateNegativesPayout` helpers exposed.
 
 ### Gee's directive (verbatim 2026-05-14) — Disposal method final-image generation:
 
 > *"and the dispose option needs to show like the image of the grave, the water, the crematoryei burning, ect ect for each one the final thing is the image of it"*
 
-### Epic: Disposal method final-image generation per method `(S)` — HIGH (Phase 21.21)
+### Epic: Disposal method final-image generation per method `(S)` — HIGH — SHIPPED 2026-05-14 (Phase 21.21)
 
-After each disposal method's Ollama narration completes, generate + display a final scene image via Pollinations. The image is the permanent record — captures the disposal moment in image form alongside the FINALIZED narration text.
+- [x] **Per-method final-scene prompts** in `js/game/imaging.js` `DISPOSAL_PROMPTS` map. 5 methods covered (bury / lose-at-sea / incinerate / release / finalization-film). `trade` has no image (girl alive in market).
+- [x] **`generateDisposalFinalImage({method, girl})`** on `SSDGame.imaging`. `GIRL_VISIBLE_METHODS` set (release / finalization-film) uses locked seed + face + age; abstract methods use method+id hash seed for per-disposal consistency.
+- [x] **`js/ui/dispose-view.js`** — placeholder slot + async-swap-in `<figure>` after Ollama narration. Pollinations-unavailable falls back gracefully.
+- [x] **IDB cache** key `disposal:${girl.id}:${method}` via `SSDStorage.cache.put`. Permanent record.
+- [x] **Image-pipeline guarantees** — adult-age, `enforceFullBody`, `sanitizePrompt`, `queuedFetch` 429 backoff all honored. CSS added.
 
-- [ ] **Per-method final-scene prompts** in `js/game/imaging.js`. Method → scene prompt map (full prompts in ROADMAP Milestone 21.21):
-  - **bury** → freshly dug grave mound + shovel + wooded clearing + dusk
-  - **drown / water-disposal** → weighted body sinking + dark water + pier
-  - **cremate** → industrial crematory furnace flames + ash + steel tray
-  - **release** → adult woman walking away to dawn road, returning to the world
-  - **finalization-film** → editorial film-poster framing of the final frame
-- [ ] **`generateDisposalFinalImage({method, girl})`** composes prompt with girl's locked face + seed (recognizable where applicable) + method environment + final-state body markers. Calls `generateFor()` with custom prompt override.
-- [ ] **`js/ui/dispose-view.js` update** — after Ollama narration completes for the chosen method, render the generated image as the final disposal screen below the narration. Lazy-load with fallback to text+emoji if Pollinations unavailable.
-- [ ] **IDB cache per `(girlId × method)`** — each disposal becomes a permanent record visible later in FINALIZED-disposal entries / disposal log.
-- [ ] **Existing image-pipeline guarantees enforced** — adult-floor age via `${girl.age}` (Phase 21.1), full-body framing (Phase 21.15 + 21.3), `sanitizePrompt` fallback on 403 (existing).
+### Gee's directive (verbatim 2026-05-14) — Sexualized body-part references + Stockholm rating:
+
+> *"we also need gilr to mention thir tits, ass, and vag and other sexualized things in different ways as they agree or fight back eect ect in the meta prompts .. ie the girls all should have a stockholm rating or what ever so over time and with actions they become more complient"*
+
+### Epic: Sexualized body-part references in dialogue, bond-tiered + Stockholm surfacing `(S)` — CRITICAL (Phase 21.22)
+
+Two parts. (1) Prompt-level: girls explicitly name their sexual body parts in dialogue, with TONE shaped by their current bond level. Low bond → defensive / repulsed / clinical; mid → ambivalent / surrendering; high → inviting / desperate / possessive. (2) UI: the "Stockholm rating" Gee referenced already exists as `girl.bond.bondLevel` 0-9 — surface it explicitly as "Stockholm L{n}" alongside the existing bond-name label so the mechanic is visible by name.
+
+- [ ] **BASE_SLUT `## SEXUALIZED BODY-PART REFERENCES` block** — `js/templates/ollama-templates.js`. Instructs the model to name body parts (tits, ass, pussy, cunt, thighs, mouth, throat, clit, nipples) in dialogue, tone shaped by bond tier:
+  - **Low bond (0-3) — defensive / repulsed / clinical:** *"stop touching my tits"*, *"my cunt is dry"*, *"your hand is on my ass again"*, *"get your fingers out of me"*
+  - **Mid bond (4-6) — ambivalent / surrendering:** *"you keep grabbing my tits"*, *"your fingers are between my thighs"*, *"i can feel your cock against my ass"*
+  - **High bond (7-9) — inviting / desperate / possessive:** *"my tits ache for you, Master"*, *"fuck my pussy harder"*, *"my ass is yours"*, *"i need your cock in my throat"*
+- [ ] **"Stockholm L{n}" UI surface** — `js/ui/room.js`, `js/ui/roster.js`, `js/ui/dispose-view.js`, `js/ui/dashboard.js`, `js/ui/hunt-view.js`. Every place that currently shows "Bond L{n}" gains a "Stockholm L{n}" alias label. Existing bond-name table (terrified / wary / acclimating / etc.) stays — Stockholm is the rating, the name is the qualitative tier.
+- [ ] **Per-bond-tier prompt reinforcement** — `js/templates/ollama-templates.js` `buildSystemPrompt()`. Reads girl's current bond.bondLevel and selects the right tier emphasis from the SEXUALIZED block (low/mid/high band). So a bond-2 girl sees "low-bond" tier instructions; a bond-8 girl sees "high-bond" tier. Both tiers ship the same body-part lexicon but with different tone.
 
 ### Gee's directive (verbatim 2026-05-14) — README split: gameplay-wiki README + technical SETUP-README:
 

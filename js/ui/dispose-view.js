@@ -51,9 +51,34 @@
           const resultHtml = `<div class="panel"><h3>${window.SSDGame.disposal.METHODS[method].emoji} ${window.SSDGame.disposal.METHODS[method].displayName}</h3>
             ${narration ? `<div class="log"><div class="log-entry assistant"><b>${girlSnapshot.name}:</b> ${escapeHtml(narration)}</div></div>` : ''}
             ${result.generatedFilmId ? `<p class="small gold">Finalization film ${result.generatedFilmId} recorded and listed.</p>` : ''}
+            <div class="dispose-final-image-slot" id="dispose-final-image">
+              ${window.SSDGame.imaging?.isAvailable() && window.SSDGame.imaging.generateDisposalFinalImage
+                ? '<div class="small muted">📷 generating final scene…</div>'
+                : ''}
+            </div>
             <div class="btn-row"><a href="#dashboard" class="btn-primary">← Dashboard</a></div>
           </div>`;
           el.innerHTML = resultHtml;
+
+          // Phase 21.21 — generate + render the per-method final-scene image (async).
+          // Methods covered: bury / lose-at-sea / incinerate / release / finalization-film.
+          // `trade` doesn't generate an image (girl goes to slave market alive).
+          const imgSlot = el.querySelector('#dispose-final-image');
+          if (imgSlot && window.SSDGame.imaging?.generateDisposalFinalImage) {
+            try {
+              const imgResult = await window.SSDGame.imaging.generateDisposalFinalImage({ method, girl: girlSnapshot });
+              if (imgResult?.url) {
+                imgSlot.innerHTML = `<figure class="dispose-final-image">
+                  <img src="${imgResult.url}" alt="${window.SSDGame.disposal.METHODS[method].displayName} — ${girlSnapshot.name}" class="gen-img dispose-final-img" onerror="this.outerHTML='<div class=\\'small muted\\'>(image fetch blocked — <a href=\\'' + this.src + '\\' target=\\'_blank\\'>open in new tab</a>)</div>';" />
+                  <figcaption class="small muted">${window.SSDGame.disposal.METHODS[method].emoji} ${window.SSDGame.disposal.METHODS[method].displayName} — final scene · ${girlSnapshot.name}</figcaption>
+                </figure>`;
+              } else {
+                imgSlot.innerHTML = '';
+              }
+            } catch (err) {
+              imgSlot.innerHTML = `<div class="small muted">(final image gen failed: ${err?.message || 'unknown'})</div>`;
+            }
+          }
         } catch (e) { alert(e.message); }
       };
     });
