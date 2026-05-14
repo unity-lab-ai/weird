@@ -482,12 +482,23 @@ python3 -m http.server 8000
 
 For dev-time auto-injection of a Pollinations token (so you don't have to paste it into Settings every time you wipe storage):
 
-```bash
-cp js/env.example.js js/env.local.js
-# Edit js/env.local.js, paste your pk_ key
+1. Copy `.env.example` → `.env` at the project root (gitignored)
+2. Paste your `sk_` or `pk_` key into `POLLINATIONS_API_KEY=`
+3. Launch via `start.bat` (Windows) or `start.sh` (Mac/Linux) — the launcher runs the env sync as Step 0 and regenerates `js/env.local.js` from `.env`. The browser's `window.__DEV_ENV` reflects the latest values on every launch.
+
+Both `.env` and `js/env.local.js` are gitignored. `.env` is the single source of truth — never edit `js/env.local.js` by hand; the launcher will overwrite it.
+
+If you launch the static server manually (without `start.bat` / `start.sh`), run the sync first:
+
+```powershell
+# Windows
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/sync-env.ps1
 ```
 
-`env.local.js` is gitignored.
+```bash
+# Mac/Linux — extract the sync_env function from start.sh, or just call start.sh once
+bash start.sh
+```
 
 ### Regenerating README screenshots
 

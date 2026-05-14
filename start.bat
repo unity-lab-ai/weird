@@ -14,6 +14,14 @@ set PROJECT_DIR=%CD%
 echo Project: %PROJECT_DIR%
 echo.
 
+REM === STEP 0: Sync .env -> js/env.local.js =========================
+echo [0/3] Syncing .env to js/env.local.js...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PROJECT_DIR%\scripts\sync-env.ps1"
+if %ERRORLEVEL% NEQ 0 (
+    echo   ! Sync script failed (non-fatal). Browser will fall back to existing js/env.local.js or settings panel.
+)
+echo.
+
 REM === STEP 1: Ollama check + auto-start ============================
 echo [1/3] Checking Ollama...
 

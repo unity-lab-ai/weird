@@ -200,15 +200,22 @@
 
   function renderPollinationsSetup(s) {
     const hasKey = s.pollinations.present;
-    const savedKey = localStorage.getItem('ssd_pollinations_key') || '';
+    // Effective key resolved by config — respects precedence: localStorage > __DEV_ENV (env.local.js from .env) > default.
+    const effectiveKey = (window.SSDConfig && window.SSDConfig.POLLINATIONS && window.SSDConfig.POLLINATIONS.apiKey) || '';
+    const lsKey = localStorage.getItem('ssd_pollinations_key') || '';
+    const sourceBadge = (effectiveKey && !lsKey)
+      ? ` <span class="small muted">(from .env / env.local.js)</span>`
+      : (effectiveKey && lsKey)
+        ? ` <span class="small muted">(from Settings panel)</span>`
+        : '';
     $('#polly-setup').innerHTML = `
       <h3>4. Pollinations API key (optional — for images)</h3>
       <p class="small">Used for whole-body profile images + on-demand selfies. Skip it — the game plays fully as text+emoji.</p>
-      ${hasKey ? `<p class="small">Current key: <code>${savedKey.slice(0, 4)}…${savedKey.slice(-4)}</code> ✓ saved</p>` : ''}
+      ${hasKey ? `<p class="small">Current key: <code>${effectiveKey.slice(0, 4)}…${effectiveKey.slice(-4)}</code> ✓ saved${sourceBadge}</p>` : ''}
       <div class="polly-row">
         <input type="password" id="polly-key" placeholder="${hasKey ? 'Paste new key to change' : 'sk_... or pk_...'}" class="text-input" />
         <button class="btn-small" id="polly-save">Save</button>
-        ${hasKey ? `<button class="btn-small btn-danger" id="polly-clear">Clear</button>` : ''}
+        ${lsKey ? `<button class="btn-small btn-danger" id="polly-clear">Clear localStorage key</button>` : ''}
       </div>
     `;
     $('#polly-save').onclick = () => {

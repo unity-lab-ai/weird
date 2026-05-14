@@ -14,8 +14,6 @@
 
 As of session-end **2026-05-14** (commit chain through `6421b84`):
 
-**Active backlog: 0 tasks.** Everything shipped or audit-dropped with rationale.
-
 All completion records for this project's work live in **[`docs/FINALIZED.md`](./FINALIZED.md)** — 35 session entries covering 71 task IDs across:
 
 - **Phase 21 milestones** — all 24 (21.1 → 21.24) ✅
@@ -81,7 +79,8 @@ After commit lands:
 
 | Date | Session focus | Commit |
 |---|---|---|
-| 2026-05-14 | TODO template-out — verified full FINALIZED coverage before strip | (this commit) |
+| 2026-05-14 | BUG.1 — `start.bat` / `start.sh` auto-sync `.env` → `js/env.local.js` so Pollinations key flows to browser; landing-page Settings shows effective key with source badge | (this commit) |
+| 2026-05-14 | TODO template-out — verified full FINALIZED coverage before strip | `36e2787` |
 | 2026-05-14 | POST-REVIEW.1-7 batch fix (action-effects routing + custom-pose persistence + Ollama fallback + gallery blob + condom state overlay) | `6421b84` |
 | 2026-05-14 | POST-REVIEW.1-7 added to active backlog | `726cd45` |
 | 2026-05-14 | NEW.1 custom image-prompt + NEW.2 image history gallery + hunt-view tooltips + drop unneeded deferred | `7a59f9c` |
