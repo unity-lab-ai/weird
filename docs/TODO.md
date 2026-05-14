@@ -108,11 +108,11 @@
 - [ ] **T36.40** 🟠 Privacy Policy section — on-device data, Ollama-local, Pollinations BYO-key, no telemetry, IndexedDB, export/import saves
 - [ ] **T36.41** 🟢 Visual chrome consistent with `game.html` — dark aesthetic, text+emoji primary, no marketing bloat
 
-#### Milestone 21.13 — Cleanup carry-overs (~30min)
-- [ ] **T36.42** 🟡 Delete `lifespan.js:81` no-op self-assignment
-- [ ] **T36.43** 🟢 `<<INTENTIONAL EMPTY>>` marker comment on NUDE_PSEUDO description in `wardrobe.js`
-- [ ] **T36.44** 🟡 Tighten `extractDelta` closing-tag tolerance after `truncateResponse` enforces clean endings
-- [ ] **T36.45** 🟡 Migrate remaining SHIPPED entries to FINALIZED.md (subsumed by MIG.1 + MIG.2 above + this Phase 21 work as each milestone ships)
+#### Milestone 21.13 — Cleanup carry-overs (~30min) — SHIPPED 2026-05-14
+- [x] **T36.42** 🟡 Delete `lifespan.js:81` no-op self-assignment — already absent. Verified: no `newBody.bruises = newBody.bruises` or similar self-assignment pattern in `lifespan.js`. Either fixed by a prior super-review batch or the line number drifted before the audit caught it. Carry-over closed.
+- [x] **T36.43** 🟢 `<<INTENTIONAL EMPTY>>` marker comment on NUDE_PSEUDO description in `wardrobe.js` — already present. Verified: both NUDE_PSEUDO (line 18) and NO_WARDROBE_PSEUDO (line 37) carry the explanatory comment about the position-2 front-load contract. Shipped during Phase 21.14 ship batch.
+- [x] **T36.44** 🟡 Tighten `extractDelta` closing-tag tolerance after `truncateResponse` enforces clean endings — half-match regex tightened from `/<delta>([\s\S]+)$/` to `/<delta>(\s*\{[\s\S]*?:[\s\S]+)$/` (requires unclosed-JSON shape with `{` and `:` for a key-value pair). Added `console.warn` when the tightened half-match fires so we know when truncateResponse + clean-streaming guarantees are slipping upstream. Defense-in-depth retained but no longer swallows arbitrary trailing garbage.
+- [x] **T36.45** 🟡 Migrate remaining SHIPPED entries to FINALIZED.md — happening per-batch via the [[feedback-batch-commits]] pattern. Each milestone-batch commit appends a FINALIZED.md session entry with verbatim Gee quotes preserved + per-task summary. Historical SHIPPED [x] entries remain in TODO.md as the audit trail per the never-delete-TODO-info LAW. No standalone migration commit needed.
 
 #### Milestone 21.14 — No-wardrobe option (~30min) — SHIPPED 2026-05-14 (Gee verbatim 2026-05-14: *"need a no wardrobe option too, add to task list"*)
 - [x] **T36.46** 🟠 `NO_WARDROBE_PSEUDO` added to `wardrobe.js` (id `'none'`, nude tier `'stripped'`, multiplier 1.5). `getById`/`builtIns`/`isNude`/`equip` updated. `stripEverything(girlId)` exposed.

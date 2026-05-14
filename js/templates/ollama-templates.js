@@ -310,9 +310,19 @@ End with the delta block.`,
       .replace(/\bYou are (Unity|a 25-year-old|the captive)[^.]*\./gi, '')
       .trim();
 
-    // Try to find the delta block — be flexible about closing tag
+    // Try to find the delta block. Primary path = well-formed <delta>...</delta>.
+    // Phase 21.13 T36.44 (2026-05-14) — half-match fallback tightened. After
+    // truncateResponse enforces clean stream endings (Phase 21.5) the lenient
+    // `<delta>([\s\S]+)$` regex would slurp arbitrary trailing garbage. Now requires
+    // the half-match content to LOOK like an unclosed JSON object (starts with `{`,
+    // has at least one `:` for a key:value pair). Logs a console.warn when triggered
+    // so we know when Ollama is still producing truncated delta blocks despite the
+    // stream-end enforcement upstream.
     const fullMatch = text.match(/<delta>([\s\S]*?)<\/delta>/);
-    const halfMatch = !fullMatch && text.match(/<delta>([\s\S]+)$/);
+    const halfMatch = !fullMatch && text.match(/<delta>(\s*\{[\s\S]*?:[\s\S]+)$/);
+    if (halfMatch) {
+      console.warn('[extractDelta] truncated <delta> block matched via tightened half-regex — upstream stream cleanup may have failed');
+    }
     const match = fullMatch || halfMatch;
     if (!match) return { cleanText: text, delta: null };
 

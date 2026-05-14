@@ -13,6 +13,30 @@
 
 ---
 
+## 2026-05-14 — Session: Phase 21.13 SHIPPED (cleanup carry-overs from super-review)
+
+Tail-end cleanup of the 4 carry-overs left open by the 2026-05-14 super-review audit. Mostly verification — 3 of 4 items had already been shipped in prior milestone batches; one small code change for the remaining one.
+
+### Phase 21.13 — Cleanup carry-overs (T36.42-T36.45)
+
+- **T36.42 — Delete `lifespan.js:81` no-op self-assignment** — already absent. Verified via `grep -n "bruises = .*bruises"` on `js/game/lifespan.js`: zero matches. Either fixed by an earlier super-review batch or the line number drifted before the audit. Closed as already-shipped.
+- **T36.43 — `<<INTENTIONAL EMPTY>>` marker comment on NUDE_PSEUDO description in `wardrobe.js`** — already present. Verified at line 18 for NUDE_PSEUDO and line 37 for NO_WARDROBE_PSEUDO. Both carry the explanatory comment explaining the position-2 front-load contract for imaging.js. Shipped during the Phase 21.14 ship batch.
+- **T36.44 — Tighten `extractDelta` closing-tag tolerance** — SHIPPED. `js/templates/ollama-templates.js` half-match regex tightened from the lenient `/<delta>([\s\S]+)$/` (which would slurp arbitrary trailing garbage after a missing close-tag) to a structured `/<delta>(\s*\{[\s\S]*?:[\s\S]+)$/` requiring the unclosed content to LOOK like JSON (starts with `{`, has at least one `:` for a key-value pair). Added `console.warn` when the half-match fires so we know when truncateResponse + clean-streaming guarantees are slipping upstream — defense in depth without silent data swallowing. Addresses the super-review verdict's "Hiding bugs in the cleanup function" concern while preserving fallback safety for genuine mid-stream truncation.
+- **T36.45 — Migrate remaining SHIPPED entries to FINALIZED.md** — confirmed happening per-batch via the [[feedback-batch-commits]] pattern. Each milestone-batch commit lands its own FINALIZED.md entry. Historical SHIPPED [x] entries remain in TODO.md as the audit trail per the never-delete-TODO-info LAW. No standalone migration commit needed; the per-batch pattern is the migration.
+
+### Files touched (1 code + 3 docs)
+
+- `js/templates/ollama-templates.js` — extractDelta half-match regex tightened + console.warn added
+- `docs/TODO.md` — Milestone 21.13 marked SHIPPED, all 4 sub-tasks [x] with shipped detail
+- `docs/ROADMAP.md` — Dependency Graph 21.13 entry expanded to SHIPPED summary
+- `docs/FINALIZED.md` — this entry
+
+### Syntax verification
+
+`node --check js/templates/ollama-templates.js` clean.
+
+---
+
 ## 2026-05-14 — Session: Phase 21.10 SHIPPED (pregnancy subsystem — biggest unshipped vertical from super-review brief)
 
 Atomic ship per [[feedback-batch-commits]]: schema + module + 5 catalog items + delta conception hook + room.js panel + dashboard/roster 🤰 lights + image-prompt trimester markers + Ollama-side delta-block teaching. Two mid-ship Gee addendums folded in (dashboard light + vaginal-cum gate) plus a forward-looking cross-link to Phase 21.16 (johns-can-impregnate).
