@@ -244,8 +244,8 @@
 
           ${(() => {
             // Pregnancy panel — always visible so the player can see her current
-            // reproductive state. Shows NOT PREGNANT explicitly when status is 'none'
-            // and no past outcomes, instead of hiding the panel entirely.
+            // reproductive state. Shows NOT PREGNANT explicitly when status is 'none',
+            // never hides. Status icon + tooltip explain what the icon means.
             const preg = girl.pregnancy || { status: 'none' };
             const methods = window.DMTHGame.pregnancy
               ? window.DMTHGame.pregnancy.allAbortionMethodsForDisplay(girl)
@@ -257,8 +257,21 @@
               'lost-to-authorities': '🚨', birthed: '🍼', lost: '🚨'
             }[preg.status] || '·';
             const statusLabel = preg.status === 'none' ? 'NOT PREGNANT' : preg.status.toUpperCase().replace(/-/g, ' ');
-            return `<h3>${statusEmoji} Pregnancy</h3>
-              <div class="stat-row"><span>Status</span><b>${statusLabel}</b></div>
+            const statusTip = {
+              none: 'Not currently pregnant. Vaginal cum + no condom + bond < L9 fires a conception roll at 30% base chance.',
+              pregnant: 'Pregnant. Gestation advances ~1 game day per trimester (3 game days = full term).',
+              aborted: 'Pregnancy terminated by abortion method.',
+              miscarried: 'Pregnancy lost — back-alley complication or other adverse outcome.',
+              'stillbirth-trash': 'Stillborn at full term. Body disposed quietly. +1 notoriety, mild bond debt.',
+              'firestation-drop': 'Newborn dropped off anonymously at a firestation. No paper trail.',
+              'sold-to-black-market': 'Newborn sold to a black-market broker. Real money, moderate notoriety.',
+              'abandoned-trash': 'Newborn dumped — river, dumpster, shallow grave. Small chance of being found.',
+              'lost-to-authorities': 'Delivery reported. Heavy notoriety hit. She talked or someone saw.',
+              birthed: 'Delivered.',
+              lost: 'Pregnancy lost.'
+            }[preg.status] || 'Pregnancy state.';
+            return `<h3 data-tooltip="${statusTip}">${statusEmoji} Pregnancy: ${statusLabel}</h3>
+              <div class="stat-row" data-tooltip="${statusTip}"><span>Status</span><b>${statusEmoji} ${statusLabel}</b></div>
               ${preg.status === 'pregnant' ? `
                 <div class="stat-row"><span>Gestation</span><b>day ${preg.gestationDays}/280 · trimester ${preg.trimester}</b></div>
                 <div class="bar-row"><label>Term</label><div class="bar"><div class="bar-fill" style="width:${Math.min(100, Math.round((preg.gestationDays/280)*100))}%"></div></div><b>${Math.round((preg.gestationDays/280)*100)}%</b></div>

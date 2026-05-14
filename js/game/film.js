@@ -111,6 +111,25 @@
         stressBonusTier: girl.bonuses?.stressBonusTier || 0
       });
     }
+    // Cum-load bonus — recording while she's heavily used pays out a premium. Visible
+    // signs of recent use are a selling point in the content market. Tiered:
+    //   cumLoad ≥ 2.0  → "used"      × 1.10
+    //   cumLoad ≥ 3.5  → "well-used" × 1.20
+    //   cumLoad ≥ 5.0  → "ruined"    × 1.35  (saturation tier)
+    // Stacks multiplicatively with wardrobe + stress bonuses.
+    const cl = girl.body?.cumLoad || 0;
+    const cumMul = cl >= 5.0 ? 1.35 : cl >= 3.5 ? 1.20 : cl >= 2.0 ? 1.10 : 1.0;
+    if (cumMul !== 1.0) {
+      const current = window.DMTHGame.state.current.films.find(f => f.id === film.id);
+      const newPrice = Math.round((current?.currentListPrice || film.currentListPrice) * cumMul);
+      const cumTier = cl >= 5.0 ? 'ruined' : cl >= 3.5 ? 'well-used' : 'used';
+      window.DMTHGame.state.updateFilm(film.id, {
+        currentListPrice: newPrice,
+        cumLoadMultiplier: cumMul,
+        cumLoadTier: cumTier,
+        cumLoadAtRecording: cl
+      });
+    }
     // Auto-generate cover image IF Pollinations is configured — otherwise text+emoji film lives fine without it.
     if (window.DMTHGame.imaging && window.DMTHGame.imaging.isAvailable()) {
       window.DMTHGame.imaging.filmCover(film.id).catch(() => {});

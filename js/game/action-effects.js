@@ -76,8 +76,12 @@
       notes: 'Massage — major stamina + health restore, modest bond.'
     },
     'love-bathe-her': {
-      stamina: +10, health: +8, mood: +6, bondXP: +4, bondDebt: -2, satisfaction: +2,
-      notes: 'Bathe her — strong health + stamina rebuild, real intimacy.'
+      stamina: +10, health: +8, mood: +6, bondXP: +4, bondDebt: -2, cumLoad: -3, satisfaction: +2,
+      notes: 'Bathe her — strong health + stamina rebuild, real intimacy. Drains cumLoad in the bath.'
+    },
+    'wipe-down': {
+      stamina: +2, health: +1, mood: +3, bondXP: +1, bondDebt: -1, cumLoad: -2, satisfaction: +1,
+      notes: 'Wipe her down — drains accumulated cum. Faster than a full bath, less recovery.'
     },
     'love-feed-by-hand': {
       stamina: +8, health: +5, mood: +7, bondXP: +5, bondDebt: -2, satisfaction: +2,
