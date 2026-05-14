@@ -64,22 +64,42 @@
     if (window.SSDGame.lifespan) window.SSDGame.lifespan.tickAll();
   }
 
+  // Decay food + water per tick, GATED by the hold's automation tiers (Phase 21.9, 2026-05-14).
+  // Gating rules:
+  //   - Water decay zeroes if hold's `toilet` tier >= 2 (full plumbing) OR
+  //                            hold's `waterSupply` tier >= 2 (plumbed faucet+).
+  //     Reflects Gee verbatim: "if they have a toilet they no longer need a water supply from
+  //     the user to give it". Plumbed sources draw their own water — no manual stock burn.
+  //   - Food decay zeroes if hold's `feedAutomation` tier >= 2 (auto-feeder dispenser+).
+  //     Auto-feeder + IV-line draw from their own reservoir of stocked feed (game-abstract);
+  //     player still buys food via the shop to bump the food.tier quality multiplier, but
+  //     the per-tick stock decay stops.
+  // Bond-debt accrues only when manual decay actually runs the stock to zero.
   function decayConsumables(girl) {
+    const dungeon = window.SSDGame.state.getDungeon(girl.assignedDungeonId);
+    const hold = dungeon?.holds?.[girl.assignedHoldIdx ?? 0];
+    const toiletTier = hold?.upgrades?.toilet ?? 0;
+    const waterSupplyTier = hold?.upgrades?.waterSupply ?? 0;
+    const feedAutomationTier = hold?.upgrades?.feedAutomation ?? 0;
+
+    const waterPlumbed = toiletTier >= 2 || waterSupplyTier >= 2;
+    const foodAutomated = feedAutomationTier >= 2;
+
     const c = girl.consumables || {};
     const newC = JSON.parse(JSON.stringify(c));
     let moodPenalty = 0;
 
-    for (const key of ['food', 'water']) {
-      if (!newC[key]) continue;
-      newC[key].stock = Math.max(0, (newC[key].stock || 0) - (newC[key].decayPerTick || 1));
-      if (newC[key].stock === 0) moodPenalty += 1;
+    if (newC.food && !foodAutomated) {
+      newC.food.stock = Math.max(0, (newC.food.stock || 0) - (newC.food.decayPerTick || 1));
+      if (newC.food.stock === 0) moodPenalty += 1;
+    }
+    if (newC.water && !waterPlumbed) {
+      newC.water.stock = Math.max(0, (newC.water.stock || 0) - (newC.water.decayPerTick || 1));
+      if (newC.water.stock === 0) moodPenalty += 1;
     }
 
     const patch = { consumables: newC };
     if (moodPenalty > 0) {
-      const newBody = { ...girl.body };
-      newBody.bruises = newBody.bruises;  // starvation doesn't bruise, but mood drops
-      patch.body = newBody;
       const newBond = { ...girl.bond, bondDebt: (girl.bond.bondDebt || 0) + moodPenalty };
       patch.bond = newBond;
     }

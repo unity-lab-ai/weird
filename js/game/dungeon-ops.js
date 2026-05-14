@@ -4,18 +4,25 @@
 (function () {
   'use strict';
 
-  // Per-room 10-track upgrade definitions with per-tier costs.
+  // Per-room 12-track upgrade definitions with per-tier costs.
+  // Phase 21.9 (2026-05-14) added feedAutomation + waterSupply — gates consumable decay
+  // in tick.js. Plumbed toilet (tier 2) OR plumbed waterSupply (tier 2) zeroes water decay;
+  // auto-feeder (tier 2) or IV-line (tier 3) zeroes food decay. Gee verbatim 2026-05-14:
+  // "we need an easier and upgradable way to feed and water the girls(automatic once
+  // upgradable)" + "if they have a toilet they no longer need a water supply from the user".
   const UPGRADE_TRACKS = {
-    security:      { label: '🔒 Security',       maxTier: 4, tierCosts: [0, 60,  250, 800, 2400], tierNames: ['basic latch','deadbolt','steel+combo','biometric','vault-grade'] },
-    restraints:    { label: '⛓️ Restraints',      maxTier: 5, tierCosts: [0, 80,  220, 600, 1400, 3000], tierNames: ['bare','floor ring + chain','bed cuffs','full harness rig','wall spread-eagle rig','institution-grade'] },
-    lights:        { label: '💡 Lights',          maxTier: 4, tierCosts: [0, 20,  80,  220, 600], tierNames: ['bare bulb','warm lamp','dimmable LED','mood LED strips','theatrical'] },
-    toys:          { label: '🧸 Toys',            maxTier: 4, tierCosts: [0, 60,  200, 600, 1500], tierNames: ['empty drawer','basic','varied chest','deluxe kit','institution-grade'] },
-    food:          { label: '🍱 Food quality',    maxTier: 4, tierCosts: [0, 30,  100, 300, 800], tierNames: ['slop','basic meals','varied','gourmet','whatever-she-wants'] },
-    toilet:        { label: '🚽 Toilet',           maxTier: 2, tierCosts: [0, 45, 300], tierNames: ['can','bucket','full plumbing'] },
-    bedding:       { label: '🛏️ Bedding',         maxTier: 4, tierCosts: [0, 20, 100, 300, 700], tierNames: ['bare floor','foam mat','mattress','real bed','canopy bed'] },
-    entertainment: { label: '📺 Entertainment',   maxTier: 4, tierCosts: [0, 40, 180, 400, 900], tierNames: ['none','radio','TV','screen + library','full streaming'] },
-    decor:         { label: '🎨 Decor',            maxTier: 4, tierCosts: [0, 30, 120, 400, 1000], tierNames: ['bare concrete','minimal','themed','luxury','fetish-themed'] },
-    climate:       { label: '🌡️ Climate',         maxTier: 3, tierCosts: [0, 40, 180, 500], tierNames: ['none','fan','AC','full climate control'] }
+    security:       { label: '🔒 Security',       maxTier: 4, tierCosts: [0, 60,  250, 800, 2400], tierNames: ['basic latch','deadbolt','steel+combo','biometric','vault-grade'] },
+    restraints:     { label: '⛓️ Restraints',      maxTier: 5, tierCosts: [0, 80,  220, 600, 1400, 3000], tierNames: ['bare','floor ring + chain','bed cuffs','full harness rig','wall spread-eagle rig','institution-grade'] },
+    lights:         { label: '💡 Lights',          maxTier: 4, tierCosts: [0, 20,  80,  220, 600], tierNames: ['bare bulb','warm lamp','dimmable LED','mood LED strips','theatrical'] },
+    toys:           { label: '🧸 Toys',            maxTier: 4, tierCosts: [0, 60,  200, 600, 1500], tierNames: ['empty drawer','basic','varied chest','deluxe kit','institution-grade'] },
+    food:           { label: '🍱 Food quality',    maxTier: 4, tierCosts: [0, 30,  100, 300, 800], tierNames: ['slop','basic meals','varied','gourmet','whatever-she-wants'] },
+    feedAutomation: { label: '🍽️ Feed automation', maxTier: 3, tierCosts: [0, 80, 280, 900], tierNames: ['manual','auto-bowl (timer)','auto-feeder (dispenser)','IV-line continuous'] },
+    toilet:         { label: '🚽 Toilet',          maxTier: 2, tierCosts: [0, 45, 300], tierNames: ['can','bucket','full plumbing'] },
+    waterSupply:    { label: '🚰 Water supply',    maxTier: 3, tierCosts: [0, 50, 200, 600], tierNames: ['manual bottle','wall jug w/ straw','plumbed faucet','recirculating IV'] },
+    bedding:        { label: '🛏️ Bedding',         maxTier: 4, tierCosts: [0, 20, 100, 300, 700], tierNames: ['bare floor','foam mat','mattress','real bed','canopy bed'] },
+    entertainment:  { label: '📺 Entertainment',   maxTier: 4, tierCosts: [0, 40, 180, 400, 900], tierNames: ['none','radio','TV','screen + library','full streaming'] },
+    decor:          { label: '🎨 Decor',            maxTier: 4, tierCosts: [0, 30, 120, 400, 1000], tierNames: ['bare concrete','minimal','themed','luxury','fetish-themed'] },
+    climate:        { label: '🌡️ Climate',         maxTier: 3, tierCosts: [0, 40, 180, 500], tierNames: ['none','fan','AC','full climate control'] }
   };
 
   function getHold(dungeonId, holdIdx) {
