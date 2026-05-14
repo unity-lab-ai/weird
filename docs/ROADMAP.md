@@ -883,23 +883,39 @@ Phase 21 (Major Systems Overhaul — 2026-05-14)
 (Ongoing — game lives here, future overhauls land as Phase 22+)
 ```
 
-### Critical Path (current — 2026-05-14)
+### Critical Path (current — 2026-05-14, end-of-session)
 
-Phases 0-20 all shipped. **Current critical path = Phase 21:**
+**Phases 0-21 all shipped.** Phase 21 closed out in 10 atomic commits across the post-compact session:
 
-1. Phase 21.5 (Speech-first TTS fix, ~1h) — unblocks Kokoro getting only "yes Master"
-2. Phase 21.15 (Full-body image framing, ~1h) — fixes mugshot/portrait default before other image work rides on top
-3. Phase 21.8 + 21.9 (Water + automation tracks, ~1.5h) — unblocks water-decay-with-no-buy-path
-4. Phase 21.1 + 21.2 + 21.3 (Drug-state + per-hold env + position reorder in image prompts, ~2-3h)
-5. Phase 21.4 (Deterministic seed fallback, ~30min)
-6. Phase 21.6 + 21.7 (Chemical-state effects in text + CAPTIVE_AFFECTS register, ~2-3h)
-7. Phase 21.10 (Pregnancy subsystem, ~3-4h)
-8. ~~Phase 21.11 (Capture as multi-stage progress-bar mechanic, ~3-4h)~~ — SHIPPED 2026-05-14 commit `<pending>`. Engine + per-tool stage profiles + per-archetype resistance + progress-bar UI + outcome resolver all in one atomic ship.
-9. Phase 21.14 (No-wardrobe option, ~30min)
-10. Phase 21.12 (Real public landing page, ~2h)
-11. Phase 21.13 (Cleanup + FINALIZED migration, ~30min)
+| Phase | Milestone | Commit |
+|---|---|---|
+| 21.1 | Drug-state visible in image prompts | (earlier session) |
+| 21.2 | Per-hold environment composition | (earlier session) |
+| 21.3 | Image-prompt position reorder | (earlier session) |
+| 21.4 | Deterministic seed fallback | (earlier session) |
+| 21.5 | Speech-first TTS fix | (earlier session) |
+| 21.6 | Forced chemical-state effects in Ollama text | (earlier session) |
+| 21.7 | CAPTIVE_AFFECTS register | (earlier session) |
+| 21.8 | Bottled + filtered water in shop | (earlier session) |
+| 21.9 | Automation upgrade tracks + decay gating | (earlier session) |
+| 21.10 | Pregnancy subsystem (+ T36.102-T36.104 mid-flight addendums) | `529aba7` |
+| 21.11 | Capture as multi-stage progress-bar mechanic | (earlier session) |
+| 21.12 | Real public landing page | `027d2e3` |
+| 21.13 | Cleanup carry-overs from super-review | `22ea085` |
+| 21.14 | No-wardrobe option | (earlier session) |
+| 21.15 | Full-body image framing | (earlier session) |
+| 21.16 | Whore-out passive-income + john ledger | `2fa7d94` |
+| 21.17 | Stamina + health + action-effects + john-happiness multiplier | `8679c8f` |
+| 21.18 | Universal tooltips on all pages | `93eca36` |
+| 21.19 | README split: gameplay-wiki + SETUP-README | `ef24687` |
+| 21.20 | Films auto-sell + sell-negatives premium | (earlier session) |
+| 21.21 | Disposal method final-image generation | (earlier session) |
+| 21.22 | Sexualized body-part references + Stockholm surfacing | (earlier session) |
+| 21.23 | Captives start in their captured-at outfit | `2fc5fa8` |
+| 21.24 | Tranquilizer drug: limp + unconscious 4-min timer | `2fc5fa8` |
+| PRE.1-PRE.14 | Pre-super-review epics — all verified shipped | `2387209` |
 
-Total critical path: ~17-21 hours of focused implementation.
+**No active critical path remaining.** Active backlog is empty as of `2387209`. Future overhauls will land as Phase 22+.
 
 Phase 4 (Voice) — TTS locked as Kokoro 2026-04-21, no more blockers.
 
@@ -912,7 +928,7 @@ Phase 4 (Voice) — TTS locked as Kokoro 2026-04-21, no more blockers.
 | Ollama model refuses persona content despite system prompt | High | Medium | Use a known abliterated / dolphin variant. Document model choice. Fall back to Pollinations text models if Ollama is configured with a non-uncensored model. |
 | Model does not reliably emit structured state deltas | Medium | High | Heuristic parser fallback (verb-matching). Iterate prompt until model complies most of the time. |
 | Kokoro voice-clone output quality for the custom Unity voice is weaker than the 28 built-ins | Low-Medium | Medium | Kokoro's 28 built-in voices are production-quality; clone only after a reasonable built-in has been road-tested as default. Fall back to built-in if clone underperforms. |
-| Phase 21 spans 9 distinct verticals (image prompts, captive affect, water/feed automation, pregnancy, capture mitigation, landing page, no-wardrobe option, full-body framing, cleanup); context-switching cost could stall mid-overhaul | Medium | Medium | Pick ONE milestone, ship it to completion (code + docs + commit), then pivot. Resist parallel partial work. Phase 21 milestones sequenced fastest-win first — 21.5 (TTS) is ~1h. Total active backlog now 79 tasks (T36.1-T36.54 + DOC.1-8 + MIG.1-2 + CMT.1 + PRE.1-14). |
+| Phase 21 spans 24 distinct verticals + 14 pre-epics — context-switching could stall mid-overhaul | Medium | Medium | MITIGATED 2026-05-14. Atomic-commit batch-commits pattern + ship-one-milestone-at-a-time discipline brought all 24 Phase 21 milestones + 14 PRE epics to shipped within session. No stalls observed. Pattern locked in `[[feedback-batch-commits]]` memory. |
 | Economy/capture/escape/bond math all interact — tuning one breaks another | Medium | High | Phase 20 balancing is the dedicated pass. Early phases ship with placeholder numbers; never treat numbers as final until balancing. |
 | Template generator produces boring / duplicate / incoherent girls | Medium | Medium | Template design is an authoring discipline. Roll many, read the outputs, iterate. Each template gets a diversity check before it ships. |
 | Notoriety/suspicion systems make the outside world feel punishing rather than fun | Low-Medium | Medium | Balancing pass (T26.5). Punishment for reckless hunts should sting but not brick progress. |

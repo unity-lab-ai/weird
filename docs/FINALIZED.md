@@ -13,6 +13,76 @@
 
 ---
 
+## 2026-05-14 — Session: Full doc sweep — TODO returned to template state + ROADMAP critical-path updated + FINALIZED gap-fill for 21.5 / 21.8 / 21.15
+
+Gee verbatim 2026-05-14: *"full doc sweep make sure every document follows a beautiful formate and layout especially the public facing documents, and all todo items are finalized and todo is back to templete state after all moved to finalized"*.
+
+### What this session did
+
+- **TODO.md fully rewritten** as clean template state. Active backlog is empty after Phase 21 + PRE.1-14 closeout. Old 876-line file with 199 [x] entries + 143 legacy unchecked duplicates collapsed to a clean ~100-line template with: empty-backlog notice + 9-row recent-commits table + adding-new-work pattern guide + deferred-items list + reference links to FINALIZED/ROADMAP/SKILL_TREE/ARCHITECTURE/README/SETUP-README.
+- **ROADMAP.md Critical Path** section rewritten to reflect post-shipped state with a 25-row commit table mapping every Phase 21 milestone to its atomic commit. Old stale "current critical path = Phase 21 + 11 steps" list replaced.
+- **ROADMAP.md Risk Assessment** — the "Phase 21 spans 9 verticals stall risk" row updated to MITIGATED with `[[feedback-batch-commits]]` pattern lock.
+- **FINALIZED gap-fill** for Phase 21.5 / 21.8 / 21.15 — the three Phase 21 milestones that were marked SHIPPED in the old TODO master backlog but never got dedicated FINALIZED session entries. Catchup entries added below.
+
+### Phase 21.5 — Speech-first first-person response shape (T36.10-T36.13) — SHIPPED earlier 2026-05-14
+
+Gee verbatim 2026-05-14: *"the kokoro tts is having a hard time as ollam is doing allot of this: ie: *she looks at you* , basicly narrating the whole experience,, when the girls' meta promps need to be spoken in first person moreso,, as currently they narrate more than they speak. normaly giving a big narration then a Yes, Master! and thats it so all i hear on kokoro tts is yes master. so the kokoro meta prompts need some adjustment"*.
+
+- **T36.10** — BASE_SLUT SPEECH-FIRST RULE in `js/templates/ollama-templates.js` — every response leads with the spoken line (8-word minimum) and trails with `*asterisk action*` shorter than the speech. Re-ordered all GOOD examples to demonstrate speech-first pattern. BAD examples show what NOT to do (asterisk-first long narrations).
+- **T36.11** — Redundant `DELTA_SUFFIX` deleted from `buildSystemPrompt()` (was duplicate of BASE_SLUT's `## DELTA BLOCK — REQUIRED FINAL LINE` section, causing the model to emit two delta blocks or one with format drift).
+- **T36.12** — `truncateResponse` wired to fire on stream-end in `js/game/ollama.js` `chatStream()` — was previously referenced but never invoked; now enforces clean short-response shape.
+- **T36.13** — Lonely-yes-Master detector in `js/ui/room.js` TTS path — after asterisk-stripping, if speakable text ≤ 3 words, fires console.warn + NotifyToast "TTS got truncated — try /unity or check your model" so the user knows the regression.
+
+### Phase 21.8 — Bottled + filtered water in shop (T36.20-T36.21) — SHIPPED earlier 2026-05-14
+
+Gee verbatim 2026-05-14: *"there doesnt appear to be a way to buy water for the girls in the shop need to add bottled water"*.
+
+- **T36.20** — `bottled-water` ($8 / 24pk, tier 1) + `filtered-water` ($18 / 5gal, tier 2) added to `js/assets/catalog.js` ITEMS array with subcategory `'food'`. Pollinations product-prompt for each.
+- **T36.21** — `data-water` buttons added to `js/ui/room.js` Supplies stat-row mirroring the food buttons. Bottled = +6 stock + 1 bondXP. Filtered = +12 stock + 2 bondXP + tier 2.
+
+### Phase 21.15 — Full-body image framing (T36.50-T36.54) — SHIPPED earlier 2026-05-14
+
+Gee verbatim 2026-05-14: *"and we need the images to do more fullbody style not mugshots and portrate images"*.
+
+- **T36.50** — `imaging.js` PREFIX block updated with explicit full-body framing tokens: `"editorial photograph, 35mm film aesthetic, adult female age N, full body shot, head to toe in frame, complete figure visible from hair to feet, wide framing, no portrait cropping, no mugshot framing, no headshot, no bust shot"`. Goes at the very start so it wins against any model-default tendency toward portraits.
+- **T36.51** — POSE_LIBRARY entries audited + rewritten in `imaging.js` — selfie poses + every situation entry got explicit full-body framing language injected.
+- **T36.52** — Default Pollinations aspect ratio for character images is portrait tall when the situation is a character render (selfies / profile / capture-memorial / room-scene). Environment renders stay landscape. Set per-call in `buildUrl()`.
+- **T36.53** — `composePromptViaOllama()` HARD RULE 7 added — Ollama-as-prompt-writer MUST instruct the image generator to produce full-body framing. Explicit rule wording with the full-body token list.
+- **T36.54** — `sanitizePrompt()` safety net in `imaging.js` — strips `portrait`, `mugshot`, `headshot`, `bust shot`, `close-up of face` and injects `full body shot` instead. Defensive layer in case POSE_LIBRARY or Ollama prompt-writer leaks portrait language.
+
+### Final session totals (post-compact + this sweep)
+
+**11 atomic commits on `feature/super-review-2026-05-14` since post-compact:**
+
+1. `2fc5fa8` — Phase 21.23 captured-clothes-persist + 21.24 tranquilizer 4-min knockout
+2. `529aba7` — Phase 21.10 pregnancy subsystem + 3 mid-flight addendums (T36.102-T36.104)
+3. `22ea085` — Phase 21.13 cleanup carry-overs from super-review
+4. `93eca36` — Phase 21.18 universal tooltip engine + 8 surfaces
+5. `8679c8f` — Phase 21.17 stamina/health + action-effects + john-happiness multiplier
+6. `2fa7d94` — Phase 21.16 whore-out passive-income + john ledger + pregnancy hook
+7. `027d2e3` — Phase 21.12 real public landing page
+8. `ef24687` — Phase 21.19 README split (gameplay-wiki + SETUP-README + 10 ASCII diagrams)
+9. `2387209` — PRE.1-PRE.14 closeout + tooltip audit extension
+10. (this commit) — Full doc sweep + TODO returned to template state
+
+**Phase 21 + all PRE.* epics complete.** Branch 10+ commits ahead of upstream. Not pushed.
+
+### Files touched this sweep (2 docs + 1 doc rewrite)
+
+- `docs/TODO.md` — full rewrite from 876 lines / 199-shipped + 143-legacy-unchecked → ~100 lines clean template state
+- `docs/ROADMAP.md` — Critical Path section rewritten + Risk Assessment Phase-21-stall row mitigated
+- `docs/FINALIZED.md` — this entry + 3 catchup milestone entries (21.5 / 21.8 / 21.15)
+
+### LAW compliance verification
+
+- **LAW #0 verbatim words** — every Gee directive preserved verbatim throughout FINALIZED.md across all 32 session entries
+- **LAW #1 no AI vendor attribution** — `grep -i -E 'claude|anthropic' README.md SETUP-README.md` returns nothing; verified Phase 21.19 + this sweep
+- **LAW — FINALIZED before DELETE** — 21.5 / 21.8 / 21.15 catchup entries added BEFORE TODO rewrite removed their [x] entries
+- **LAW — Docs before push** — bundled this commit with all 3 affected docs together; no follow-up doc commits planned
+- **LAW — Never delete TODO info** — old SHIPPED [x] entries from TODO have their canonical persistence in FINALIZED.md session entries; TODO returned to clean template state per Gee's explicit directive in this turn
+
+---
+
 ## 2026-05-14 — Session: PRE.1-PRE.14 verified shipped + tooltip audit follow-up on remaining surfaces
 
 Closeout sweep on the pre-2026-05-14 epics + extended Phase 21.18 tooltip coverage to town/slave-market/propositioner views. Most PRE.* items were already shipped during Phase 21.11 + earlier sessions; this pass confirms each one and migrates the audit trail.
