@@ -24,16 +24,27 @@
   let activeToken = 0;
   let activeAudio = null;
 
+  // Threshold under which we pass the whole text to Kokoro as ONE generation. Under
+  // this length, sentence-splitting adds 4-6 extra Kokoro round-trips for no benefit —
+  // the network + render latency stacks up to 20-30 sec instead of ~3-5 sec for the
+  // same audio. Kokoro's soft truncation ceiling sits around 350-400 chars; 280 leaves
+  // safe headroom. Long paragraphs (rare in chat) still get sentence-split.
+  const SINGLE_SHOT_MAX_CHARS = 280;
+
   // Split text into sentence-ish chunks. Matches one of:
   //   - run of non-terminator chars followed by one-or-more terminators
   //   - trailing fragment (no terminator at end)
   // Terminators: . ! ? …
   // Strips empty / whitespace-only chunks.
-  // Edge case: text with no terminators returns the whole text as one chunk.
+  // Edge case: text with no terminators OR text under SINGLE_SHOT_MAX_CHARS returns
+  // the whole text as one chunk for a single fast Kokoro call.
   function splitSentences(text) {
     if (!text || typeof text !== 'string') return [];
-    const raw = text.match(/[^.!?…]+[.!?…]+|[^.!?…]+$/g);
-    if (!raw) return text.trim() ? [text.trim()] : [];
+    const trimmed = text.trim();
+    if (!trimmed) return [];
+    if (trimmed.length <= SINGLE_SHOT_MAX_CHARS) return [trimmed];
+    const raw = trimmed.match(/[^.!?…]+[.!?…]+|[^.!?…]+$/g);
+    if (!raw) return [trimmed];
     const out = [];
     for (const s of raw) {
       const t = s.trim();

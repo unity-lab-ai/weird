@@ -539,15 +539,12 @@
           }
         });
         const clean = (parsed.cleanText || raw).trim();
-        streamDiv.classList.remove('streaming');
-        // Now that stream is done, replace the visible text with the FULLY cleaned version
-        // (extractDelta strips XML hallucinations, system-prompt leakage, etc.)
-        if (clean && clean.length > 0) {
-          txtEl.textContent = clean;
-        } else {
-          // Model returned only a delta block with no narration — show a placeholder
-          txtEl.textContent = '*…*';
-        }
+        // Stream finished cleanly — remove the transient streaming bubble. state.appendTurn
+        // below fires state.onChange which triggers renderLog's incremental append, drawing
+        // the canonical .log-entry for this assistant turn. Keeping the streamDiv around
+        // would result in TWO bubbles (streamDiv + the new appended entry). Error path
+        // below intentionally keeps streamDiv to display the error + repair button.
+        streamDiv.remove();
         window.DMTHGame.state.appendTurn(girl.id, 'assistant', clean || '*…*');
         if (parsed.delta) window.DMTHGame.delta.applyDelta(girl.id, parsed.delta);
         if (mode === 'hurtme') window.DMTHGame.damage.accumulateFromText(girl.id, clean);
