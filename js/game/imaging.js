@@ -352,9 +352,26 @@
   // Pollinations requires seed to fit in positive int32 (0 to 2_147_483_647).  Mask every seed
   // we emit with 0x7FFFFFFF so oversized stored seeds (e.g., the 48-bit Unity bootstrap seed or
   // anything multiplied by 0xFFFFFFFF) never hit the API raw.
-  function clampSeed(s) {
-    const n = Math.abs(Number(s) || Math.floor(Math.random() * 0x7FFFFFFF));
-    return n & 0x7FFFFFFF;
+  //
+  // Phase 21.4 (2026-05-14) — deterministic seed fallback. Facial persistence is the project's
+  // #1 image-pipeline invariant: same girl renders with the same face across every image of her.
+  // The previous fallback (Math.floor(Math.random() * 0x7FFFFFFF)) silently turned every
+  // seed-less girl into a different face on every generation. Now a `fallbackKey` parameter
+  // (typically girl.id) deterministically derives a stable seed via the existing djb2 hash, so
+  // seed-less girls still render consistently.
+  function clampSeed(s, fallbackKey) {
+    const n = Number(s);
+    if (Number.isFinite(n) && n > 0) {
+      return Math.abs(n) & 0x7FFFFFFF;
+    }
+    if (fallbackKey) {
+      return parseInt(promptHash(String(fallbackKey)), 16) & 0x7FFFFFFF;
+    }
+    // No seed AND no fallback key — non-girl-bound callers (rare ad-hoc utility).
+    // Fresh random rather than throwing, but surface the situation so the missing
+    // invariant is visible in dev.
+    console.warn('[imaging] clampSeed called without seed AND without fallbackKey — using fresh random; facial persistence will not hold');
+    return Math.floor(Math.random() * 0x7FFFFFFF) & 0x7FFFFFFF;
   }
   function buildUrl(prompt, seed, opts = {}) {
     const p = cfg();
@@ -553,7 +570,7 @@ Write the Pollinations prompt now.`;
       return { url: cached.blobUrl, cached: true, cacheKey, prompt };
     }
 
-    const seed = clampSeed(girl.visualIdentity?.seed);
+    const seed = clampSeed(girl.visualIdentity?.seed, girl.id);
     let url = buildUrl(prompt, seed);
 
     // Try fetch for blob caching. If any failure, we still return the URL so the caller

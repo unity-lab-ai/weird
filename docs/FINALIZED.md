@@ -13,6 +13,50 @@
 
 ---
 
+## 2026-05-14 — Session: Phase 21.4 SHIPPED — Deterministic seed fallback in clampSeed
+
+### What shipped (Phase 21.4)
+
+Facial persistence is the project's #1 image-pipeline invariant: same girl renders with the same face across every image of her. Prior `clampSeed(s)` fell back to `Math.floor(Math.random() * 0x7FFFFFFF)` when `s` was falsy — meaning a girl without `visualIdentity.seed` got a fresh random seed (and therefore a fresh face) on every generation. Silent invariant violation.
+
+- **`js/game/imaging.js`** — `clampSeed(s, fallbackKey)` signature extended. Behavior:
+  - Valid positive number → masked to int32 (existing fast path, no behavior change for callers passing pre-clamped seeds)
+  - Invalid/missing seed + `fallbackKey` provided → deterministic djb2 hash of `String(fallbackKey)` masked to int32. Reuses the existing `promptHash()` helper. NEW path.
+  - Invalid/missing seed + no `fallbackKey` → `console.warn` + fresh random. Surfaces the dropped invariant in dev console instead of silently mis-rendering. Non-throwing so non-girl-bound utility callers don't break.
+- **`js/game/imaging.js`** — `generateFor()` updated to pass `girl.id` as fallback: `const seed = clampSeed(girl.visualIdentity?.seed, girl.id);`. Every existing call path through `generateFor()` (profile / room-scene / selfie / film-cover / milestone-memorial / capture-aftermath / hunt-thumb) automatically inherits the fix because they all funnel through one callsite.
+- Other `clampSeed()` callsites (`buildUrl()` line 367, legacy-URL retry line 587, env-render legacy-URL retry line 735) all pass already-clamped positive int32 seeds. They hit the fast path with no behavior change. No regressions.
+
+### Files touched
+
+- `js/game/imaging.js` — Phase 21.4 code ship (clampSeed signature + generateFor callsite)
+- `docs/ROADMAP.md` — Phase 21.4 marked SHIPPED
+- `docs/TODO.md` — Phase 21.4 marked SHIPPED in Master Backlog + Epic + Phase A.4
+- `docs/FINALIZED.md` — this entry
+
+### Pre-push checklist
+
+- [x] Existing seed-bearing callers unchanged (fast path triggers for any positive int32)
+- [x] `generateFor()` now passes `girl.id` as fallback — every downstream image route inherits the fix
+- [x] Other `clampSeed()` callsites verified safe (all pass valid pre-clamped seeds)
+- [x] console.warn surfaces the no-seed-and-no-fallback state in dev console
+- [x] No new dependencies (reuses existing `promptHash()` djb2)
+- [x] FINALIZED.md appended per FINALIZED-before-DELETE LAW
+- [x] No AI vendor attribution (LAW #1)
+- [x] Atomic commit: code + every affected doc
+
+### Image-prompt cluster status
+
+| Phase | Description | Status | Commit |
+|---|---|---|---|
+| 21.1 | Drug-state visible in image prompts + age-18 fix | ✅ | `f305a4a` |
+| 21.2 | Per-hold environment composition (+ Phase 21.19 docs lock) | ✅ | `ab2d5d2` |
+| 21.3 | 8-position canonical reorder (env→3, drug→6, body→7) | ✅ | `87e3172` |
+| 21.4 | Deterministic seed fallback in clampSeed | ✅ | this commit |
+
+All four image-prompt cluster milestones SHIPPED. Image pipeline now: every captive renders with the same face every time (Phase 21.4) at the right age (Phase 21.1), her chemical state visible (Phase 21.1), her specific hold as the background (Phase 21.2), all in the right prompt positions (Phase 21.3).
+
+---
+
 ## 2026-05-14 — Session: Phase 21.3 SHIPPED — Image-prompt position reorder (env→3, drug→6, body→7)
 
 ### Gee's verbatim directives shipped

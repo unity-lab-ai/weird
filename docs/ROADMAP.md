@@ -635,8 +635,8 @@ Unity is one girl in the roster — the goth nympho coke whore template, seeded 
 - [x] T36.7 — Re-ordered `composePrompt()` parts arrays in BOTH clothed and nude branches per the canonical 8-position spec: prefix(1) → NUDITY-or-face(2) → env(3) → face-or-outfit(4) → pose(5) → drug-state(6) → body-state(7) → additional/suffix. Env moves from old position 7 to position 3. Drug-state pinned to position 6 (was adjacent to body-state). Body-state moves to position 7. ARCHITECTURE position table is now aligned with shipped code.
 - [x] T36.8 — `composePromptViaOllama()` ENVIRONMENT RENDERING RULE rewritten to specify "POSITION 3 of the prompt" explicitly. Added a CANONICAL PROMPT POSITION ORDERING section to the Ollama system prompt listing all 8 positions so the prompt-writer follows the same skeleton the hardcoded composer would emit. ARCHITECTURE PREFIX example updated to use dynamic `${girl.age}` (was the stale "age 20s" text).
 
-### Milestone 21.4 — Deterministic seed fallback
-- [ ] T36.9 — Fix `clampSeed()` to require girl-id fallback when seed missing, never random — preserves facial persistence
+### Milestone 21.4 — Deterministic seed fallback — SHIPPED 2026-05-14
+- [x] T36.9 — `clampSeed(s, fallbackKey)` now accepts a fallback key. Valid positive number → masked to int32 (existing behavior). Invalid/missing seed + fallback key → djb2 hash of fallback key masked to int32 (NEW — deterministic). Invalid/missing seed + no fallback → fresh random with console.warn surfacing the dropped facial-persistence invariant. `generateFor()` passes `girl.id` as the fallback so every captive without a `visualIdentity.seed` still renders consistently across every image of her.
 
 ### Milestone 21.5 — Speech-first first-person response shape
 - [ ] T36.10 — Add SPEECH-FIRST RULE to `BASE_SLUT` in `js/templates/ollama-templates.js` with re-ordered exemplars (speech first, asterisk action trails, 8-word minimum spoken)

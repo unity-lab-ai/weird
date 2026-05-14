@@ -67,8 +67,8 @@
 - [x] **T36.7** 🟠 `composePrompt()` parts arrays re-ordered to canonical 8-position spec: prefix(1) → NUDITY-or-face(2) → env(3) → face-or-outfit(4) → pose(5) → drug-state(6) → body-state(7) → additional/suffix. Env moves from old pos 7 to pos 3. Drug-state pinned to 6. Body-state moves to 7.
 - [x] **T36.8** 🟠 `composePromptViaOllama()` ENVIRONMENT RENDERING RULE rewritten to specify "POSITION 3" explicitly. Added CANONICAL PROMPT POSITION ORDERING section listing all 8 positions. ARCHITECTURE PREFIX example updated to dynamic `${girl.age}`.
 
-#### Milestone 21.4 — Deterministic seed fallback (~30min)
-- [ ] **T36.9** 🟠 Fix `clampSeed()` to require girl-id fallback when seed missing, never random
+#### Milestone 21.4 — Deterministic seed fallback (~30min) — SHIPPED 2026-05-14
+- [x] **T36.9** 🟠 `clampSeed(s, fallbackKey)` signature extended. djb2 hash of fallback key replaces the prior random-fallback. `generateFor()` passes `girl.id` as fallback. Facial persistence invariant preserved for seed-less captives. console.warn surfaces the still-broken state if neither seed nor fallback is provided.
 
 #### Milestone 21.6 — Forced chemical-state effects in Ollama text (~1h)
 - [ ] **T36.14** 🟠 `## CHEMICAL STATE EFFECTS` block in BASE_SLUT — slur / rapid-fire / drift / flooding / sensory leak / swearing-up
@@ -363,10 +363,10 @@ All quotes preserved in docs/TODO.md revision history + docs/FINALIZED.md sessio
 - [x] **`js/game/imaging.js` Line 219-246 — Severity: High.** Issue: In `composePrompt()`, environment is at position 6 (clothed) or position 6 (nude). `bodyStateTokens` is position 5. Both get buried at prompt-tail where image models attenuate them — the EXACT bug Gee fixed for nudity (which now lives at position 2). Hold/environment specificity will be ignored by the model in the same way nudity was being ignored before. Why it's bad: User intent: "isn't melted in at the end of the prompt in one word only" — same principle. If we're putting effort into per-hold environment description, it can't live at slot 6.
 - [x] **SHIPPED FIX:** Re-ordered both clothed and nude `parts` arrays to canonical 8-position spec — env at 3, drug-state at 6, body-state at 7. Inline numbered comments in `composePrompt()` for each slot. `composePromptViaOllama()` ENVIRONMENT RENDERING RULE updated to specify "POSITION 3" + new CANONICAL PROMPT POSITION ORDERING section listing all 8 slots. ARCHITECTURE position table aligned.
 
-### Epic: Deterministic seed fallback in `clampSeed` `(S)` — HIGH
+### Epic: Deterministic seed fallback in `clampSeed` `(S)` — HIGH — SHIPPED 2026-05-14
 
-- [ ] **`js/game/imaging.js` Line 264-267 — Severity: High.** Issue: `clampSeed(s)` returns `Math.floor(Math.random() * 0x7FFFFFFF)` when `s` is falsy. A girl with no `visualIdentity.seed` gets a fresh random seed on EVERY image call. Why it's bad: Facial persistence is the project's #1 image-pipeline invariant ("seed + facialDescription + outfitDescription persist across all her images"). A missing seed silently becomes a different girl each generation. The fix should either (a) refuse-and-throw or (b) deterministically derive a seed from the girl's ID hash.
-- [ ] **Suggested fix:** `function clampSeed(s, fallbackKey){ const n = Number(s); if (Number.isFinite(n) && n > 0) return Math.abs(n) & 0x7FFFFFFF; if (fallbackKey) return djb2Hash(fallbackKey) & 0x7FFFFFFF; throw new Error('no seed and no fallback key'); }` — and require callers to pass `girl.id` as fallback.
+- [x] **`js/game/imaging.js` Line 264-267 — Severity: High.** Issue: `clampSeed(s)` returns `Math.floor(Math.random() * 0x7FFFFFFF)` when `s` is falsy. A girl with no `visualIdentity.seed` gets a fresh random seed on EVERY image call. Why it's bad: Facial persistence is the project's #1 image-pipeline invariant ("seed + facialDescription + outfitDescription persist across all her images"). A missing seed silently becomes a different girl each generation.
+- [x] **SHIPPED FIX:** `clampSeed(s, fallbackKey)` — valid positive number → masked to int32 (existing behavior). Invalid/missing seed + fallback key → djb2 hash (via existing `promptHash()`) of fallback key masked to int32 — NEW deterministic path. Invalid/missing seed + no fallback → fresh random with `console.warn` surfacing the dropped invariant. `generateFor()` passes `girl.id` as the fallback so every captive without a `visualIdentity.seed` still renders consistently. Other callsites (buildUrl, legacy URL retries, env render retries) pass already-valid clamped seeds and hit the no-op fast path — no behavior change.
 
 ### Epic: Ollama-as-prompt-writer drug + env instructions `(S)` — HIGH — DRUG HALF SHIPPED 2026-05-14 (env half still pending → Phase 21.2)
 
@@ -553,7 +553,7 @@ The reformulation rejects the "anti-spam friction" framing and replaces it with 
 - [x] A.1 — Add `drugStateTokens(body)` to `imaging.js` covering coke / weed / mdma / acid / ketamine / sedatives, layered by drug magnitude — SHIPPED 2026-05-14
 - [x] A.2 — Rewrite `envTokens()` to accept `holdIdx`, resolve `dungeon.holds[holdIdx]`, pull `tpl.holdPrompt`, and produce a rich per-hold backdrop. Pass `holdIdx` through every caller — SHIPPED 2026-05-14
 - [x] A.3 — Re-order `composePrompt()` to promote env to position 3 (after NUDITY/face). Re-order `composePromptViaOllama()` HARD RULES to instruct the model to place env at position 3 + drug effects visibly — SHIPPED 2026-05-14
-- [ ] A.4 — Fix `clampSeed()` to fail-or-derive deterministically; require girl-id fallback
+- [x] A.4 — Fix `clampSeed()` to fail-or-derive deterministically; require girl-id fallback — SHIPPED 2026-05-14
 
 #### Phase B — Water supply chain `(M)` Critical, ~1h → ROADMAP Milestones 21.8 + 21.9 (T36.20-T36.24)
 - [ ] B.1 — Add `bottled-water` + `filtered-water` to ITEMS catalog
