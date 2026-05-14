@@ -1,9 +1,8 @@
 // SEX SLAVE DUNGEON — sentence-aware Kokoro TTS playback queue.
 //
-// Why this exists: Gee verbatim 2026-05-13:
-//   "the tts playback is being cut off on long paragraphs we need to play
-//    each sentence one at a time in order waiting for first to compleete
-//    before move to next and so on"
+// Why this exists: TTS playback gets cut off on long paragraphs. The queue plays each
+// sentence one at a time in order, waiting for the first to complete before moving to
+// the next.
 //
 // Kokoro-js has a soft length ceiling — long inputs get truncated mid-sentence
 // or generated at degraded quality. Splitting on sentence terminators and

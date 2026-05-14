@@ -108,8 +108,7 @@
     })();
   }
 
-  // Phase 21.11 (2026-05-14) — renderApproach rewritten as 4-stage capture progress-bar UI.
-  // Replaces the prior single-tool-single-roll button row. Player assigns one tool per stage
+  // 4-stage capture progress-bar UI. Player assigns one tool per stage
   // (Approach / Engage / Subdue / Secure) from inventory, clicks "Begin Attempt", and the four
   // stages resolve via `window.SSDGame.capture.runAttempt()` with animated progress bars.
   function renderApproach(el, params) {
@@ -142,7 +141,7 @@
       const desc = cap.STAGE_DESCRIPTIONS[stageKey];
       const resistance = archResist[stageKey] || 25;
       if (eligible.length === 0) {
-        // POST-REVIEW.6 fix (2026-05-14) — consistency with the populated branch's tooltip
+        // Consistency with the populated branch's tooltip
         return `
           <div class="capture-stage-row" data-tooltip="${label}: ${desc}. No qualifying tool in inventory for this stage — visit the shop OR pick a different target whose archetype has lower ${stageKey} resistance.">
             <div class="capture-stage-head"><b>${label}</b> <span class="muted small">— ${desc}</span></div>

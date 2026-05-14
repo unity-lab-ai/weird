@@ -14,7 +14,11 @@
     wallet: {
       money: 200,
       notoriety: 0,
-      suspicionByLocation: {}
+      suspicionByLocation: {},
+      // Player satisfaction meter (0-100). Sex acts with captives raise it; slow per-tick
+      // decay drops it without intimacy. High satisfaction grants a hunting bonus —
+      // capture odds get easier the more satisfied the player is.
+      playerSatisfaction: 50
     },
 
     inventory: {},                 // { [itemId]: qty }
@@ -67,6 +71,10 @@
 
   async function save() {
     if (!state) return;
+    // Refuse to save while a wipe is in progress. Without this, an in-flight tick-driven
+    // mutate() between wipeAll() and location.reload() would repopulate the save store
+    // with the old state, defeating "fresh slate".
+    if (window.SSDGame?.state?._nuking) return;
     await window.SSDStorage.save.put('main', state);
   }
 
@@ -107,6 +115,14 @@
     return true;
   }
   function addNotoriety(delta) { mutate(s => { s.wallet.notoriety = Math.max(0, s.wallet.notoriety + delta); }); }
+  function addSatisfaction(delta, reason) {
+    mutate(s => {
+      const cur = typeof s.wallet.playerSatisfaction === 'number' ? s.wallet.playerSatisfaction : 50;
+      s.wallet.playerSatisfaction = Math.max(0, Math.min(100, cur + delta));
+      s.wallet._lastSatisfactionEvent = { delta, reason, at: Date.now() };
+    });
+  }
+  function getSatisfaction() { return typeof state?.wallet?.playerSatisfaction === 'number' ? state.wallet.playerSatisfaction : 50; }
 
   // inventory
   function addItem(itemId, qty = 1) {
@@ -163,6 +179,12 @@
   }
   function getTurns(girlId, n = 10) {
     return (state?.turns[girlId] || []).slice(-n);
+  }
+  // Wipes the per-girl turn log so the room view starts blank. Other girls' logs untouched.
+  function clearTurns(girlId) {
+    mutate(s => {
+      if (s.turns[girlId]) delete s.turns[girlId];
+    });
   }
 
   // films
@@ -238,10 +260,11 @@
     isLoaded: () => loaded,
     load, save, initNew, onChange,
     addMoney, spendMoney, addNotoriety,
+    addSatisfaction, getSatisfaction,
     addItem, consumeItem,
     addDungeon, updateDungeon, getDungeon,
     addGirl, updateGirl, getGirl, removeGirl,
-    appendTurn, getTurns,
+    appendTurn, getTurns, clearTurns,
     addFilm, updateFilm, getFilm,
     addDisposal,
     enqueuePropositioner, acceptPropositioner, completePropositioner, rejectPropositioner,

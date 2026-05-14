@@ -26,7 +26,7 @@
         </div>
         <p class="small muted" style="margin-top:8px">
           <b>🍑 Derobe</b> puts <code>nude</code> at position 2 of the image prompt — accessories (collars, cuffs, harnesses) still allowed if equipped.<br>
-          <b>🚫 Strip everything</b> (Phase 21.14) is more aggressive — bans accessories, jewelry, collars, restraints. Raw nakedness, no body adornment whatsoever.<br>
+          <b>🚫 Strip everything</b> is more aggressive — bans accessories, jewelry, collars, restraints. Raw nakedness, no body adornment whatsoever.<br>
           <b>👗 Re-dress</b> restores her captured-at outfit (the clothes she was wearing when taken). Both strip options free + always available.
         </p>
       </div>

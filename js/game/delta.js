@@ -9,17 +9,18 @@
     const girl = window.SSDGame.state.getGirl(girlId);
     if (!girl) return;
 
-    // Pre-clamp the delta itself to safe per-turn ranges — defensive against bad model output
-    // Phase 21.17 (2026-05-14) — stamina + health delta keys added per Gee verbatim:
-    // "they also need a stamina bar thet gets used up and thinks like degrad build it back up"
+    // Pre-clamp the delta itself to safe per-turn ranges — defensive against bad model
+    // output. Stamina + health keys are intentionally absent: the model would hallucinate
+    // `"health": -20` into the delta JSON on violent scenes and tank HP in a few turns,
+    // bypassing the grace-period model entirely. Vitals are sole-source-of-truth to
+    // action-effects (applyAction + tickStaminaHealth). The model gets a vote on
+    // arousal, wetness, cum, bruises, high, bond, mood, tags — NOT the survival bar.
     const safeDelta = {
       arousal:  clamp(delta.arousal  || 0, -30, 30),
       wetness:  clamp(delta.wetness  || 0, -30, 30),
       cumLoad:  clamp(delta.cumLoad  || 0, -2, 2),
       bruises:  clamp(delta.bruises  || 0, -10, 15),
       high:     clamp(delta.high     || 0, -30, 30),
-      stamina:  clamp(delta.stamina  || 0, -30, 30),
-      health:   clamp(delta.health   || 0, -30, 30),
       bondXP:   clamp(delta.bondXP   || 0, -20, 20),
       bondDebt: clamp(delta.bondDebt || 0, -20, 20),
       moodShift: typeof delta.moodShift === 'string' ? delta.moodShift.slice(0, 60) : '',
@@ -32,8 +33,6 @@
     body.cumLoad = Math.max(0, body.cumLoad + safeDelta.cumLoad);
     body.bruises = Math.max(0, Math.min(99, body.bruises + safeDelta.bruises));
     body.high = clamp(body.high + safeDelta.high, 0, 100);
-    body.stamina = clamp((body.stamina ?? 70) + safeDelta.stamina, 0, 100);
-    body.health = clamp((body.health ?? 100) + safeDelta.health, 0, 100);
     delta = safeDelta;   // use the clamped version for everything below
 
     const mood = { ...girl.mood };
@@ -77,8 +76,8 @@
       _lastTags: Array.isArray(delta.tags) ? delta.tags : []
     });
 
-    // Phase 21.10 + 21.10 addendum T36.103 (2026-05-14) — Gee verbatim: "can only get
-    // knowcked up with a chance roll when cumming in vag". Conception hook fires ONLY when
+    // Conception can only fire on a chance roll when semen lands in the vagina.
+    // Hook fires ONLY when
     // BOTH conditions hit on this turn: (a) cumLoad delta >= 1.0 (semen delivery proxy)
     // AND (b) delta.tags contains at least one VAGINAL_CUM_TAG marker (so BJ / anal /
     // facial / body-shot don't fire conception). Inner gates (bond < 9, no condom, status

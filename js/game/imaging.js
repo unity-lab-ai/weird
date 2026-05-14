@@ -80,10 +80,9 @@
     return out.join(', ');
   }
 
-  // --- Drug-state visible markers (Phase 21.1, 2026-05-14) ---
-  // Gee verbatim 2026-05-14: "it doesnt seem like the druig use when give or on them
-  // actually never apperas in the meta image prompts ... i want the drug use forced or
-  // other wise to show effects in images and ollama text responses".
+  // --- Drug-state visible markers ---
+  // Drug use is forced into image prompts so it shows up visually. Without this, captives
+  // could be visibly stoned/coked/high in body state but render as sober in their images.
   // Per-drug rendered tokens. Intensity scales with body.high (composite 0-100 already
   // computed by drug-scheduler tick). When drugs are active the prompt hash changes,
   // so generateFor() pulls a fresh image rather than serving a stale cached one — the
@@ -114,7 +113,7 @@
     if (names.has('ketamine')) {
       out.push(`${intensifier} disconnected vacant stare, half-lidded eyes, fully slack jaw, motionless dissociated posture, body limp and unsteady, awareness distant and elsewhere`);
     }
-    // Phase 21.24 (2026-05-14) — tranquilizer: full unconscious knockout. Front-load
+    // Tranquilizer: full unconscious knockout. Front-load
     // hard markers since "unconscious" overrides nearly every other body-state marker
     // (no arousal expression possible, no awareness, no movement). Use 'extreme' tone
     // regardless of intensifier — knockout is binary, not magnitude-scaled.
@@ -124,8 +123,29 @@
     return out.join(', ');
   }
 
-  // Phase 21.10 + T36.75 (2026-05-14) — Gee verbatim: "21.10 girls can get apperance image
-  // trait 9-months pregnate". Per-trimester visible markers, front-loaded near nudity/face
+  // Active-bondage visible markers, front-loaded near nudity/face slot so the bondage
+  // pose transforms the render. body.activeBondage is set by the bondage Quick Actions
+  // tab and is sticky until cleared (next bondage / derobe / scene-shift action). Label
+  // is matched case-insensitive so the QA labels (e.g. "hogtie (nugget)") map cleanly.
+  function bondageTokens(body) {
+    if (!body || !body.activeBondage) return '';
+    const ab = String(body.activeBondage).toLowerCase();
+    if (ab.includes('hogtie') || ab.includes('nugget')) return 'HEAVILY BONDAGED hogtied position, wrists and ankles cinched together with thick rope behind the back, body arched into a tight nugget shape on the floor, ropes biting into skin, helpless belly-down hogtie posture';
+    if (ab.includes('suspension') || ab.includes('wrist suspension')) return 'HEAVILY BONDAGED wrist suspension, both arms hoisted overhead by leather cuffs and chain, body dangling with toes barely scraping the floor, arms stretched taut above head, ropes and chain visible from ceiling rig';
+    if (ab.includes('spreader')) return 'HEAVILY BONDAGED ankle spreader bar locked between both ankles forcing legs wide apart, metal bar visible, helpless wide-legged stance, cunt and thighs forced exposed';
+    if (ab.includes('mummif') || ab.includes('tape')) return 'HEAVILY BONDAGED mummified in tight black duct tape, head-to-toe taped wrapping, only mouth and crotch left uncovered, body fully encased in glossy tape cocoon, restricted breathing';
+    if (ab.includes('elbow')) return 'HEAVILY BONDAGED elbow tie, elbows forced together behind the back and lashed tight with rope, chest jutted out hard from shoulder strain, ropes cinched across back and shoulders, breasts thrust forward by the strict tie';
+    if (ab.includes('ball gag')) return 'HEAVILY BONDAGED tight red ball gag locked deep in the mouth, leather strap padlocked behind the head, drool running from the corners of the mouth, jaw forced wide open';
+    if (ab.includes('predicament')) return 'HEAVILY BONDAGED predicament tie, one ankle roped up to a collar around the throat, body forced into a contorted self-strangling pose, ropes taut between throat and ankle';
+    if (ab.includes('body bag') || ab.includes('cocoon')) return 'HEAVILY BONDAGED zipped into a black leather body bag, only one breathing slit at the nose, body fully encased and immobile inside the bag, leather straps cinched along the outside';
+    if (ab.includes('cage')) return 'HEAVILY BONDAGED locked inside a steel dog cage too small to stand or lie flat in, body folded into the cramped cage, bars pressing into skin, padlocks visible';
+    if (ab.includes('frog')) return 'HEAVILY BONDAGED frog-tied, thighs lashed tight against calves on both sides forcing legs folded, cunt forced wide open, ropes cinched around each thigh-calf junction';
+    if (ab.includes('wall spread') || ab.includes('spread-eagle')) return 'HEAVILY BONDAGED wall spread-eagle, both wrists and ankles cuffed to iron rings set into the concrete wall, body stretched in a wide X, helpless spread-open posture';
+    if (ab.includes('arm-binder') || ab.includes('sleeve')) return 'HEAVILY BONDAGED both arms forced straight down a single black leather arm-binder sleeve, laced tight from shoulders to wrists behind the back, breasts thrust forward, helpless armless posture';
+    return 'HEAVILY BONDAGED, ropes and restraints visible, forcibly bound and immobilized';
+  }
+
+  // Per-trimester visible pregnancy markers, front-loaded near nudity/face
   // slot so the model doesn't bury the pregnancy in tail tokens. Three tiers map to
   // pregnancy.trimester (1/2/3) plus a separate full-term band at day >= 250 for the
   // maximum-bump appearance. All tiers enforce the adult-floor invariant via callers
@@ -170,7 +190,7 @@
   // Three strengths:
   //   'full'         — completely naked, no clothing
   //   'accessories'  — naked + listed accessories (collar / cuffs / harness / etc.)
-  //   'stripped'     — Phase 21.14 (2026-05-14). Distinct from 'full' — explicitly bans
+  //   'stripped'     — Distinct from 'full' — explicitly bans
   //                    accessories + jewelry + collars + restraints. Raw nakedness.
   function nudeTokens(strength, accessoriesOnly) {
     if (strength === 'full') {
@@ -249,16 +269,16 @@
     'film-cover':       'dramatic low-key editorial poster composition, centered subject, cinematic lighting, mood-appropriate, professional film poster framing'
   };
 
-  // --- Environment tokens per situation / dungeon / hold (Phase 21.2, 2026-05-14) ---
-  // Gee verbatim 2026-05-14: "we also need the specific gilrs in specific holds to have
-  // the meta prompt for the images insert that type of hold as the background and setting
+  // --- Environment tokens per situation / dungeon / hold ---
+  // Specific girls in specific holds get a hold-specific environment in their image prompts.
+  // The hold's type determines the background and setting
   // of the images... ie hole in the ground, but we need to describe it not just say hole
   // in the ground". Previously this function ignored holdIdx and returned tpl.plotTokens
   // — a generic comma-keyword shared by every captive in the same hideout. Now it composes
   // tpl.plotTokens + tpl.holdPrompt + tpl.displayName so each captive renders her specific
   // hold as the background. Hold-resolution order: hold.holdType (per-hold field, supports
   // future mixed-type capacity expansions) → tpl.holdType (template default).
-  // Phase 21.x BUG.10 + BUG.11 (2026-05-14) — every girl renders in a location-accurate
+  // Every girl renders in a location-accurate
   // environment, ALWAYS. Priority chain:
   //   1. dungeonId set       → her assigned hold inside that dungeon
   //   2. locationId set      → the hunt location's environment (hunt thumbs + previews)
@@ -267,8 +287,8 @@
   //   5. ABSOLUTE LAST RESORT (girl has no dungeon, no location, no special situation —
   //      shouldn't happen in practice) → moody concealed setting (NEVER plain white).
   //
-  // Gee verbatim 2026-05-14: "not nutral the girls have to be imaged in their location
-  // always even when hunting around town the backdrop is the location u are hunting so
+  // The girls are imaged in their location ALWAYS — even when hunting around town the
+  // backdrop is the location being hunted so
   // the girls appear at the location they are being hunted at so their previews are
   // acurat, then their clothing remains once captured and until changed(manhandled)".
   function envTokens({ situation, dungeonId, holdIdx, locationId }) {
@@ -296,8 +316,8 @@
     // 2. HUNT LOCATION — previewing a girl spawned at a location. Prefer the
     //    `personEnvPrompt` (phrased as a person-in-the-scene env description) over
     //    the standalone `prompt` (which was authored as a town-overhead establishing
-    //    shot). Per Gee 2026-05-14: "you may have to fill out the location data that
-    //    dynamically is inserted into the meta prompts" — `personEnvPrompt` is that data.
+    //    shot). Locations carry a `personEnvPrompt` field with the body-of-her-in-the-scene
+    //    text that gets dynamically inserted into the meta prompts.
     if (locationId) {
       const loc = window.SSDAssets.getById('location', locationId);
       if (loc) {
@@ -323,8 +343,8 @@
 
   // --- Compose the full prompt ---
   //
-  // Phase 21.3 canonical 8-position ordering — env promoted to position 3, drug-state
-  // promoted to position 6, body-state at position 7. Both clothed and nude branches use
+  // Canonical 8-position ordering — env at position 3, drug-state at position 6,
+  // body-state at position 7. Both clothed and nude branches use
   // the same skeleton with one slot swap at position 2/4:
   //
   //   CLOTHED:
@@ -349,14 +369,12 @@
   //     8 additional → suffix
   //     ^^^^^^^^^^^^^^^^^ outfit block is COMPLETELY SUPPRESSED when nude ^^^^^^^^^^^^^^^^^
   //
-  // Position-2 NUDITY placement is per Gee 2026-05-13: "agressively positioning that part
-  // so it isnt melted in at the end of the prompt in one word only". Position-3 env
-  // placement is per Gee 2026-05-14: "the specific girls in specific holds to have the
-  // meta prompt for the images insert that type of hold as the background and setting".
-  // Position-6 drug-state placement is per Gee 2026-05-14: "i want the drug use forced or
-  // other wise to show effects in images and ollama text responses".
+  // Position-2 NUDITY is front-loaded so nudity tokens aren't melted in at the end of
+  // the prompt in one word only — image models drop trailing tokens. Position-3 env
+  // makes the hold/location dictate background + setting. Position-6 drug-state forces
+  // drug effects to show visibly in the render rather than being inferred-only.
   function composePrompt(girl, options = {}) {
-    // POST-REVIEW.3 fix (2026-05-14) — userStaging fallback for Ollama-unavailable path.
+    // userStaging fallback for Ollama-unavailable path.
     // composePromptViaOllama threads userStaging into the system prompt directly; here in
     // the hardcoded fallback we accept the same option and treat it as customPose (slot 5)
     // + additionalTokens (slot 8) so the user's scene description never gets silently
@@ -370,7 +388,7 @@
     const vi = girl.visualIdentity || {};
     const faceBlock   = vi.facialDescription || 'natural face, soft features';
     const baseOutfit  = vi.defaultOutfitDescription || 'plain comfortable outfit';
-    // POST-REVIEW.7 fix (2026-05-14) — condom-on is a state overlay, not a visible outfit.
+    // Condom-on is a state overlay, not a visible outfit.
     // When equipped, render her in her PREVIOUS outfit (tracked at equip time) so the image
     // matches what she actually looks like. The contraception flag stays effective for the
     // pregnancy gate via girl.currentOutfit === 'condom-on' check.
@@ -384,6 +402,7 @@
     const stateTokens = bodyStateTokens(girl.body);
     const drugTokens  = drugStateTokens(girl.body);
     const pregTokens  = pregnancyTokens(girl.pregnancy);
+    const bondTokens  = bondageTokens(girl.body);
     const pose = effectivePose || POSE_LIBRARY[situation] || POSE_LIBRARY.profile;
     const env = envTokens({
       situation,
@@ -405,6 +424,7 @@
       parts = [
         prefix,               // 1
         nudeBlock,            // 2 — aggressive nudity front-load (replaces face slot)
+        bondTokens,           // 2.3 — bondage transforms posture, front-loaded
         pregTokens,           // 2.5 — pregnancy markers front-loaded so the bump isn't buried at tail
         env,                  // 3 — hold-specific environment, promoted from old pos 7
         faceBlock,            // 4 — face moves to 4 when nude (nude is at 2)
@@ -417,7 +437,7 @@
     } else {
       let outfitBlock = currentOutfitEntry?.description || baseOutfit;
       const outfitState = outfitStateTokens(girl.body);
-      // SR.13 fix (2026-05-14) — when pregnant + outfit looks form-fitting, append a
+      // When pregnant + outfit looks form-fitting, append a
       // reconciler so Pollinations doesn't get contradictory "tight" + "big bump" tokens.
       // Heuristic: any outfit description containing fit-hugging keywords gets the
       // reconciler appended. Past trimester 2 (day 94+), the bump is too pronounced to
@@ -436,6 +456,7 @@
       parts = [
         prefix,                                                                   // 1
         faceBlock,                                                                // 2
+        bondTokens,                                                               // 2.3 — bondage transforms posture, front-loaded
         pregTokens,                                                               // 2.5 — pregnancy markers front-loaded so the bump isn't buried at tail
         env,                                                                      // 3 — hold-specific environment, promoted from old pos 7
         outfitBlock + (outfitState ? ', ' + outfitState : ''),                    // 4
@@ -464,7 +485,7 @@
   // we emit with 0x7FFFFFFF so oversized stored seeds (e.g., the 48-bit Unity bootstrap seed or
   // anything multiplied by 0xFFFFFFFF) never hit the API raw.
   //
-  // Phase 21.4 (2026-05-14) — deterministic seed fallback. Facial persistence is the project's
+  // Deterministic seed fallback. Facial persistence is the project's
   // #1 image-pipeline invariant: same girl renders with the same face across every image of her.
   // The previous fallback (Math.floor(Math.random() * 0x7FFFFFFF)) silently turned every
   // seed-less girl into a different face on every generation. Now a `fallbackKey` parameter
@@ -558,7 +579,7 @@
     const currentOutfitEntry = (girl.wardrobe || []).find(w => w.id === girl.currentOutfit);
     const outfitDesc = currentOutfitEntry?.description || vi.defaultOutfitDescription || '';
 
-    // Phase 21.2 — hold-specific dungeon env, threaded into GIRL CONTEXT so the prompt-writer
+    // Hold-specific dungeon env, threaded into GIRL CONTEXT so the prompt-writer
     // sees the same hold-specific environment the hardcoded composer would emit.
     const holdEnvText = envTokens({
       situation,
@@ -626,7 +647,7 @@ SITUATION: ${situation}
 POSE: ${customPose || POSE_LIBRARY[situation] || 'standing front-facing neutral full-body'}
 ${locationId ? `LOCATION: ${window.SSDAssets.getById('location', locationId)?.displayName || locationId}` : ''}
 ${additionalTokens ? `ADDITIONAL: ${additionalTokens}` : ''}
-${userStaging ? `\nUSER STAGING DIRECTIVE (NEW.1 2026-05-14 — user's verbatim scene/pose request — render this faithfully while keeping every HARD RULE above intact, especially adult-floor + full-body framing + nudity/pregnancy/drug markers):\n"${userStaging.replace(/"/g, '\\"').slice(0, 800)}"` : ''}
+${userStaging ? `\nUSER STAGING DIRECTIVE (user's verbatim scene/pose request — render this faithfully while keeping every HARD RULE above intact, especially adult-floor + full-body framing + nudity/pregnancy/drug markers):\n"${userStaging.replace(/"/g, '\\"').slice(0, 800)}"` : ''}
 
 CANONICAL PROMPT POSITION ORDERING (8 slots):
 1. PREFIX (editorial photograph, 35mm film, adult female age X, full body shot)
@@ -760,7 +781,7 @@ Write the Pollinations prompt now.`;
       if (existing >= 0) additional[existing] = entry;
       else additional.push(entry);
 
-      // NEW.2 fix (2026-05-14) — gallery history. Every generation appends a new entry to
+      // Gallery history. Every generation appends a new entry to
       // imageHistory with full URL + prompt + situation + timestamp. Capped at last 100 per
       // girl to keep state size bounded. The `additionalImages` map-by-situation behavior
       // above stays for latest-by-situation lookup; this history is the gallery source.
@@ -918,9 +939,9 @@ Write the Pollinations prompt now.`;
     return result.url;
   }
 
-  // --- Disposal final-image generation (Phase 21.21, 2026-05-14) ---
-  // Gee verbatim 2026-05-14: "and the dispose option needs to show like the image of the
-  // grave, the water, the crematoryei burning, ect ect for each one the final thing is
+  // --- Disposal final-image generation ---
+  // The disposal option renders a final image of the grave / water / crematorium burning /
+  // etc — for each disposal method, the final image shows
   // the image of it". Renders a per-method final-scene Pollinations image after the Ollama
   // disposal narration. Recognizable-girl methods (release / finalization-film) use her
   // locked seed so she appears as herself; abstract-scene methods (bury / lose-at-sea /

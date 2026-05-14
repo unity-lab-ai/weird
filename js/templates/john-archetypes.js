@@ -1,7 +1,6 @@
-// SEX SLAVE DUNGEON — john archetype catalog (Phase 21.16, 2026-05-14).
-// Gee verbatim 2026-05-14: "also want a whore out option that allows girls to generate
-// passive income and tracks all the johns and what they did to where the girls can talk
-// about their johns and stuff idk figure it out".
+// SEX SLAVE DUNGEON — john archetype catalog.
+// Captives generate passive income through john encounters; the ledger tracks every john
+// (act / payment / quirks) so the captive can talk about her johns in chat.
 //
 // Distinct from Propositioner archetypes (bespoke single deals, upmarket clientele):
 // johns are general-public flow, batch-resolved per tick. 10 archetypes representing the

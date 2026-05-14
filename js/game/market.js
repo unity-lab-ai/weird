@@ -1,12 +1,11 @@
 // SEX SLAVE DUNGEON — content market auto-sell + sell-negatives premium.
 //
-// Phase 21.20 (2026-05-14) rewrite. Gee verbatim: "lest also get rid of the slaes pass
-// button for sales of videos and just have them auto sell and u never lose a video as u
-// can make many copies so they are always for sale it jsut u can remove them(sell
-// negatives) which gives much more $ than the noraml video sales that are more like
-// passive income".
+// Films auto-sell on tick — no manual "sales pass" button. Films are never consumed:
+// they're permanent infinite-copy assets. The only way to remove one is "sell negatives",
+// which destroys the master for a one-time premium payout (much bigger than the lifetime
+// passive but the film stops earning thereafter).
 //
-// Films no longer get consumed on sale — they're permanent passive-income assets that
+// Films are permanent passive-income assets that
 // auto-sell every market tick at small per-tick rates (basePrice × tickRate × demand
 // multipliers). The "sales pass" button is gone; `tick.js` schedule drives the income.
 //

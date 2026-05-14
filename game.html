@@ -108,6 +108,7 @@
       <a href="#achievements" data-route="achievements" data-tooltip="Milestones unlocked through the operation.">🏆</a>
     </nav>
     <div class="chrome-clock" id="chrome-clock" data-tooltip="In-game day clock. 1 real second = 1 game minute (24 real min = 1 game day). Captives go 3 game days without water and 5 game days without food before health starts dropping.">Day 1, 00:00</div>
+    <div class="chrome-satisfaction" id="chrome-satisfaction" data-tooltip="Player satisfaction (0-100). Sex acts with captives raise it; slow drift down without intimacy. High satisfaction grants a hunting bonus — capture odds get easier the more satisfied you are. Fuck enough and the next catch is much easier.">😐 50</div>
     <div class="chrome-money" id="chrome-money" data-tooltip="Liquid cash on hand. Spend on upgrades, captures, abortions, slaves.">$0</div>
     <button class="btn-small" id="chrome-voice" data-tooltip="Toggle Kokoro TTS voice playback on/off.">🔊</button>
     <button class="btn-small btn-danger" id="chrome-new-game" data-tooltip="WIPES your save and starts fresh. Use Settings → Save Slots to keep a copy first.">🔄 New Game</button>
@@ -130,15 +131,21 @@
       location.hash = '#dashboard';
     }
 
-    // Chrome money sync
+    // Chrome money + satisfaction sync
     function syncChrome() {
       const s = window.SSDGame.state.current;
       document.getElementById('chrome-money').textContent = s ? `$${s.wallet.money.toLocaleString()}` : '$0';
+      const satEl = document.getElementById('chrome-satisfaction');
+      if (satEl && s) {
+        const sat = typeof s.wallet.playerSatisfaction === 'number' ? s.wallet.playerSatisfaction : 50;
+        const emoji = sat >= 80 ? '😈' : sat >= 60 ? '😏' : sat >= 40 ? '😐' : sat >= 20 ? '😒' : '🥶';
+        satEl.textContent = `${emoji} ${Math.round(sat)}`;
+      }
     }
     syncChrome();
     window.SSDGame.state.onChange(syncChrome);
 
-    // BUG.15 — running game clock display. 1 real second = 1 game minute, so
+    // Running game clock display. 1 real second = 1 game minute, so
     // updating the display once a real second is enough to capture every
     // game-minute boundary. The gameClock module is the source of truth.
     const clockEl = document.getElementById('chrome-clock');
@@ -148,9 +155,14 @@
       setInterval(updateClock, 1000);
     }
 
-    // Chrome "New Game" button — wipes save + routes to new-game setup
+    // Chrome "New Game" button — wipes save + routes to new-game setup. Stops the tick
+    // and flags state for nuke before wipeAll() so a racing background save() can't
+    // repopulate the save store with old state between the wipe and the reload.
     document.getElementById('chrome-new-game').onclick = async () => {
       if (!confirm('Start a new game? This WIPES your current save. Use Settings → Save Slots first if you want to keep a copy.')) return;
+      try { if (window.SSDGame.tick) window.SSDGame.tick.stop(); } catch {}
+      try { if (window.SSDVoiceQueue) window.SSDVoiceQueue.cancel(); } catch {}
+      try { window.SSDGame.state._nuking = true; } catch {}
       await window.SSDStorage.wipeAll();
       for (const k of Object.keys(localStorage)) if (k.startsWith('ssd_') && k !== 'ssd_pollinations_key' && k !== 'ssd_ollama_endpoint' && k !== 'ssd_ollama_model' && k !== 'ssd_kokoro_voice') localStorage.removeItem(k);
       location.hash = '#newgame';

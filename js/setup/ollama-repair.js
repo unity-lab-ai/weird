@@ -159,10 +159,10 @@
   // Use this when a soft `repairModel` (pull only) would short-circuit because
   // Ollama sees the manifest as "already installed" and refuses to re-download
   // the missing weight blob.  This is the path the user asked for after
-  // diagnosing that `ollama pull` was lying about completion:
-  //   *"it not correctly downloading the model on set up it thinks its there
-  //   but its not we need to clear the ollam log that shows its installed or
-  //   something"*  (Gee verbatim 2026-05-13)
+  // diagnosing that `ollama pull` was lying about completion — the user reported the
+  // model wasn't actually downloading correctly on setup: Ollama thought the model was
+  // installed but it wasn't, so we need to clear the manifest entry that shows it
+  // installed before re-pulling fresh.
   //
   // Flow:
   //   1. DELETE /api/delete  — clears the manifest entry + orphan blobs

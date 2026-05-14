@@ -8,6 +8,7 @@
 }
 .chrome-brand { font-family: var(--mono); letter-spacing: 0.08em; color: var(--accent); font-weight: 700; }
 .chrome-money { font-family: var(--mono); color: var(--ok); }
+.chrome-satisfaction { font-family: var(--mono); padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,122,168,0.08); font-size: 0.88rem; letter-spacing: 0.04em; }
 .chrome-clock { font-family: var(--mono); color: var(--warn); margin-left: auto; padding: 4px 12px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,184,74,0.08); font-size: 0.88rem; letter-spacing: 0.04em; }
 .chrome-nav   { display: flex; gap: 8px; flex-wrap: wrap; }
 .chrome-nav a {
@@ -45,7 +46,7 @@
 .bar-fill.warn      { background: linear-gradient(90deg, #d4a849, #c9762a); }
 .bar-fill.highgreen { background: linear-gradient(90deg, #1f9d55, #53d68a); }
 
-/* NEW.2 (2026-05-14) — gallery view + lightbox */
+/* Gallery view + lightbox */
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -151,8 +152,10 @@
 .girl-meta  { display: flex; gap: 8px; flex-wrap: wrap; font-size: 0.78rem; color: var(--text-dim); margin: 4px 0; }
 .approach-card { cursor: default; }
 
-.log { background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 10px; height: 380px; overflow-y: auto; font-size: 0.9rem; }
-.log-entry { margin: 6px 0; padding: 6px 8px; border-radius: 4px; }
+/* Explicit user-select on chat log so the player can highlight + copy responses. Protects
+   against any future parent style that would disable selection. */
+.log { background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 10px; height: 380px; overflow-y: auto; font-size: 0.9rem; user-select: text; -webkit-user-select: text; }
+.log-entry { margin: 6px 0; padding: 6px 8px; border-radius: 4px; user-select: text; -webkit-user-select: text; }
 .log-entry.user      { background: #1a1622; border-left: 2px solid var(--accent-dim); }
 .log-entry.assistant { background: #150f1f; border-left: 2px solid var(--accent);  color: #f5d7e5; }
 .log-entry.streaming { opacity: 0.85; font-style: italic; }
@@ -260,7 +263,7 @@ button, .btn-small, .btn-primary { min-height: 38px; padding-left: 14px; padding
   to   { opacity: 1; transform: translateX(0); }
 }
 
-/* Phase 21.11 — Capture-as-progress-bar mechanic UI */
+/* Capture-as-progress-bar mechanic UI */
 .capture-stage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-bottom: 12px; }
 .capture-stage-row { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
 .capture-stage-head { margin-bottom: 6px; }
@@ -278,7 +281,7 @@ button, .btn-small, .btn-primary { min-height: 38px; padding-left: 14px; padding
 .capture-stage-summary { padding: 4px 0; }
 .capture-mech-summary  { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
 
-/* Phase 21.21 — Disposal final-image */
+/* Disposal final-image */
 .dispose-final-image-slot { margin: 16px 0 8px; min-height: 40px; }
 .dispose-final-image      { margin: 0; padding: 0; display: block; }
 .dispose-final-img        { width: 100%; max-height: 480px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }

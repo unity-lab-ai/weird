@@ -15,15 +15,15 @@
     whiskey: { onsetMs: 5 * 60_000,  peakMs: 20 * 60_000, wearOffMs: 90 * 60_000, highContribution: 45, speechEffect: 'drunk',     stackable: true,  itemId: 'wine' },  // routed through 'wine'/'whiskey' item
     alcohol: { onsetMs: 5 * 60_000,  peakMs: 20 * 60_000, wearOffMs: 90 * 60_000, highContribution: 45, speechEffect: 'drunk',     stackable: true,  itemId: 'wine' },
     ketamine:{ onsetMs: 2 * 60_000,  peakMs: 8 * 60_000,  wearOffMs: 40 * 60_000, highContribution: 75, speechEffect: 'broken',    stackable: false, itemId: 'ketamine' },
-    // Phase 21.24 (2026-05-14) — Gee verbatim: "i want a tranquilizaer drug to make the
-    // girls limp and unconsious with a timer like 4 minutes". 4-min wearOffMs total span,
+    // Tranquilizer drug — makes the captive limp and unconscious with a 4-minute timer.
+    // 4-min wearOffMs total span,
     // 5-sec onset, 10-sec peak. Distinct from ketamine (dissociation) — this is full
     // knockout. While active, body.unconscious + body.limp resolve true via
     // isUnconscious(girl) helper, gating chat / consensual actions in room.js.
     tranquilizer: { onsetMs: 5_000, peakMs: 10_000, wearOffMs: 240_000, highContribution: 30, speechEffect: 'unconscious', stackable: false, itemId: 'tranquilizer' }
   };
 
-  // Phase 21.24 — return the active tranquilizer entry on the girl if she's still within
+  // Return the active tranquilizer entry on the girl if she's still within
   // its wearOffAt window, else null. Used by UI to gate buttons + drive the live mm:ss
   // countdown, and by image-prompt path to front-load unconscious markers.
   function isUnconscious(girl) {

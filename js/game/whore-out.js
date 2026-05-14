@@ -1,7 +1,6 @@
-// SEX SLAVE DUNGEON — whore-out passive-income subsystem (Phase 21.16, 2026-05-14).
-// Gee verbatim 2026-05-14: "also want a whore out option that allows girls to generate
-// passive income and tracks all the johns and what they did to where the girls can talk
-// about their johns and stuff idk figure it out".
+// SEX SLAVE DUNGEON — whore-out passive-income subsystem.
+// Captives generate passive income through john encounters; the ledger tracks every john
+// (act / payment / time / quirks) so the captive can reference them in chat.
 //
 // Distinct from Propositioner (bespoke single deals, player-approval gated, upmarket
 // clientele). Whore-out is continuous passive general-public flow with batch resolution
@@ -123,7 +122,7 @@
     const wo = getWhoreOut(girl);
 
     // Pick acts — intersection of john's preferences + player's permittedActs (if non-empty)
-    // SR.15 fix (2026-05-14) — when player has a non-empty permittedActs whitelist and no
+    // When player has a non-empty permittedActs whitelist and no
     // john preference matches, the john leaves without service (whitelist is binding now,
     // not "john gets his preferences anyway"). Prevents the player's whitelist from being
     // silently ignored.
@@ -152,8 +151,8 @@
     const totalPaid = payment + tip;
 
     // Apply the john action (drains stamina + health + mood per archetype intensity)
-    // SR.3 fix (2026-05-14) — capture bond before+after so encounter ledger records the
-    // ACTUAL bond delta applied, not hardcoded 0.
+    // Capture bond before+after so encounter ledger records the ACTUAL bond delta applied,
+    // not hardcoded 0.
     const moodBefore = girl.mood?.mood || 'neutral';
     const bondDebtBefore = girl.bond?.bondDebt || 0;
     const bondXPBefore = girl.bond?.bondXP || 0;
@@ -182,7 +181,7 @@
       }
     }
 
-    // CO.8 fix (2026-05-14) — for repeat-eligible archetypes, persist a stable johnId so
+    // For repeat-eligible archetypes, persist a stable johnId so
     // subsequent encounters can match against prior visits. Repeat clients build cumulative
     // rep + the girl can reference them by name in dialogue ("the regular from Tuesday").
     const isRepeatable = !!arc.repeatable;
@@ -283,8 +282,8 @@
     return { ok: true, amount };
   }
 
-  // Summarize the last N encounters for Ollama context block / memory injection.
-  // Per Gee verbatim: "the girls can talk about their johns and stuff".
+  // Summarize the last N encounters for Ollama context block / memory injection so the
+  // captive can talk about her johns in chat.
   function summarizeLedger(girlId, opts = {}) {
     const girl = window.SSDGame.state.getGirl(girlId);
     if (!girl) return [];

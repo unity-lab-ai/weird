@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — multi-stage capture engine (Phase 21.11, 2026-05-14).
+// SEX SLAVE DUNGEON — multi-stage capture engine.
 // Replaces the prior single-tool-single-roll capture model with a 4-stage progress-bar
 // attempt sequence (Approach → Engage → Subdue → Secure) where each stage has its own
 // 0-100% progress meter driven by the selected tool's per-stage stats vs the girl-archetype's
@@ -40,7 +40,7 @@
   ]);
 
   // Canonical list of capture-loop tools. UI dropdowns filter inventory against this.
-  // Phase 21.24 — tranquilizer added (Subdue 50 single-use, mirrors ketamine in the capture
+  // Tranquilizer (Subdue 50 single-use, mirrors ketamine in the capture
   // path; distinct behavior only in the in-dungeon administered drug path via drug-scheduler).
   const CAPTURE_TOOL_IDS = [
     'pipe', 'rohypnol', 'chloroform', 'ether', 'ketamine', 'tranquilizer',
@@ -154,7 +154,7 @@
     const playerSkill = getPlayerSkill();
     const witness = rollWitness({ locationId });
 
-    // SR.6 fix (2026-05-14) — pre-validate every assigned single-use tool against
+    // Pre-validate every assigned single-use tool against
     // inventory BEFORE resolution math fires. Guards against UI-engine desync race
     // (state mutated between render and attempt-fire). For non-single-use tools the
     // engine relies on UI eligibleToolsForStage filtering, which is render-time-only.

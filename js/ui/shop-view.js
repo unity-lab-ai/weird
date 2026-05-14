@@ -10,7 +10,7 @@
     const s = window.SSDGame.state.current;
     const listings = window.SSDGame.shop.listingsBySubcategory(subcat);
 
-    // Phase 21.18 — per-subcategory tooltip hints surfaced on the tab + per-item notes on the card.
+    // Per-subcategory tooltip hints surfaced on the tab + per-item notes on the card.
     const SUBCAT_TOOLTIPS = {
       'blunt': 'Blunt-force tools — pipes etc. Cheap Approach + Subdue stage assist. Messy.',
       'sedation': 'Chemical subdue tools — rohypnol / chloroform / ether / ketamine / tranquilizer. Single-use per stage.',

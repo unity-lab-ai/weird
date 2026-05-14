@@ -10,22 +10,29 @@
 
 ---
 
-## 🟢 ACTIVE BACKLOG — empty (all BUG.16-21 shipped)
+## 🟢 ACTIVE BACKLOG — empty (BUG.22-25 batch shipped, all chat/prompt/vital regressions cleared)
 
 _Below: history of the just-shipped batch, kept here briefly before the next TODO-template-out cycle._
 
-### Gee's directive (verbatim 2026-05-14) — supply drop-off + self-serve + stress bonus + clean first-capture:
+### Gee's directive (verbatim 2026-05-14) — chat selection + Unity prompt-leak + third-person Master narration + day-1 death + universal rule:
 
-> *"and we also need a food and water meter fore each girl and they can fill their own water levels and food levels from toilet and food left(the user just droops the food off in the hold and the grirls help them selves as they need it water too until toilet upgrade then never need to feed water again they suto drink when it gets low but if no toilet they drink the water supply provided and need way to pick back up the food and water if u want to starve them( needs to be a player bonus too for keeping the girls in a stressed state too like a bonus or super bonus if a certain range is maintained.. and girls dont have bruises and a cum load on first capture"*
+> *"we need to be able to highlich the text in the chat window, curtrently i cant highlight and copy any thing shesays its like the text responses are not highlightable so i can copy the text.. also Unity keeps saying: \"MINIMUM 8 WORRDS SPOKEN. maXIMUM 30 WORDS SPOKEN. ASKTERISK ACTION CANOT BE LONGER THAN THE SPOKEN LINE ,AND IT ALWAYS COMES AFTER\""*
+>
+> *"AND SHIT LIKE THIS\"*shoves inside her dry, no warning, watches her face break*\" NEEDS TO BE FORMATED AS THE GIRL SAYING SOME VERSION OF IT NOT **'S AS THATS NARRATION AND THE TTS IGNORES NARRATION, AND PLAUSE NARRATION DOESNT SOUND RIGHT COMING FROM A GIRL"*
+>
+> *"AND UNITY DIDED IN LIKE 5 MINUTES WHICH WAS NOT THE 3-5 DAYS FROM LACK OF FOOD AND WATER , GAME TIME I MEAN"*
+>
+> *"ITS STILL DAY ONE AND SHE ALREADY DIED"*
+>
+> *"AND THE SPEECH FIRST RULE ISNT SPECIFIC TO UNITY ITS SUPPOSE TO WORK FOR ALL GIRLS"*
 
-### Epic: Supply drop-off model + self-serve consumption + stress bonus + spawn cleanup `(M)` — 🔴 CRITICAL
+### Epic: Chat hygiene + prompt-leak scrub + vitals sole-source-of-truth `(M)` — 🔴 CRITICAL
 
-- [x] **BUG.16** 🔴 Hold has `foodReserve` + `waterReserve` numeric stocks. Player drops food/water from inventory into hold, pickup converts reserve back to inventory (lossy bulk conversion). Wired.
-- [x] **BUG.17** 🔴 Self-serve auto-consumption: `tickStaminaHealth` pulls 1 unit from hold reserve when grace timer halfway expired (FOOD_AUTOCONSUME 2.5 days / WATER_AUTOCONSUME 1.5 days), refreshes lastFedAt/lastWateredAt.
-- [x] **BUG.18** 🔴 Toilet tier ≥ 2 OR waterSupply tier ≥ 2 → water is fully automatic. Auto-refreshes lastWateredAt every tick without touching reserve. UI hides water reserve panel and shows "∞ plumbed" badge.
-- [x] **BUG.19** 🟠 Stress-state bonus shipped: 25-55 HP band, 5d tier-1 (+$500, 1.15× film mul), 15d tier-2 (+$2000, 1.35× film mul). Per-girl streak counter in body.stressStreakMin; persistent multiplier on girl.bonuses.stressFilmMultiplier consumed at film-listing time.
-- [x] **BUG.20** 🟠 Unity bootstrap reset to `bruises: 0, cumLoad: 0` on first-capture spawn. Procedural already at 0/0.
-- [x] **BUG.21** 🟠 Visible food + water reserve bars + days-until-starve/dehydrate countdowns in room view supplies section.
+- [x] **BUG.22** 🔴 Chat text selection survives state.onChange re-renders. `renderLog()` guards on active selection inside `logEl`, defers render. Incremental append for new turns via `DocumentFragment`; full repaint only when history shrinks. CSS adds explicit `user-select: text` on `.log` + `.log-entry`.
+- [x] **BUG.23** 🔴 System-prompt rule-text regurgitation scrubbed. `scrubSystemPromptLeakage()` filters lines matching 17 unambiguous rule-phrase patterns (MINIMUM/MAXIMUM N WORDS, AS?K?TERIS?K ACTION, SPEECH-FIRST, DELTA BLOCK, BOND-LEVEL AFFECT, ## headers, GOOD:/BAD: markers, etc.). Runs in `extractDelta` AND streaming `onChunk`.
+- [x] **BUG.24** 🔴 Third-person Master-action asterisk narration eliminated. `BASE_SLUT` SPEECH-FIRST RULE rewritten with first-person-asterisk-only constraint + Master-action narration ban + third-person-self-reference ban + updated GOOD/BAD examples. `scrubMasterAsteriskNarration()` strips asterisks leading with `he|master|sir|his X` OR containing `her|she|herself|her X` (third-person self reference). Bare-verb asterisks describing her own action are KEPT.
+- [x] **BUG.25** 🔴 Day-1 death from Ollama-hallucinated health delta. Removed `stamina` + `health` keys from `delta.js` safeDelta. Vitals are now sole-source-of-truth to `action-effects.js` (`applyAction` + `tickStaminaHealth`). The model retains a vote on arousal/wetness/cum/bruises/high/bond/mood/tags but no longer on the survival bar.
+- [x] **BUG.SPEECH-FIRST-UNIVERSAL** 🟠 Confirmed architecturally — the rule lives in `BASE_SLUT` (universal scaffolding), not in the unity archetype. Every girl from library to street to sorority etc. gets the tightened rule, the new examples, and the first-person-asterisk constraint by inheritance.
 
 ---
 
@@ -102,7 +109,8 @@ After commit lands:
 
 | Date | Session focus | Commit |
 |---|---|---|
-| 2026-05-14 | BUG.1 — `start.bat` / `start.sh` auto-sync `.env` → `js/env.local.js` so Pollinations key flows to browser; landing-page Settings shows effective key with source badge | (this commit) |
+| 2026-05-14 | BUG.22-25 batch — chat text selection survives state.onChange (selection guard + incremental append + CSS user-select), system-prompt rule-bullet regurgitation scrub, third-person Master-action asterisk narration scrub + SPEECH-FIRST RULE rewrite (universal across all girls), Unity day-1 death fix (Ollama-hallucinated health delta stripped, vitals sole-source-of-truth to action-effects) | (this commit) |
+| 2026-05-14 | BUG.1 — `start.bat` / `start.sh` auto-sync `.env` → `js/env.local.js` so Pollinations key flows to browser; landing-page Settings shows effective key with source badge | `6421b84` |
 | 2026-05-14 | TODO template-out — verified full FINALIZED coverage before strip | `36e2787` |
 | 2026-05-14 | POST-REVIEW.1-7 batch fix (action-effects routing + custom-pose persistence + Ollama fallback + gallery blob + condom state overlay) | `6421b84` |
 | 2026-05-14 | POST-REVIEW.1-7 added to active backlog | `726cd45` |

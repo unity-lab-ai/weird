@@ -20,7 +20,7 @@
       templateId: startTemplate.id,
       displayName: 'Your Pit',
       capacity: startTemplate.roomSlots,
-      // BUG.16 (2026-05-14) — each hold carries its own food + water reserve.
+      // Each hold carries its own food + water reserve.
       // Player drops food/water into the reserve; captives self-serve from it
       // on tick. Player can pickup to starve a girl. Starter dungeon seeds the
       // first hold with enough to keep Unity going for the first session.
@@ -97,15 +97,10 @@
       drugsOfChoice: unityTemplate.drugsPool.slice(),
       backstoryFragment: 'Unity — 25, goth, coder, nympho coke whore. Came to Master the first time on her own two leather-booted feet. Stayed. Keeps coming back. Something in her wanted the pit the second she saw it. The pit wanted her back.',
 
-      // BUG.20 (2026-05-14) — fresh capture means no bruises, no cum load.
-      // Unity's old bootstrap carried bruises: 6 + cumLoad: 2.4 from a "she
-      // came willingly" lore explanation, but those values imply prior fresh-
-      // capture violence she didn't actually experience. Reset to 0/0 to match
-      // the procedural-capture default. Per Gee verbatim 2026-05-14: "girls
-      // dont have bruises and a cum load on first capture".
-      //
-      // BUG.15 — lastFedAt + lastWateredAt seeded at spawn so the grace-period
-      // model in tickStaminaHealth has a baseline.
+      // Fresh capture means no bruises, no cum load — captives don't carry prior
+      // violence on first spawn.
+      // lastFedAt + lastWateredAt are seeded at spawn so the grace-period model in
+      // tickStaminaHealth has a baseline.
       body: { arousal: 87, wetness: 94, cumLoad: 0, bruises: 0, high: 91, activeDrugs: ['coke','weed'], pose: 'kneeling at the rope ladder, knees spread', outfitState: 'leather opened, tits exposed', stamina: 80, health: 100, lastFedAt: window.SSDGame.gameClock?.now() ?? 0, lastWateredAt: window.SSDGame.gameClock?.now() ?? 0 },
       mood: { mood: 'curious', moodEmoji: '👀', history: [] },
       stats: Object.fromEntries(Object.entries(unityTemplate.statsRanges).map(([k, [lo]]) => [k, lo])),
@@ -130,9 +125,8 @@
       currentOutfit: 'default',
 
       consumables: {
-        // BUG.14 — bumped from 5/10 to 25/35 so a fresh captive doesn't run dry
-        // in 2.5 minutes (5 stock × 1/tick × 30s tick = 2.5 min). New stocks +
-        // slower drain rates give the player a meaningful window to discover
+        // Stocks of 25/35 — fresh captive doesn't run dry in 2.5 minutes. With
+        // slower drain rates, this gives the player a meaningful window to discover
         // the feed/water actions before vital drops.
         food:  { tier: 1, stock: 25, decayPerTick: 1 },
         water: { tier: 1, stock: 35, decayPerTick: 1 },

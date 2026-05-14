@@ -98,7 +98,7 @@
         });
       }
     }
-    // BUG.19 (2026-05-14) — stress-state bonus multiplier. Stacks with wardrobe.
+    // Stress-state bonus multiplier. Stacks with wardrobe.
     // Awarded by action-effects.js when body.health stays in the 25-55 band long
     // enough (5 days = tier 1 = 1.15×, 15 days = tier 2 = 1.35×).
     const stressMul = girl.bonuses?.stressFilmMultiplier || 1.0;

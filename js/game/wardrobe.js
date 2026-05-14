@@ -5,9 +5,9 @@
 
   // Special built-in pseudo-outfit ID for "fully nude" — every girl can equip this without
   // buying it. Detected by imaging.js to front-load explicit nudity tokens at position 2 of
-  // the prompt (right after the prefix), suppressing the outfit block entirely.  Per Gee
-  // 2026-05-13: "agressively positioning that part so it isnt melted in at the end of the
-  // prompt in one word only".
+  // the prompt (right after the prefix), suppressing the outfit block entirely. The
+  // front-load matters: image models drop trailing tokens, so a nudity token at the end
+  // of a long prompt gets "melted in" and rendered weakly or not at all.
   const NUDE_PSEUDO_ID = 'nude';
   const NUDE_PSEUDO = {
     id: NUDE_PSEUDO_ID,
@@ -22,8 +22,7 @@
     builtIn: true                            // always available, no purchase
   };
 
-  // Phase 21.14 (2026-05-14) — NO_WARDROBE_PSEUDO. Gee verbatim: "need a no wardrobe option
-  // too, add to task list". Distinct from NUDE_PSEUDO: NUDE is "fully naked, no clothing"
+  // NO_WARDROBE_PSEUDO — distinct from NUDE_PSEUDO: NUDE is "fully naked, no clothing"
   // (accessories like collar/cuffs are STILL allowed if equipped). NO_WARDROBE is "stripped
   // of EVERYTHING — no garments, no accessories, no jewelry, no collar, no restraints,
   // no anything on her body". Raw nakedness, more aggressive nudity prompt-block in imaging.js.
@@ -41,7 +40,7 @@
     builtIn: true                            // always available, no purchase
   };
 
-  // CO.4 fix (2026-05-14) — condom-on wardrobe pseudo-outfit. When equipped, pregnancy
+  // Condom-on wardrobe pseudo-outfit. When equipped, pregnancy
   // conception gate suppresses the conception roll (matches the existing `currentOutfit
   // !== 'condom-on'` check in pregnancy.js attemptConception). Free + always available.
   // Doesn't change image-prompt rendering (it's "wearing a condom" — invisible).
@@ -368,7 +367,7 @@
     if (!isBuiltIn && !(girl.wardrobe || []).some(w => w.id === outfitId)) {
       throw new Error('outfit not in her wardrobe');
     }
-    // CO.4 — condom-on requires consuming one `condom` from inventory at equip time so
+    // Condom-on requires consuming one `condom` from inventory at equip time so
     // the catalog item drives a real supply economy. Without a condom in inventory, fail.
     if (outfitId === CONDOM_PSEUDO_ID) {
       const ok = window.SSDGame.state.consumeItem('condom', 1);
@@ -381,7 +380,7 @@
         : CONDOM_PSEUDO;
       wardrobe = [...wardrobe, { ...builtIn, source: 'built-in' }];
     }
-    // POST-REVIEW.7 fix (2026-05-14) — condom-on is a STATE OVERLAY, not a visible
+    // Condom-on is a STATE OVERLAY, not a visible
     // outfit. Track previousOutfit at equip time so the image-prompt path can render
     // her in her real outfit while the conception gate reads the condom-on flag.
     const patch = { currentOutfit: outfitId, wardrobe };
@@ -397,7 +396,7 @@
     return equip(girlId, NUDE_PSEUDO_ID);
   }
 
-  // Phase 21.14 — Convenience: equip the built-in no-wardrobe pseudo-outfit (strips
+  // Convenience: equip the built-in no-wardrobe pseudo-outfit (strips
   // EVERYTHING including accessories). Always succeeds.
   function stripEverything(girlId) {
     return equip(girlId, NO_WARDROBE_PSEUDO_ID);

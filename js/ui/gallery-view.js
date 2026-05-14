@@ -1,6 +1,5 @@
-// SEX SLAVE DUNGEON — image history gallery view (NEW.2, 2026-05-14).
-// Gee verbatim 2026-05-14: "and we need a image history of some kind where all past
-// imaGES CAN BE VIEWED AND DOWNLAODED AND OPENED UP IN BIGGER VIEW FULLSCREEN IF WANTED".
+// SEX SLAVE DUNGEON — image history gallery view.
+// Past images viewable, downloadable, openable fullscreen in a lightbox.
 //
 // Per-girl gallery showing every past generated image. Thumbnails grid → click for
 // fullscreen lightbox with prev/next navigation. Download button on each image.
@@ -97,7 +96,7 @@
       thumb.onclick = () => showLightbox(Number(thumb.dataset.idx));
     });
 
-    // POST-REVIEW.5 fix (2026-05-14) — blob-based download. The <a download> attribute is
+    // Blob-based download. The <a download> attribute is
     // only honored same-origin per HTML5 spec; Pollinations URLs are cross-origin and
     // would otherwise open inline. fetch→blob→objectURL→click forces a real download
     // even cross-origin (assuming CORS allows the GET). Falls back to direct href on

@@ -1,8 +1,7 @@
-// SEX SLAVE DUNGEON — central per-action stat-impact spec (Phase 21.17, 2026-05-14).
-// Gee verbatim 2026-05-14: "they also need a stamina bar thet gets used up and thinks like
-// degrad build it back up and other things each have their stat boost and health + - 's for
-// all actions some heal some hurt some use stamina some rebuild it all levels of system
-// like this".
+// SEX SLAVE DUNGEON — central per-action stat-impact spec.
+// Every actionable button (sex, drugs, violence, care) carries its own stamina/health/
+// mood/arousal/bondXP delta envelope. Some heal, some hurt, some drain stamina, some
+// rebuild it. This file is the single source of truth for those deltas.
 //
 // Every actionable button or in-dungeon event consults this table to learn its per-stat
 // delta envelope. Keys are action IDs; values are signed integer deltas applied to body
@@ -32,59 +31,112 @@
     // CARETAKING — generally restore stamina/health/bond
     // -----------------------------------------------------------------
     'feed-basic': {
-      stamina: +6, health: +2, mood: +3, bondXP: +1,
+      stamina: +6, health: +2, mood: +3, bondXP: +1, satisfaction: +1,
       notes: 'Basic meal — light stamina + health restore. Modest bond.'
     },
     'feed-gourmet': {
-      stamina: +12, health: +5, mood: +6, bondXP: +3,
+      stamina: +12, health: +5, mood: +6, bondXP: +3, satisfaction: +1,
       notes: 'Gourmet meal — stronger restore + bond bump. She remembers who fed her well.'
     },
     'water-bottled': {
-      stamina: +4, health: +2, mood: +2, bondXP: +1,
+      stamina: +4, health: +2, mood: +2, bondXP: +1, satisfaction: 0,
       notes: 'Bottled water — hydration restore.'
     },
     'water-filtered': {
-      stamina: +6, health: +3, mood: +3, bondXP: +2,
+      stamina: +6, health: +3, mood: +3, bondXP: +2, satisfaction: 0,
       notes: 'Filtered water — better hydration + small bond bump.'
     },
     'heal': {
-      stamina: +10, health: +20, mood: +6, bruises: -10,
+      stamina: +10, health: +20, mood: +6, bruises: -10, satisfaction: +1,
       notes: 'Heal — major bruise reset + meaningful health restore.'
     },
     'rest-tick': {                  // passive, fired from tick.js when no scene happens
-      stamina: +8, health: +2,
+      stamina: +8, health: +2, satisfaction: 0,
       notes: 'Passive rest — quiet tick, mild stamina regen.'
+    },
+
+    // -----------------------------------------------------------------
+    // LOVE / SENSUAL — gentle care + bond restoration. Rebuilds stamina/health/Stockholm
+    // when she's low. Reduces accumulated bondDebt — past harshness can be forgiven.
+    // -----------------------------------------------------------------
+    'love-kiss-gentle': {
+      stamina: +4, health: +2, mood: +5, bondXP: +3, bondDebt: -1, satisfaction: +1,
+      notes: 'Gentle kiss — small stamina + bond bump, mood lift.'
+    },
+    'love-cuddle': {
+      stamina: +8, health: +4, mood: +6, bondXP: +4, bondDebt: -2, satisfaction: +2,
+      notes: 'Cuddle — stronger stamina restore + bond bump + bondDebt forgiveness.'
+    },
+    'love-praise': {
+      stamina: +2, health: +1, mood: +8, bondXP: +5, bondDebt: -1, satisfaction: +1,
+      notes: 'Whispered praise — heavy mood + bond hit, minor body restore.'
+    },
+    'love-massage': {
+      stamina: +12, health: +6, mood: +5, bondXP: +3, bondDebt: -2, satisfaction: +2,
+      notes: 'Massage — major stamina + health restore, modest bond.'
+    },
+    'love-bathe-her': {
+      stamina: +10, health: +8, mood: +6, bondXP: +4, bondDebt: -2, satisfaction: +2,
+      notes: 'Bathe her — strong health + stamina rebuild, real intimacy.'
+    },
+    'love-feed-by-hand': {
+      stamina: +8, health: +5, mood: +7, bondXP: +5, bondDebt: -2, satisfaction: +2,
+      notes: 'Feed her by hand — caretaking intimacy. Strong bond gain.'
+    },
+    'love-hair-brush': {
+      stamina: +4, health: +2, mood: +5, bondXP: +4, bondDebt: -1, satisfaction: +1,
+      notes: 'Brush her hair — slow, intimate, rebuilds trust.'
+    },
+    'love-lullaby': {
+      stamina: +6, health: +2, mood: +8, bondXP: +5, bondDebt: -2, satisfaction: +1,
+      notes: 'Lullaby — sing or hum her to sleep. Big mood + bond.'
+    },
+    'love-hold-her': {
+      stamina: +5, health: +3, mood: +6, bondXP: +4, bondDebt: -1, satisfaction: +1,
+      notes: 'Just hold her — quiet, no demands. Steady bond gain.'
+    },
+    'love-aftercare': {
+      stamina: +15, health: +10, mood: +10, bondXP: +6, bondDebt: -4, bruises: -2, satisfaction: +3,
+      notes: 'Full aftercare — water, blanket, treat bruises, hold her until she sleeps.'
+    },
+    'love-forehead-kiss': {
+      stamina: +2, health: +1, mood: +4, bondXP: +3, bondDebt: -1, satisfaction: +1,
+      notes: 'Forehead kiss — small but emotionally weighted.'
+    },
+    'love-promise-sweet': {
+      stamina: +1, health: 0, mood: +6, bondXP: +5, bondDebt: -2, satisfaction: +1,
+      notes: 'Whispered promise — even if hollow, she\'ll cling to it. Big bond gain.'
     },
 
     // -----------------------------------------------------------------
     // DRUGS — artificial stamina bumps + health hits
     // -----------------------------------------------------------------
     'drug-coke': {
-      stamina: +20, health: -2, mood: +5, arousal: +5,
+      stamina: +20, health: -2, mood: +5, arousal: +5, satisfaction: +2,
       notes: 'Cocaine — artificial stamina spike, small health cost.'
     },
     'drug-weed': {
-      stamina: +3, health: 0, mood: +4, arousal: +3,
+      stamina: +3, health: 0, mood: +4, arousal: +3, satisfaction: +1,
       notes: 'Weed — mild stamina boost, no health cost. Relaxes her.'
     },
     'drug-mdma': {
-      stamina: +15, health: -3, mood: +12, bondXP: +2, arousal: +12, wetness: +15,
+      stamina: +15, health: -3, mood: +12, bondXP: +2, arousal: +12, wetness: +15, satisfaction: +2,
       notes: 'MDMA — euphoric stamina lift + arousal flood. Small health hit.'
     },
     'drug-acid': {
-      stamina: +5, health: -2, mood: +8, arousal: +5,
+      stamina: +5, health: -2, mood: +8, arousal: +5, satisfaction: +2,
       notes: 'Acid — long curve. Mind-altering more than body-altering.'
     },
     'drug-whiskey': {
-      stamina: -3, health: -3, mood: +5, arousal: +6,
+      stamina: -3, health: -3, mood: +5, arousal: +6, satisfaction: +1,
       notes: 'Whiskey — actually drops stamina (depressant) but loosens her up.'
     },
     'drug-ketamine': {
-      stamina: -15, health: -4, mood: -5,
+      stamina: -15, health: -4, mood: -5, satisfaction: +2,
       notes: 'Ketamine — heavy stamina drain (dissociation), health hit.'
     },
     'drug-tranquilizer': {
-      stamina: -30, health: -2, mood: -8,
+      stamina: -30, health: -2, mood: -8, satisfaction: +3,
       notes: 'Tranquilizer dart — knocks her out. Heavy stamina drain.'
     },
 
@@ -92,23 +144,23 @@
     // SEXUAL — drain stamina + arousal/wetness/cumLoad shifts
     // -----------------------------------------------------------------
     'sex-gentle': {
-      stamina: -8, health: 0, mood: +2, arousal: +12, wetness: +15, cumLoad: +0.6, bondXP: +2,
+      stamina: -8, health: 0, mood: +2, arousal: +12, wetness: +15, cumLoad: +0.6, bondXP: +2, satisfaction: +3,
       notes: 'Gentle sex — moderate stamina cost, positive mood + bond.'
     },
     'sex-rough': {
-      stamina: -18, health: -3, mood: -4, arousal: +18, wetness: +20, cumLoad: +0.9, bruises: +2, bondDebt: +3,
+      stamina: -18, health: -3, mood: -4, arousal: +18, wetness: +20, cumLoad: +0.9, bruises: +2, bondDebt: +3, satisfaction: +5,
       notes: 'Rough sex — bigger stamina hit + bruise accumulation + bond-debt.'
     },
     'sex-anal': {
-      stamina: -15, health: -2, mood: -2, arousal: +12, wetness: +10, cumLoad: +0.7, bondDebt: +2,
+      stamina: -15, health: -2, mood: -2, arousal: +12, wetness: +10, cumLoad: +0.7, bondDebt: +2, satisfaction: +4,
       notes: 'Anal — high stamina cost, some bond debt.'
     },
     'sex-oral': {
-      stamina: -6, health: -1, mood: 0, arousal: +8, wetness: +8, cumLoad: +0.5,
+      stamina: -6, health: -1, mood: 0, arousal: +8, wetness: +8, cumLoad: +0.5, satisfaction: +2,
       notes: 'Oral — lower stamina cost, no breeding risk (vag-only gate).'
     },
     'sex-cum-inside': {              // vaginal cum delivery — fires pregnancy conception roll
-      stamina: -3, health: 0, mood: -2, cumLoad: +1.2, bondDebt: +2,
+      stamina: -3, health: 0, mood: -2, cumLoad: +1.2, bondDebt: +2, satisfaction: +6,
       notes: 'Cum inside her pussy — adds bondDebt, fires pregnancy conception roll.'
     },
 
@@ -116,19 +168,19 @@
     // VIOLENCE / HURTME — bruise accumulation + health hits
     // -----------------------------------------------------------------
     'slap': {
-      stamina: -2, health: -3, mood: -8, bruises: +1, bondDebt: +3,
+      stamina: -2, health: -3, mood: -8, bruises: +1, bondDebt: +3, satisfaction: +3,
       notes: 'Slap — small physical cost, mood hit, bruise.'
     },
     'choke': {
-      stamina: -8, health: -5, mood: -6, arousal: +6, bruises: +2, bondDebt: +4,
+      stamina: -8, health: -5, mood: -6, arousal: +6, bruises: +2, bondDebt: +4, satisfaction: +5,
       notes: 'Choke — stamina drain + health hit + bond debt. Arousal spike for kink fit.'
     },
     'whip': {
-      stamina: -10, health: -8, mood: -10, bruises: +4, bondDebt: +6,
+      stamina: -10, health: -8, mood: -10, bruises: +4, bondDebt: +6, satisfaction: +6,
       notes: 'Whip — heavy bruise count + health hit. Bond-debt accumulates.'
     },
     'punch': {
-      stamina: -5, health: -6, mood: -10, bruises: +3, bondDebt: +5,
+      stamina: -5, health: -6, mood: -10, bruises: +3, bondDebt: +5, satisfaction: +4,
       notes: 'Punch — meaningful health hit + bruise + mood + bond debt.'
     },
 
@@ -136,19 +188,18 @@
     // RESTRAINT — low stamina, mood drop
     // -----------------------------------------------------------------
     'restrain': {
-      stamina: -1, health: 0, mood: -3, bondDebt: +1,
+      stamina: -1, health: 0, mood: -3, bondDebt: +1, satisfaction: +1,
       notes: 'Restrain her — minimal physical cost, mood drop, bond-debt blip.'
     },
 
     // -----------------------------------------------------------------
     // PASSIVE STARVATION / DEHYDRATION — applied by tick.js when supplies hit 0
     // -----------------------------------------------------------------
-    // BUG.14 (2026-05-14) — drain rates softened. Previous combined starve+dehydrate
-    // health drain was -8/tick (-3 + -5) and 30-second ticks meant a captive went from
-    // 100 health to terminal in ~10 minutes real time, even with the player feeding her
-    // every few minutes. Per Gee verbatim: "why are my girls dying so fucking fast?"
-    // New rates give the player a meaningful window to react (~30-40 min from healthy
-    // to critical if completely neglected) while still rewarding attention.
+    // Drain rates are intentionally soft. Previous combined starve+dehydrate drain
+    // (-8 health/tick) plus 30-second ticks meant a captive went from 100 health to
+    // terminal in ~10 real minutes even with regular feeding. New rates give the player
+    // a meaningful window to react (~30-40 min from healthy to critical if completely
+    // neglected) while still rewarding attention.
     'starve-tick': {
       stamina: -1, health: -1, mood: -3,
       notes: 'Food at 0 — gentle starvation drain. Mood hits harder than health.'
@@ -163,7 +214,7 @@
     },
 
     // -----------------------------------------------------------------
-    // WHORE-OUT — johns drain stamina per encounter (Phase 21.16 hook)
+    // WHORE-OUT — johns drain stamina per encounter
     // -----------------------------------------------------------------
     'john-gentle': {
       stamina: -5, health: 0, mood: -2, cumLoad: +0.5, bondDebt: +2,
@@ -175,7 +226,7 @@
     },
     'john-quick': {
       stamina: -3, health: 0, mood: -1, cumLoad: +0.3, bondDebt: +1,
-      notes: 'Quick john — minimal stamina cost, premium per-minute pay (Phase 21.16).'
+      notes: 'Quick john — minimal stamina cost, premium per-minute pay.'
     },
     'john-degrader': {
       stamina: -10, health: -2, mood: -15, cumLoad: +0.8, bondDebt: +8,
@@ -210,14 +261,14 @@
     }
     if (action.stamina) {
       const d = action.stamina < 0 ? action.stamina * strainMul : action.stamina;
-      // BUG.15 — stamina capped by current health. Low health pulls down the
-      // stamina ceiling so a half-dead captive can't run at full stamina.
+      // Stamina capped by current health. Low health pulls down the stamina
+      // ceiling so a half-dead captive can't run at full stamina.
       const ceiling = body.health ?? 100;
       body.stamina = clamp((body.stamina ?? 70) + d, 0, ceiling);
     }
 
-    // BUG.15 (2026-05-14) — feed/water actions reset the corresponding "last
-    // fed at" / "last watered at" game-clock timestamps so the grace-period
+    // Feed/water actions reset the corresponding "last fed at" / "last watered at"
+    // game-clock timestamps so the grace-period
     // model in tickStaminaHealth resets. Any action id starting with 'feed-'
     // touches lastFedAt; any starting with 'water-' touches lastWateredAt.
     if (window.SSDGame.gameClock) {
@@ -230,8 +281,8 @@
     if (action.bruises) body.bruises = clamp((body.bruises ?? 0) + (action.bruises < 0 ? action.bruises : action.bruises * strainMul), 0, 99);
     if (action.cumLoad) body.cumLoad = Math.max(0, (body.cumLoad ?? 0) + action.cumLoad);
 
-    // SR.1 fix (2026-05-14) — mood was previously declared in 30+ ACTIONS entries but
-    // never applied. Track moodPressure (cumulative drift) so the model name reclassifies
+    // Mood was previously declared in 30+ ACTIONS entries but never applied. moodPressure
+    // tracks cumulative drift so the model name reclassifies
     // at threshold boundaries. johnHappinessForGirl already reads mood.mood; this gives
     // the action-effects layer a way to push mood meaningfully.
     if (action.mood) {
@@ -264,6 +315,14 @@
       window.SSDGame.state.addNotoriety(action.notoriety);
     }
 
+    // Player satisfaction — every action sexualizes; the meter reads action.satisfaction.
+    // John actions intentionally have satisfaction=0 in their spec (proxied service, not
+    // direct intimacy). Mercy / passive ticks have 0 too. Hunting bonus draws from this
+    // meter via hunt.previewCaptureOdds.
+    if (action.satisfaction && window.SSDGame.state.addSatisfaction) {
+      window.SSDGame.state.addSatisfaction(action.satisfaction, actionId);
+    }
+
     window.SSDGame.state.updateGirl(girlId, { body, bond, mood });
     return { ok: true, action, strain: !!opts.strain };
   }
@@ -287,9 +346,9 @@
 
   // Defensive helper for any subsystem that needs to advance the body fields per-tick.
   // Used by tick.js to evaluate health-decline factors + passive rest regen.
-  // BUG.15 (2026-05-14) — grace-period model + stamina-capped-by-health.
-  // Gee verbatim: "3 game days with out water and 5 game days without food they
-  // will begin to lose health and have max stamina fall so if health is lower
+  // Grace-period model + stamina-capped-by-health: a captive goes 3 game days without
+  // water and 5 game days without food before health starts dropping. Below grace,
+  // health drains; max stamina falls in lockstep, so if health is lower
   // the maximum stamina can reach is reduced also".
   //
   // Health drain ONLY kicks in once the grace period expires:
@@ -300,8 +359,8 @@
   //
   // Stamina max-cap = body.health. Low health pulls down the stamina ceiling,
   // so a half-dead captive can't run at full stamina even when rested.
-  // BUG.19 (2026-05-14) — stress-state bonus. Per Gee verbatim: "needs to be a
-  // player bonus too for keeping the girls in a stressed state too like a bonus
+  // Stress-state bonus. The player earns a payout for keeping a captive in a
+  // visibly-stressed health band — a bonus
   // or super bonus if a certain range is maintained".
   //
   // Stress range: body.health 25-55 (above terminal, below comfortable — she's
@@ -324,7 +383,7 @@
 
   const WATER_GRACE_DAYS = 3;
   const FOOD_GRACE_DAYS = 5;
-  // BUG.17 (2026-05-14) — captives self-serve from the hold's reserve when their
+  // Captives self-serve from the hold's reserve when their
   // grace timer gets halfway low. Set well before the grace expires so a fresh
   // captive with reserve in her hold doesn't even approach starvation.
   const FOOD_AUTOCONSUME_DAYS = 2.5;    // half the 5-day food grace
@@ -417,7 +476,7 @@
       body.health = newHealth;
       body.stamina = clamp((body.stamina ?? 70) + staminaDelta, 0, newHealth);
 
-      // BUG.19 — stress-state streak tracking. Increment counter while in band;
+      // Stress-state streak tracking. Increment counter while in band;
       // reset out of band. Each tick adds ~30 game-minutes (one tick of game time).
       const inStressBand = newHealth >= STRESS_RANGE_MIN && newHealth <= STRESS_RANGE_MAX;
       const prevStreak = body.stressStreakMin || 0;
@@ -457,14 +516,13 @@
     }
   }
 
-  // Phase 21.16+21.17 cross-link — Gee verbatim 2026-05-14: "better girls gorwen stats =
-  // hap[pier johns= more money". Computes a 0..1.5 happiness multiplier for a girl,
+  // Better-trained girls earn more — computes a 0..1.5 happiness multiplier for a girl,
   // suitable for multiplying basePay in the john-resolver. Inputs: Stockholm bond
   // (trained = bigger payout), stamina + health (above threshold = good service),
   // mood (happy mood = happy john), outfit multiplier. Returns the multiplier + a
   // diagnostic breakdown for tooltip display.
   //
-  // Phase 21.16 john-resolver should call this when computing per-encounter pay:
+  // The john-resolver should call this when computing per-encounter pay:
   //   const { multiplier } = SSDGame.actionEffects.johnHappinessForGirl(girl);
   //   const finalPay = basePay * multiplier;
   function johnHappinessForGirl(girl) {

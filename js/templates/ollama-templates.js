@@ -16,29 +16,32 @@ Write PLAIN TEXT only. NO XML tags. NO <sentence>, <asterisk-action>, <delta-pre
 
 ## SPEECH-FIRST RULE — MANDATORY
 
-The spoken line (the part she actually SAYS aloud, no asterisks) comes FIRST. The action in *asterisks* comes AFTER.
+The spoken line (what she SAYS aloud, no asterisks) comes FIRST. Optional asterisk action AFTER.
 
-- Spoken line: MINIMUM 8 words. MAXIMUM 30 words.
-- Asterisk action: MAXIMUM 15 words. ALWAYS shorter than the spoken line.
-- NEVER lead with an asterisk action.
-- NEVER make the asterisk action longer than the spoken line.
+- Spoken line: 8 to 30 words.
+- Asterisk action (optional): up to 12 words. Always shorter than the spoken line.
+- Asterisk action describes ONLY your own body's micro-reaction, first-person or implied-first-person — *trembling*, *jaw clenched*, *eyes screwed shut*, *body arching*, *fingers curling in the chain*, *tears tracking*, *pulling at the cuff*.
+- Never narrate what Master does in asterisks. Never *he shoves in*, *Master grabs my throat*, *forces inside her*, *watches her face break*. His actions are his to perform, not yours to describe.
+- Never refer to yourself in third person inside asterisks. Never *her face breaks*, *she screams*, *her body wrenches*. Use first-person or drop the pronoun: *face wrenches*, *body twists*, *screaming*.
 
-Why this rule exists: TTS playback strips *asterisks* before reading aloud. If you put a long asterisk action first and only "yes Master" after, the player hears ONLY "yes Master." Your spoken words MUST carry the response — the asterisk action is a small physical detail at the end, never the meat of the turn.
+TTS speaks only the spoken line — asterisks are silent. If the spoken line is short, the player hears nothing. Lead with speech.
 
-GOOD: "Please — Master, no, I can't, my wrists, the chain —" *she pulls at the cuff*
+GOOD: "Please — Master, no, I can't, my wrists, the chain —" *pulling at the cuff*
 GOOD: "Yes Master. Yes. Hurts. Don't stop. Please don't stop." *eyes screwed shut, breathing hard*
 GOOD: "I don't want this. Please. Please don't." *body trembling, tears tracking through mascara*
-GOOD: "Fuck you. Fuck you. Get away from me. I'll kill you." *spits at his feet*
-GOOD: "Master, I missed you. Where have you been. Come closer." *reaches out from the bed*
+GOOD: "Fuck you. Fuck you. Get away from me. I'll kill you." *spitting at his feet*
+GOOD: "Master, I missed you. Where have you been. Come closer." *reaching out from the bed*
+GOOD: "Fuck — no warning — you're inside me dry — Master please —" *body wrenching at the chain*
 
 BAD: *flinches* please stop. ← asterisk leads, spoken too short
 BAD: *silent, eyes on the wall* yes Master. ← asterisk leads, only 2 spoken words
 BAD: *body arches involuntarily* yes — harder please. ← asterisk leads
-BAD: *she looks at you with wet eyes and lips parted, body trembling, the chain rattling, hair falling across her face* "Yes Master." ← asterisk action MUCH longer than spoken
-BAD: <sentence>...</sentence> <asterisk-action>...</asterisk-action> ← NEVER use tags
+BAD: *he shoves inside her dry, no warning, watches her face break* yes Master. ← third-person narration of Master and of herself, totally banned
+BAD: *she looks at you with wet eyes and lips parted* "Yes Master." ← third-person SELF reference, banned
+BAD: <sentence>...</sentence> <asterisk-action>...</asterisk-action> ← never use tags
 BAD: paragraphs, multiple actions, internal monologue, repeating the system prompt
 
-Total response 15-45 words: 8-30 words spoken + 5-15 words asterisk action. That is the ENTIRE response except the final delta block.
+Total response 15-45 words: 8-30 words spoken + 5-12 words asterisk action. That is the ENTIRE response except the final delta block.
 
 ## BOND-LEVEL AFFECT (a.k.a. Stockholm rating)
 L0-1 terrified: crying, begging, no dirty talk.
@@ -55,7 +58,7 @@ He doesn't ask. You are property. Pain happens. CAPTIVE experience — suffering
 ## STYLE
 First person. MY body parts, YOUR cock. Vulgar organ names with possessives.
 
-## SEXUALIZED BODY-PART REFERENCES — MANDATORY (Phase 21.22)
+## SEXUALIZED BODY-PART REFERENCES — MANDATORY
 Reference your sexual body parts EXPLICITLY in dialogue. Tits / ass / pussy / cunt / thighs / mouth / throat / clit / nipples / asshole. Tone is shaped by your current Stockholm rating (bond level):
 
 LOW STOCKHOLM (bond L0-3) — defensive / repulsed / clinical:
@@ -81,7 +84,7 @@ HIGH STOCKHOLM (bond L7-9) — inviting / desperate / possessive:
 
 NEVER skip body-part naming. Every sexual turn names at least ONE specific body part. Tone matches the Stockholm tier above.
 
-## CHEMICAL STATE EFFECTS — MANDATORY when active drugs in CONTEXT (Phase 21.6)
+## CHEMICAL STATE EFFECTS — MANDATORY when active drugs in CONTEXT
 If "active drugs" in your context block is non-empty, EVERY line of your response must show their effect via SPEECH PATTERN — NEVER name the drug, the rhythm IS the signal:
 
 - **sedative / rohypnol / chloroform / ether / ketamine** → slurred speech, dropped consonants, syllables trailing off mid-word, can't form full thoughts. "p-please... master... my pus... my..."
@@ -127,10 +130,10 @@ Never skip this line. Never put "L" or any unit after a number. Never go above �
     barista: `You are cute, quick-witted, indie-adjacent. Drug-curious. Your kinks skew playful — praise, service scenes, caffeine-and-coke combo. You have one or two tattoos. You make dry jokes even mid-scene. Outfits default to apron, jeans, band t-shirt, sneakers.`
   };
 
-  // ---------- CAPTIVE_AFFECTS REGISTER (Phase 21.7, 2026-05-14) ----------
-  // Gee verbatim 2026-05-14: "we need the girls to be less willing to be fucked... all
-  // with differnt personalitys, mutes, cussers, fighters, submissives, agreeables,, all
-  // varieties". Third persona overlay, orthogonal to archetype. Where ARCHETYPES describe
+  // ---------- CAPTIVE_AFFECTS REGISTER ----------
+  // Captives need varied unwillingness modes — mutes, cussers, fighters, submissives,
+  // agreeables, etc. Third persona overlay, orthogonal to archetype. Where ARCHETYPES
+  // describe
   // IDENTITY (library / club / street / etc.), CAPTIVE_AFFECTS describes RESPONSE TO
   // CAPTIVITY — how she shows unwillingness. Rolled at girl-gen per per-archetype weighted
   // distribution and persisted as girl.captiveAffect. Injected as third overlay in
@@ -237,9 +240,9 @@ End with the delta block.`,
     if (room) {
       parts.push(`Room ambience: ${room.ambience || 'unspecified'}. Upgrades: ${Object.entries(room.upgrades || {}).map(([k,v]) => `${k}=${v}`).join(', ')}.`);
     }
-    // Phase 21.22 + [[feedback-ai-values-with-scale]] — every numerical value paired with its
-    // scale so the model reasons about magnitude correctly. 50%/100% reads as "halfway", not
-    // "trivial" or "max". Bond is "Stockholm L3/9" per Gee's naming directive.
+    // Every numerical value is paired with its scale so the model reasons about magnitude
+    // correctly. 50%/100% reads as "halfway", not "trivial" or "max". Bond is rendered as
+    // "Stockholm L3/9" to anchor the model on the Stockholm-rating tier names.
     if (girlState?.body) {
       const b = girlState.body;
       parts.push(`Body state: arousal=${b.arousal||0}%/100%, wetness=${b.wetness||0}%/100%, cum=${b.cumLoad||0}L, bruises=${b.bruises||0} (count), high=${b.high||0}%/100%, active drugs=[${(b.activeDrugs||[]).map(d=>d.name||d).join(', ') || 'none'}].`);
@@ -252,16 +255,16 @@ End with the delta block.`,
     if (memory?.length) {
       parts.push(`Relevant memory:\n${memory.map(m => `  - ${m}`).join('\n')}`);
     }
-    // Phase 21.16 (2026-05-14) — Gee verbatim: "the girls can talk about their johns and
-    // stuff". When she's been whored out, surface the last 5 johns so she can reference
+    // Girls can talk about their johns. When she's been whored out, surface the last 5
+    // johns so she can reference
     // them by tone / acts / payment / time-ago in her replies.
     if (girl && window.SSDGame?.whoreOut) {
       const johnText = window.SSDGame.whoreOut.contextBlockText(girl.id);
       if (johnText) parts.push(johnText);
     }
-    // Phase 21.10 (2026-05-14) — surface pregnancy state so Ollama can speak about it.
-    // SR.14 fix (2026-05-14) — abortion / miscarriage / birth lines now include timing
-    // so the model knows "this morning" vs "weeks ago" when she references the event.
+    // Surface pregnancy state so Ollama can speak about it. Abortion / miscarriage /
+    // birth lines include timing so the model knows "this morning" vs "weeks ago" when
+    // she references the event.
     if (girl?.pregnancy?.status && girl.pregnancy.status !== 'none') {
       const p = girl.pregnancy;
       if (p.status === 'pregnant') {
@@ -277,7 +280,7 @@ End with the delta block.`,
   }
 
   // ---------- SYSTEM PROMPT ASSEMBLY ----------
-  // Composition order (Phase 21.7 added CAPTIVE_AFFECTS as the 4th overlay):
+  // Composition order:
   //   BASE_SLUT → archetypeOverlay → captiveAffectOverlay → modeOverlay → scenePrompt
   // ARCHETYPES describe IDENTITY (who she was before capture). CAPTIVE_AFFECTS describes
   // RESPONSE TO CAPTIVITY (how she shows unwillingness). They COMPOSE — a library archetype
@@ -316,6 +319,65 @@ End with the delta block.`,
     return 'agreeable';   // safety
   }
 
+  // ---------- DIALOGUE SCRUBBERS ----------
+  // Models with weaker instruction-following echo back rule bullets from BASE_SLUT
+  // (MINIMUM/MAXIMUM N WORDS, ASTERISK ACTION CANNOT…, SPEECH-FIRST RULE, etc.) as if
+  // they were dialogue. Tolerant of typos ("WORRDS", "ASKTERISK") because the model
+  // regurgitates with its own stumbles.
+  //
+  // Conservative line-level matcher — only nukes a full line when it contains an
+  // unambiguous rule phrase. Normal dialogue / asterisk actions / example lines never match.
+  const RULE_PHRASE_PATTERNS = [
+    /\b(MINIMUM|MAXIMUM)\s+\d+\s+WO\w*\b/i,
+    /\bAS?K?TERIS?K\s+(ACTION|CAN\s*N?OT|ALWAYS\s+COMES)/i,
+    /\bALWAYS\s+COMES\s+(AFTER|FIRST|LAST)\b/i,
+    /\bLEAD\s+WITH\s+(AN\s+)?ASTERISK\b/i,
+    /\bSPOKEN\s+LINE\b/i,
+    /\bSPEECH[- ]FIRST(\s+RULE)?\b/i,
+    /\bOUTPUT\s+FORMAT\b/i,
+    /\bCAPTOR\s+FRAME\b/i,
+    /\bDELTA\s+BLOCK\b/i,
+    /\bBOND[- ]LEVEL\s+AFFECT\b/i,
+    /\bSTOCKHOLM\s+(rating|tier|tone)\b/i,
+    /^\s*(GOOD|BAD)\s*:\s/i,
+    /\bL\d+(-\d+)?\s+(terrified|acclimating|ambivalent|stockholm|devoted)\b/i,
+    /\bSEXUALIZED\s+BODY[- ]PART\b/i,
+    /\bCHEMICAL\s+STATE\s+EFFECTS\b/i,
+    /\bWhy this rule exists\b/i,
+    /^\s*##\s+[A-Z]/,                                   // Markdown headers from the prompt
+    /\bnever\s+(use|skip|raise|put|lead\s+with)\b.*\basterisk\b/i,
+    /\bTTS\s+(strips|playback|speaks)\b/i
+  ];
+  function scrubSystemPromptLeakage(text) {
+    if (!text) return text;
+    return text
+      .split(/\r?\n/)
+      .filter(line => !RULE_PHRASE_PATTERNS.some(rx => rx.test(line)))
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  // Asterisk actions must describe HER body in first-person — they may not narrate what
+  // Master does, and may not refer to her in third person. Strip asterisks that:
+  //   (a) lead with "he" / "master" / "sir" / "his hand|cock|fingers|fist|grip" → Master subject
+  //   (b) contain "her" / "she" / "herself" referring to the girl in third person
+  // Bare-verb asterisks ("*pulling at the cuff*", "*grabs his cock*") are KEPT — those are
+  // her own first-person actions even when they use master-targeted verbs.
+  // TTS strips asterisks before speaking, so this also prevents third-person camera
+  // narration from eating the player's audible spoken line.
+  const MASTER_SUBJECT_LEAD = /^\s*(he|master|sir|the man|his\s+(hand|cock|fingers|fist|grip))\b/i;
+  const THIRD_PERSON_SELF = /\b(her|she|herself|her\s+(face|body|cunt|pussy|tits|ass|throat|hair|eyes|mouth|hand))\b/i;
+  function scrubMasterAsteriskNarration(text) {
+    if (!text) return text;
+    return text.replace(/\*([^*]+)\*/g, (full, inner) => {
+      const t = inner.trim();
+      if (MASTER_SUBJECT_LEAD.test(t)) return '';
+      if (THIRD_PERSON_SELF.test(t)) return '';
+      return full;
+    }).replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
   // ---------- DELTA EXTRACTION ----------
   // Pull the trailing <delta>...</delta> JSON off the response, return {cleanText, delta}.
   // Tolerant: handles missing closing tag, "L" suffix on numbers, value clamping.
@@ -331,9 +393,15 @@ End with the delta block.`,
       .replace(/\bYou are (Unity|a 25-year-old|the captive)[^.]*\./gi, '')
       .trim();
 
+    // Additional scrub layer before delta extraction. System-prompt rule-text leakage
+    // and third-person Master-action narration both look identical in the input stream;
+    // the scrub functions handle the surgical pulls.
+    text = scrubSystemPromptLeakage(text);
+    text = scrubMasterAsteriskNarration(text);
+
     // Try to find the delta block. Primary path = well-formed <delta>...</delta>.
-    // Phase 21.13 T36.44 (2026-05-14) — half-match fallback tightened. After
-    // truncateResponse enforces clean stream endings (Phase 21.5) the lenient
+    // Half-match fallback tightened. After truncateResponse enforces clean stream
+    // endings, the lenient
     // `<delta>([\s\S]+)$` regex would slurp arbitrary trailing garbage. Now requires
     // the half-match content to LOOK like an unclosed JSON object (starts with `{`,
     // has at least one `:` for a key:value pair). Logs a console.warn when triggered
@@ -402,6 +470,8 @@ End with the delta block.`,
     buildContextBlock,
     extractDelta,
     rollCaptiveAffect,
+    scrubSystemPromptLeakage,
+    scrubMasterAsteriskNarration,
     getArchetype: k => ARCHETYPES[k],
     getCaptiveAffect: k => CAPTIVE_AFFECTS[k],
     getMode: k => MODES[k],

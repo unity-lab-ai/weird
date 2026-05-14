@@ -19,8 +19,8 @@
 
     window.SSDGame.state.bumpTick();
 
-    // 0. Advance the game clock — BUG.15 (2026-05-14). 1 real second = 1 game
-    // minute, so each 30-second tick advances game time by 30 game minutes.
+    // 0. Advance the game clock. 1 real second = 1 game minute, so each 30-second
+    // tick advances game time by 30 game minutes.
     // Computed from the real-clock delta so the clock stays continuous even if
     // ticks miss/throttle (browser tab backgrounded, etc).
     if (window.SSDGame.gameClock) window.SSDGame.gameClock.advanceFromTick();
@@ -69,27 +69,37 @@
     // 11. Lifespan system — days-captive aging + neglect/care evaluation + terminal state transitions
     if (window.SSDGame.lifespan) window.SSDGame.lifespan.tickAll();
 
-    // 12. Pregnancy — Phase 21.10 (2026-05-14). Advance gestation by GESTATION_DAYS_PER_TICK
+    // 12. Pregnancy — advance gestation by GESTATION_DAYS_PER_TICK
     // for every pregnant captive; auto-resolve at day 280 (birthed / sold / lost branches).
     if (window.SSDGame.pregnancy) window.SSDGame.pregnancy.tickPregnancies();
 
-    // 13. Stamina + health drain/regen — Phase 21.17 (2026-05-14). Starvation/dehydration/
+    // 13. Stamina + health drain/regen. Starvation/dehydration/
     // chronic-bruise penalties + passive rest regen when no negative pressure is active.
     if (window.SSDGame.actionEffects) window.SSDGame.actionEffects.tickStaminaHealth();
 
-    // 14. Whore-out john arrivals — Phase 21.16 (2026-05-14). Per-rate arrival rolls per
+    // Player satisfaction slow decay — without intimacy this tick, the meter drifts down.
+    // 0.5/tick = full decay (50 → 0) over ~100 ticks (~50 real minutes). Sex acts via
+    // applyAction bump it back up; balance is tuned for "stop hunting and fuck for a bit"
+    // to be a real strategic choice.
+    if (window.SSDGame.state?.current?.wallet) {
+      const w = window.SSDGame.state.current.wallet;
+      const cur = typeof w.playerSatisfaction === 'number' ? w.playerSatisfaction : 50;
+      if (cur > 0) w.playerSatisfaction = Math.max(0, cur - 0.5);
+    }
+
+    // 14. Whore-out john arrivals. Per-rate arrival rolls per
     // whored-out captive; each arrival resolves the encounter, drains stamina via action-
     // effects, accrues unclaimedEarnings, persists to johnLedger, fires pregnancy hook on
     // vaginal-cum + !condomUsed.
     if (window.SSDGame.whoreOut) window.SSDGame.whoreOut.runJohnTick();
   }
 
-  // Decay food + water per tick, GATED by the hold's automation tiers (Phase 21.9, 2026-05-14).
+  // Decay food + water per tick, GATED by the hold's automation tiers.
   // Gating rules:
   //   - Water decay zeroes if hold's `toilet` tier >= 2 (full plumbing) OR
   //                            hold's `waterSupply` tier >= 2 (plumbed faucet+).
-  //     Reflects Gee verbatim: "if they have a toilet they no longer need a water supply from
-  //     the user to give it". Plumbed sources draw their own water — no manual stock burn.
+  //     A captive with a toilet no longer needs a manual water supply — plumbed sources
+  //     draw their own water, so no manual stock burn.
   //   - Food decay zeroes if hold's `feedAutomation` tier >= 2 (auto-feeder dispenser+).
   //     Auto-feeder + IV-line draw from their own reservoir of stocked feed (game-abstract);
   //     player still buys food via the shop to bump the food.tier quality multiplier, but

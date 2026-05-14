@@ -4,12 +4,11 @@
 (function () {
   'use strict';
 
-  // Per-room 12-track upgrade definitions with per-tier costs.
-  // Phase 21.9 (2026-05-14) added feedAutomation + waterSupply — gates consumable decay
-  // in tick.js. Plumbed toilet (tier 2) OR plumbed waterSupply (tier 2) zeroes water decay;
-  // auto-feeder (tier 2) or IV-line (tier 3) zeroes food decay. Gee verbatim 2026-05-14:
-  // "we need an easier and upgradable way to feed and water the girls(automatic once
-  // upgradable)" + "if they have a toilet they no longer need a water supply from the user".
+  // Per-room 12-track upgrade definitions with per-tier costs. feedAutomation +
+  // waterSupply gate consumable decay in tick.js. Plumbed toilet (tier 2) OR plumbed
+  // waterSupply (tier 2) zeroes water decay; auto-feeder (tier 2) or IV-line (tier 3)
+  // zeroes food decay. The intent is an upgradable feed/water automation path that
+  // becomes hands-off once plumbed.
   const UPGRADE_TRACKS = {
     security:       { label: '🔒 Security',       maxTier: 4, tierCosts: [0, 60,  250, 800, 2400], tierNames: ['basic latch','deadbolt','steel+combo','biometric','vault-grade'] },
     restraints:     { label: '⛓️ Restraints',      maxTier: 5, tierCosts: [0, 80,  220, 600, 1400, 3000], tierNames: ['bare','floor ring + chain','bed cuffs','full harness rig','wall spread-eagle rig','institution-grade'] },
@@ -58,7 +57,7 @@
     return { ok: true, track: trackKey, newTier: nextTier, cost };
   }
 
-  // --- Capacity expansion (T27.5) ---
+  // --- Capacity expansion ---
   function nextCapacityUpgrade(dungeon) {
     const tpl = window.SSDAssets.getById('dungeon', dungeon.templateId);
     if (!tpl || !Array.isArray(tpl.capacityUpgrades)) return null;

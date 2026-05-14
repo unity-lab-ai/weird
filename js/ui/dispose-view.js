@@ -61,7 +61,7 @@
           </div>`;
           el.innerHTML = resultHtml;
 
-          // Phase 21.21 — generate + render the per-method final-scene image (async).
+          // Generate + render the per-method final-scene image (async).
           // Methods covered: bury / lose-at-sea / incinerate / release / finalization-film.
           // `trade` doesn't generate an image (girl goes to slave market alive).
           const imgSlot = el.querySelector('#dispose-final-image');

@@ -97,8 +97,13 @@
         <div class="btn-row">
           <button class="btn-small btn-danger" id="new-game-btn">🔄 Start over (new game)</button>
           <button class="btn-small btn-danger" id="wipe-all">💥 Wipe ALL saves + settings</button>
+          <button class="btn-small btn-danger" id="full-nuke" style="border:2px solid #ff3060;background:#3a0a14;">☢️ FULL NUKE — delete ALL user data (fresh slate)</button>
         </div>
-        <p class="small muted">"Start over" wipes the current save and opens the new-game setup (mode + starter options). Preserves your Ollama/Kokoro/Pollinations settings.</p>
+        <p class="small muted">
+          <b>Start over</b> — wipes the current save, opens the new-game setup. Keeps Ollama/Kokoro/Pollinations settings.<br>
+          <b>Wipe ALL saves + settings</b> — wipes IndexedDB + every <code>ssd_*</code> localStorage key. Age-gate stays accepted.<br>
+          <b>FULL NUKE</b> — burns the whole origin down: IndexedDB, ALL localStorage (incl. age verification + ToS acceptance), sessionStorage. You'll re-verify 18+ and re-accept ToS on next load. Fresh slate, no traces.
+        </p>
       </div>
     `;
 
@@ -193,8 +198,18 @@
       };
     });
 
+    // Pre-wipe shutdown sequence prevents the 30-second tick from firing a background
+    // save() that repopulates IndexedDB after wipeAll(). The _nuking flag short-circuits
+    // state.save() while the wipe is in flight.
+    function shutdownBeforeWipe() {
+      try { if (window.SSDGame?.tick) window.SSDGame.tick.stop(); } catch {}
+      try { if (window.SSDVoiceQueue) window.SSDVoiceQueue.cancel(); } catch {}
+      try { if (window.SSDGame?.state) window.SSDGame.state._nuking = true; } catch {}
+    }
+
     el.querySelector('#new-game-btn').onclick = async () => {
       if (!confirm('Start over? Wipes your current save but keeps your settings (Ollama model, Kokoro voice, Pollinations key).')) return;
+      shutdownBeforeWipe();
       await window.SSDStorage.wipeAll();
       // Keep settings-y localStorage, wipe game-state pointers only
       for (const k of Object.keys(localStorage)) {
@@ -208,9 +223,23 @@
 
     el.querySelector('#wipe-all').onclick = async () => {
       if (!confirm('WIPE ALL DATA? This cannot be undone.')) return;
+      shutdownBeforeWipe();
       await window.SSDStorage.wipeAll();
       for (const k of Object.keys(localStorage)) if (k.startsWith('ssd_')) localStorage.removeItem(k);
       location.reload();
+    };
+
+    // FULL NUKE — burns the origin down: IndexedDB + ALL localStorage (including
+    // age-gate + ToS acceptance) + sessionStorage. No survivors.
+    el.querySelector('#full-nuke').onclick = async () => {
+      if (!confirm('FULL NUKE — delete EVERYTHING: game data, Pollinations key, age verification, ToS acceptance, all preferences. You will re-verify 18+ and re-accept the ToS on the next load. This cannot be undone. Proceed?')) return;
+      if (!confirm('Second confirmation — really wipe ALL user data?')) return;
+      shutdownBeforeWipe();
+      try { await window.SSDStorage.wipeAll(); } catch (e) { console.warn('IDB wipe failed:', e); }
+      try { localStorage.clear(); } catch (e) { console.warn('localStorage clear failed:', e); }
+      try { sessionStorage.clear(); } catch (e) { console.warn('sessionStorage clear failed:', e); }
+      // Hard-reset hash + reload to landing page so age-gate fires from scratch
+      location.href = './index.html';
     };
   }
 

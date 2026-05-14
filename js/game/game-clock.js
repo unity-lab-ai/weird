@@ -1,10 +1,5 @@
 // SEX SLAVE DUNGEON — running in-game day clock.
 //
-// Gee verbatim 2026-05-14: "there need to be a running day clock like 1 real
-// second = 1 game minute.. 3 game days with out water and 5 game days without
-// food they will begin to lose health and have max stamina fall so if health
-// is lower the maximum stamina can reach is reduced also".
-//
 // Time model:
 //   1 real second  = 1  game minute
 //   60 real sec    = 1  game hour

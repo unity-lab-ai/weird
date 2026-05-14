@@ -33,14 +33,10 @@
     return Math.floor(ageOffset + yearsElapsed);
   }
 
-  // BUG.14 fix (2026-05-14) — lifespan state is now DERIVED from body.health + body.stamina
-  // rather than tracked as a separate scalar that drifted independently. Previous behavior
-  // showed a "🔴 Terminal" popup while the girl's HP bar still read 100% — the lifespan.score
-  // was a separate degrading variable that crashed within ~20 ticks even when the player was
-  // feeding her and her body.health was untouched.
-  //
-  // Gee verbatim 2026-05-14: "im getting popups saying Unity is terminal but her health
-  // shows health.. why are my girls dying so fucking fast?"
+  // Lifespan state is DERIVED from body.health + body.stamina rather than tracked as a
+  // separate scalar that drifted independently. The prior independent-scalar design showed
+  // "Terminal" popups while the girl's HP bar still read 100% — the lifespan.score crashed
+  // within ~20 ticks even when the player was feeding her and her body.health was untouched.
   //
   // New design: lifespan.state is a UX label for the composite body vital. body.health is
   // the authoritative number (drained by tickStaminaHealth in action-effects.js, restored

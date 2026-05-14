@@ -1,7 +1,7 @@
 // SEX SLAVE DUNGEON — content market page (films).
 //
-// Phase 21.20 (2026-05-14) rewrite. "Sales pass" button removed — films auto-sell on the
-// tick.js schedule. Per-film passive-earnings ticker + "Sell negatives" premium button.
+// Films auto-sell on the tick.js schedule (no manual "sales pass" button).
+// Per-film passive-earnings ticker + "Sell negatives" premium button.
 // Legacy 'sold' films (one-shot consumables from before the rewrite) still render in the
 // Sales history section for back-compat.
 
@@ -58,7 +58,7 @@
 
       <div class="panel">
         <h2>Sales history — legacy single-shot (${sold.length})</h2>
-        ${sold.length === 0 ? `<p class="muted small">No legacy sales recorded. Phase 21.20 made films infinite-copy assets — old saves' "sold" rows still appear here for history.</p>` :
+        ${sold.length === 0 ? `<p class="muted small">No legacy sales recorded. Films are infinite-copy assets now — old saves' "sold" rows still appear here for history.</p>` :
           `<ul class="film-list">${sold.map(f => `
             <li class="film-item">
               <div>

@@ -10,8 +10,8 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="stylesheet" href="css/landing.css" />
   <style>
-    /* Phase 21.12 (2026-05-14) — public landing page sectioning. Each top-level section
-       is anchor-routed via simple hash-based show/hide; default route = home. */
+    /* Public landing page sectioning. Each top-level section is anchor-routed via
+       simple hash-based show/hide; default route = home. */
     .landing-section { display: none; }
     .landing-section.active { display: block; }
     .landing-nav { display: flex; gap: 12px; flex-wrap: wrap; padding: 8px 0 18px; border-bottom: 1px solid #2a2a2a; margin-bottom: 18px; }
@@ -68,7 +68,7 @@
   </header>
 
   <main class="container">
-    <!-- Phase 21.12 — top-level nav (anchor-routed) -->
+    <!-- top-level nav (anchor-routed) -->
     <nav class="landing-nav">
       <a href="#home" data-route="home">🏠 Home</a>
       <a href="#setup" data-route="setup">⚡ Setup</a>
@@ -808,8 +808,8 @@
   <script src="js/ui/settings.js"></script>
   <script src="js/ui/landing.js"></script>
 
-  <!-- Phase 21.12 (2026-05-14) — public landing page router. Hash-based show/hide for the
-       top-level sections (home / setup / about / terms / privacy / settings). Continue Game
+  <!-- Public landing page router. Hash-based show/hide for the top-level sections
+       (home / setup / about / terms / privacy / settings). Continue Game
        button visibility driven by IDB save detection. -->
   <script>
   (function () {

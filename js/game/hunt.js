@@ -114,7 +114,7 @@
     'underground-complex':   'the security door seals behind her with a professional hiss, recessed lighting, polished concrete reflecting'
   };
 
-  // --- Archetype capture-stage resistance (Phase 21.11, 2026-05-14) ---
+  // --- Archetype capture-stage resistance ---
   // Per-archetype per-stage resistance weights (0-50) for the 4-stage capture mechanic
   // (Approach → Engage → Subdue → Secure). Read by `js/game/capture.js` via
   // `window.SSDGame.hunt.ARCHETYPE_CAPTURE_RESISTANCE`. Library/barista = low across the
@@ -186,6 +186,11 @@
     const suspicionPenalty = Math.min(0.45, suspicion * 0.08);
     const exposure = LOCATION_EXPOSURE[locationId] || 0;
 
+    // Player satisfaction hunting bonus — fuck enough captives, the next catch is easier.
+    // Center at 50 → 0 swing; full 100 → +0.20; floor 0 → -0.10.
+    const playerSat = window.SSDGame.state.current?.wallet?.playerSatisfaction ?? 50;
+    const satisfactionBonus = ((playerSat - 50) / 50) * (playerSat >= 50 ? 0.20 : 0.10);
+
     const breakdown = {
       baseline:            0.40,
       toolPower:           +toolPower,
@@ -194,7 +199,8 @@
       intelligence:        -(intelligence / 100) * 0.12,
       notorietyBonus:      +Math.min(0.12, notoriety * 0.004),
       suspicionPenalty:    -suspicionPenalty,
-      exposurePenalty:     -exposure
+      exposurePenalty:     -exposure,
+      satisfactionBonus:   +satisfactionBonus
     };
     const sumRaw =
       breakdown.baseline +
@@ -204,7 +210,8 @@
       breakdown.intelligence +
       breakdown.notorietyBonus +
       breakdown.suspicionPenalty +
-      breakdown.exposurePenalty;
+      breakdown.exposurePenalty +
+      breakdown.satisfactionBonus;
 
     const successP = Math.max(0.05, Math.min(0.95, sumRaw));
 
@@ -223,8 +230,8 @@
   }
 
   // Resolve a single-tool capture attempt.
-  // SUPERSEDED Phase 21.11 (2026-05-14) by `window.SSDGame.capture.runAttempt()` — the new
-  // 4-stage progress-bar mechanic. This function is retained for backward compatibility
+  // SUPERSEDED by `window.SSDGame.capture.runAttempt()` — the 4-stage progress-bar
+  // mechanic. This function is retained for backward compatibility
   // (external callers / debug utilities) but the hunt UI no longer calls it. New game code
   // should use `SSDGame.capture.runAttempt({girl, toolPerStage, locationId})` instead.
   // Returns { outcome: 'success'|'partial-fail'|'fail'|'critical-fail', ... }

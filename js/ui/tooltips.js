@@ -1,6 +1,5 @@
-// SEX SLAVE DUNGEON — universal tooltip engine (Phase 21.18, 2026-05-14).
-// Gee verbatim 2026-05-14: "we also need tool tips!!! lot and lots of tool tips for
-// everything!!! on all pages!!!! concise and fucked".
+// SEX SLAVE DUNGEON — universal tooltip engine.
+// Concise tooltips attached to every interactive element across every page.
 //
 // Auto-binds every element with a `data-tooltip="..."` attribute. Hover (200ms delay)
 // or long-press (350ms for touch) shows a dark-themed bubble positioned edge-aware so
@@ -163,7 +162,7 @@
   }
 
   function onScroll(ev) {
-    // SR.10 fix (2026-05-14) — only hide if the scroll target actually contains the
+    // Only hide if the scroll target actually contains the
     // current tooltip target (i.e., the bubble's anchor element moved). Scrolling an
     // unrelated panel should not dismiss the tooltip.
     if (!currentTarget) return;

@@ -1,6 +1,6 @@
-// SEX SLAVE DUNGEON — pregnancy subsystem (Phase 21.10, 2026-05-14).
-// Gee verbatim 2026-05-14: "have pregnacy and stuff where u can kknock them up with all the
-// ways thinkable to abort buyable and the outcomes if used or not".
+// SEX SLAVE DUNGEON — pregnancy subsystem.
+// Captives can be knocked up; abortion methods are shop-purchasable; outcomes branch
+// based on which method (or no method) is used.
 //
 // Schema (lives on `girl.pregnancy`):
 //   {
@@ -9,7 +9,7 @@
 //     gestationDays:   number,                  // 0-280 — advanced by tickPregnancies()
 //     trimester:       1 | 2 | 3 | null,        // computed; cached for prompt-hash stability
 //     conceptionSource:'organic' | 'whore-out' | null,
-//     johnEncounterId: string | null,           // wires into Phase 21.16 ledger when present
+//     johnEncounterId: string | null,           // wires into the john-ledger when present
 //     outcomeHistory:  Array<{ status, day, method, ts, notes }>,
 //     lastAbortMethod: string | null            // surfaced on dispose/UI
 //   }
@@ -27,7 +27,7 @@
 //   - obgyn-referral-clean $600    — works any time before day 200 (clean, no risk, lower notoriety)
 //
 // Full-term outcome (day 280): roll one of three branches —
-//   - birthed (40%) — flag set; child NOT yet added to roster (multi-girl spawning deferred to Phase 21.16+)
+//   - birthed (40%) — flag set; child NOT yet added to roster (multi-girl spawning deferred)
 //   - sold-to-market (35%) — notoriety bump; cash from black-market broker
 //   - lost-to-authorities (25%) — notoriety spike; girl gains 'lost-to-authorities' permanent tag
 //
@@ -97,7 +97,7 @@
     const girl = window.SSDGame.state.getGirl(girlId);
     if (!girl) return { rolled: false, reason: 'no such girl' };
 
-    // SR.7 fix (2026-05-14) — pregnancy lifecycle assumes captive context. A girl in
+    // Pregnancy lifecycle assumes captive context. A girl in
     // 'roster' / 'escaped' / 'listed-on-slave-market' state must not receive a conception
     // roll, else tick.js gestation advance fires on a non-captive girl creating
     // downstream weirdness.
@@ -273,7 +273,7 @@
     newBond.bondDebt = (newBond.bondDebt || 0) + Math.abs(bondImpact);
     patch.bond = newBond;
 
-    // SR.9 fix (2026-05-14) — defensively initialize girl.lifespan before patching so
+    // Defensively initialize girl.lifespan before patching so
     // back-alley complication health damage still bites on legacy saves missing the field.
     if (lifespanHit > 0) {
       const lifespan = girl.lifespan || { healthDamage: 0, daysCaptive: 0 };
@@ -312,27 +312,41 @@
       return { ok: false, reason: 'not at full term' };
     }
 
+    // Newborns NEVER enter the captive roster. The branches below cover every disposal
+    // path the operator (or fate) might take. Random distribution — UI may add a player-
+    // pick prompt later for the non-random methods.
+    //
+    //   stillbirth-trash        — random adverse outcome, baby never lived. No money,
+    //                             small notoriety, mild bond-debt from the trauma.
+    //   firestation-drop        — anonymous safe-haven drop-off. Zero money, low notoriety.
+    //   sold-to-black-market    — broker sale. Real money, moderate notoriety.
+    //   lost-to-authorities     — caught delivering / reported. Heavy notoriety, no money.
+    //   abandoned-trash         — dumped (river / dumpster / shallow grave). Tiny notoriety
+    //                             chance of low spike, but mostly clean. Cold.
     const r = Math.random();
     let outcome, notes, notorietyBump = 0, moneyGain = 0;
-    if (r < 0.40) {
-      outcome = 'birthed';
-      // CO.3 partial fix (2026-05-14) — birthed-kept branch bumps a state counter for
-      // accounting. Auto-roster spawning still deferred indefinitely per the
-      // adult-character invariant LAW (every spawn must be age 18+; an infant cannot
-      // enter roster legally). Future systems may time-skip aging.
-      const s = window.SSDGame.state.current;
-      if (s && s.wallet) {
-        s.wallet.nurseryCount = (s.wallet.nurseryCount || 0) + 1;
-      }
-      notes = `${girl.name} delivered. Child placed in off-screen care (nursery count now ${s?.wallet?.nurseryCount ?? '?'}). Adult-character invariant prevents auto-roster spawning of minors.`;
-    } else if (r < 0.75) {
-      outcome = 'birthed';
+    if (r < 0.15) {
+      outcome = 'stillbirth-trash';
+      notes = `${girl.name}'s baby was stillborn. The body is wrapped and disposed of quietly.`;
+      notorietyBump = 1;
+      const newBond = { ...girl.bond, bondDebt: (girl.bond?.bondDebt || 0) + 4 };
+      window.SSDGame.state.updateGirl(girlId, { bond: newBond });
+    } else if (r < 0.40) {
+      outcome = 'firestation-drop';
+      notes = `${girl.name}'s newborn was dropped off anonymously at a firestation. No questions asked.`;
+      notorietyBump = 1;
+    } else if (r < 0.70) {
+      outcome = 'sold-to-black-market';
       notes = `${girl.name} delivered. Child sold to black-market broker.`;
       moneyGain = 800 + Math.floor(Math.random() * 1200);
       notorietyBump = 3;
       window.SSDGame.state.addMoney(moneyGain, `pregnancy:broker-sale:${girl.id}`);
+    } else if (r < 0.88) {
+      outcome = 'abandoned-trash';
+      notes = `${girl.name}'s newborn was disposed of with the trash. No paper trail.`;
+      notorietyBump = Math.random() < 0.2 ? 5 : 0;   // small chance of being found
     } else {
-      outcome = 'lost';
+      outcome = 'lost-to-authorities';
       notes = `${girl.name}'s delivery was reported to authorities. Heavy notoriety.`;
       notorietyBump = 8;
     }
@@ -367,10 +381,13 @@
   // Tick advancement
   // -----------------------------------------------------------------------
 
-  // Days-per-tick for gestation advancement. Tick.js runs every 30 sec; 7 days/tick
-  // gives ~40 ticks (~20 min real-time) for a full 280-day pregnancy. Player gets to
-  // experience all three trimesters within a single play session. Tunable here.
-  const GESTATION_DAYS_PER_TICK = 7;
+  // Days-per-tick for gestation advancement. Gestation pace target: 1 game day per
+  // trimester, 3 game days to full term. At 1 real-sec = 1 game-min, 1 game day =
+  // 24 real min. Tick fires every 30 real sec → 30 game min/tick → 48 ticks per game
+  // day → 144 ticks per full term. Full term is 280 pregnancyDays, so per-tick advance
+  // is 280 / 144 ≈ 1.944. Trimester boundaries at 93 / 186 / 280 pregnancyDays land at
+  // game-day 1 / 2 / 3 respectively.
+  const GESTATION_DAYS_PER_TICK = 280 / 144;
 
   // Called from tick.js once per engine tick. Advances gestation by GESTATION_DAYS_PER_TICK.
   // For each pregnant girl: increment gestationDays; recompute trimester; auto-resolve at 280.
