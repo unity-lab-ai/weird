@@ -180,7 +180,10 @@
       // things each have their stat boost and health + - 's for all actions". Stamina 70
       // default (slightly fatigued from capture). Health 100 default (intact). Both 0-100.
       // Action-effects.js tables per-action deltas; tick.js drains/regenerates.
-      body: { arousal: 14, wetness: 8, cumLoad: 0, bruises: 0, high: 0, stamina: 70, health: 100, activeDrugs: [], pose: 'seated, knees together', outfitState: 'intact' },
+      // BUG.15 (2026-05-14) — lastFedAt + lastWateredAt seeded to current gameClock.now()
+      // so the grace-period model in tickStaminaHealth starts the 5-day/3-day countdown
+      // from capture time, not from epoch.
+      body: { arousal: 14, wetness: 8, cumLoad: 0, bruises: 0, high: 0, stamina: 70, health: 100, activeDrugs: [], pose: 'seated, knees together', outfitState: 'intact', lastFedAt: window.SSDGame?.gameClock?.now() ?? 0, lastWateredAt: window.SSDGame?.gameClock?.now() ?? 0 },
       mood: { mood: 'terrified', moodEmoji: '😱', history: [] },
       stats,
       bond: { bondLevel: 0, bondXP: 0, bondDebt: 0, milestones: [] },
@@ -218,10 +221,14 @@
       ],
       currentOutfit: 'default',
 
-      // consumables (per-girl ongoing)
+      // consumables (per-girl ongoing). BUG.14 (2026-05-14) — bumped from 7/10
+      // to 25/35. Fresh captives now last ~25 ticks (12 min) before food empty
+      // and ~35 ticks (17 min) before water empty. Combined with softened
+      // starve/dehydrate rates this gives the player room to find the feed/water
+      // actions before vital crashes.
       consumables: {
-        food:  { tier: 0, stock: 7,  decayPerTick: 1 },
-        water: { tier: 0, stock: 10, decayPerTick: 1 },
+        food:  { tier: 0, stock: 25, decayPerTick: 1 },
+        water: { tier: 0, stock: 35, decayPerTick: 1 },
         light: { tier: 0, hoursPerDay: 12 }
       }
     };

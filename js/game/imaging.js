@@ -258,19 +258,22 @@
   // tpl.plotTokens + tpl.holdPrompt + tpl.displayName so each captive renders her specific
   // hold as the background. Hold-resolution order: hold.holdType (per-hold field, supports
   // future mixed-type capacity expansions) → tpl.holdType (template default).
+  // Phase 21.x BUG.10 + BUG.11 (2026-05-14) — every girl renders in a location-accurate
+  // environment, ALWAYS. Priority chain:
+  //   1. dungeonId set       → her assigned hold inside that dungeon
+  //   2. locationId set      → the hunt location's environment (hunt thumbs + previews)
+  //   3. situation 'capture' → dusk transit shot
+  //   4. situation 'film-cover' → stylized poster backdrop
+  //   5. ABSOLUTE LAST RESORT (girl has no dungeon, no location, no special situation —
+  //      shouldn't happen in practice) → moody concealed setting (NEVER plain white).
+  //
+  // Gee verbatim 2026-05-14: "not nutral the girls have to be imaged in their location
+  // always even when hunting around town the backdrop is the location u are hunting so
+  // the girls appear at the location they are being hunted at so their previews are
+  // acurat, then their clothing remains once captured and until changed(manhandled)".
   function envTokens({ situation, dungeonId, holdIdx, locationId }) {
-    if (situation?.startsWith('hunt-encounter')) return '';   // pose already includes env
-    if (situation === 'capture') return 'dim dusk, getting into a vehicle, ambient';
-    if (situation === 'film-cover') return 'stylized poster backdrop, editorial';
-
-    // BUG.10 fix (2026-05-14) — captive in a dungeon ALWAYS renders inside her assigned
-    // hold, regardless of situation. The previous behavior was to return "plain clean
-    // neutral backdrop" for situation === 'profile', which sent Ollama zero hold context
-    // and let the prompt-writer hallucinate settings from the captive's tokens (e.g.
-    // Unity's leather + rope-ladder + goth aesthetic pattern-matched to carnival in
-    // image-gen training data). Hold env wins whenever dungeonId is present; neutral
-    // backdrop only applies to non-captive / non-assigned profile previews (slave-market
-    // NPC listings, hunt thumbs before capture, wishlist previews).
+    // 1. CAPTIVE IN DUNGEON — wins regardless of situation. Once she's in your hold,
+    //    every image of her is rendered inside that hold.
     if (dungeonId) {
       const dungeon = window.SSDGame.state.getDungeon(dungeonId);
       const tpl = dungeon && window.SSDAssets.getById('dungeon', dungeon.templateId);
@@ -290,9 +293,32 @@
       }
     }
 
-    // No dungeon assignment — situation-appropriate neutral defaults.
-    if (situation === 'profile') return 'plain clean neutral backdrop';
-    return 'ambient mood-appropriate backdrop';
+    // 2. HUNT LOCATION — previewing a girl spawned at a location. Prefer the
+    //    `personEnvPrompt` (phrased as a person-in-the-scene env description) over
+    //    the standalone `prompt` (which was authored as a town-overhead establishing
+    //    shot). Per Gee 2026-05-14: "you may have to fill out the location data that
+    //    dynamically is inserted into the meta prompts" — `personEnvPrompt` is that data.
+    if (locationId) {
+      const loc = window.SSDAssets.getById('location', locationId);
+      if (loc) {
+        const env = (loc.personEnvPrompt || loc.prompt || '').trim();
+        if (env) {
+          return `${loc.displayName} — ${env}`;
+        }
+        return `${loc.displayName} interior`;
+      }
+    }
+
+    // 3. Capture transit shot — she's between the location and the hold.
+    if (situation === 'capture') return 'dim dusk, getting into a vehicle, ambient';
+
+    // 4. Film cover composition.
+    if (situation === 'film-cover') return 'stylized poster backdrop, editorial';
+
+    // 5. ABSOLUTE LAST RESORT — moody dim concealed setting. NEVER plain white / clean
+    //    studio. If we hit this it means imaging was called without enough context;
+    //    fail-soft to something that won't look like a stock photoshoot.
+    return 'dim ambient hideout interior, moody concealed setting, low-key documentary lighting';
   }
 
   // --- Compose the full prompt ---
@@ -584,7 +610,7 @@ ${nudeStrength ? rulesNude : rulesClothed}
    When pregnancy.status is 'none' / 'aborted' / 'miscarried' / 'birthed' / 'lost', do NOT render any pregnancy markers. Adult-floor invariant (age 18+) already enforced by girl-gen — every pregnant captive is necessarily an adult.
 7. FRAME THE SUBJECT HEAD TO TOE — full body shot. NEVER use portrait, mugshot, headshot, bust, or waist-up framing. Every prompt MUST explicitly include "full body shot, head to toe in frame, complete figure visible" or equivalent language. The subject's feet must be visible in the composition.
 8. All subjects are adults age 18 or older. Use the GIRL CONTEXT 'age' value verbatim (e.g. "age 18", "age 22", "age 27") — NEVER hardcode "20s" or any range that excludes 18-19.
-9. HOLD ENVIRONMENT IS THE SETTING — when GIRL CONTEXT lists a 'hold environment' value, that is the EXACT setting where the scene takes place. Place its full comma-separated description verbatim at POSITION 3 of the prompt — immediately after the front-loaded NUDITY block (nude) or face description (clothed). NEVER invent a different location. NEVER use the captive's archetype, backstory, outfit, or pose tokens to infer a different setting (no carnival, no circus, no nightclub, no street, no studio, no beach, no forest unless the hold environment SAYS forest). NEVER abbreviate the hold environment to a single keyword. NEVER bury it as a tail keyword. Use every comma-separated descriptor including the "specifically:" sub-phrase that names the captive's exact hold within the larger location. If a USER STAGING DIRECTIVE provides a setting override, the user wins; otherwise the hold environment is non-negotiable.
+9. ENVIRONMENT IS THE SETTING — the 'hold environment' value in GIRL CONTEXT (when present) is the EXACT location where this scene takes place. Place its full comma-separated description verbatim at POSITION 3 of the prompt — immediately after the front-loaded NUDITY block (nude) or face description (clothed). Use every comma-separated descriptor. The "specifically:" sub-phrase names the captive's exact hold within the larger location — include it verbatim. The setting controls the visible backdrop. A USER STAGING DIRECTIVE overrides only when the directive itself specifies a different setting.
 
 GIRL CONTEXT (all numerical values shown with their full scale per [[feedback-ai-values-with-scale]]):
 - name: ${girl.name}, age ${girl.age}, archetype: ${girl.archetypeTemplate}${girl.captiveAffect ? `, captive-affect: ${girl.captiveAffect}` : ''}

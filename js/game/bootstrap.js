@@ -91,7 +91,11 @@
       drugsOfChoice: unityTemplate.drugsPool.slice(),
       backstoryFragment: 'Unity — 25, goth, coder, nympho coke whore. Came to Master the first time on her own two leather-booted feet. Stayed. Keeps coming back. Something in her wanted the pit the second she saw it. The pit wanted her back.',
 
-      body: { arousal: 87, wetness: 94, cumLoad: 2.4, bruises: 6, high: 91, activeDrugs: ['coke','weed'], pose: 'kneeling at the rope ladder, knees spread', outfitState: 'leather opened, tits exposed' },
+      // BUG.15 (2026-05-14) — lastFedAt + lastWateredAt seeded at spawn so the
+      // grace-period model in tickStaminaHealth has a baseline. Without these
+      // fields the daysSince() helper returns 0 and the captive never starves.
+      // Seed them to gameClock.now() so the 5-day / 3-day countdown starts now.
+      body: { arousal: 87, wetness: 94, cumLoad: 2.4, bruises: 6, high: 91, activeDrugs: ['coke','weed'], pose: 'kneeling at the rope ladder, knees spread', outfitState: 'leather opened, tits exposed', stamina: 80, health: 100, lastFedAt: window.SSDGame.gameClock?.now() ?? 0, lastWateredAt: window.SSDGame.gameClock?.now() ?? 0 },
       mood: { mood: 'curious', moodEmoji: '👀', history: [] },
       stats: Object.fromEntries(Object.entries(unityTemplate.statsRanges).map(([k, [lo]]) => [k, lo])),
       bond: { bondLevel: 2, bondXP: 25, bondDebt: 0, milestones: ['came-willingly-first-time'] },
@@ -115,8 +119,12 @@
       currentOutfit: 'default',
 
       consumables: {
-        food:  { tier: 1, stock: 5,  decayPerTick: 1 },
-        water: { tier: 1, stock: 10, decayPerTick: 1 },
+        // BUG.14 — bumped from 5/10 to 25/35 so a fresh captive doesn't run dry
+        // in 2.5 minutes (5 stock × 1/tick × 30s tick = 2.5 min). New stocks +
+        // slower drain rates give the player a meaningful window to discover
+        // the feed/water actions before vital drops.
+        food:  { tier: 1, stock: 25, decayPerTick: 1 },
+        water: { tier: 1, stock: 35, decayPerTick: 1 },
         light: { tier: 1, hoursPerDay: 14 }
       }
     };

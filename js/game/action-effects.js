@@ -143,17 +143,23 @@
     // -----------------------------------------------------------------
     // PASSIVE STARVATION / DEHYDRATION — applied by tick.js when supplies hit 0
     // -----------------------------------------------------------------
+    // BUG.14 (2026-05-14) — drain rates softened. Previous combined starve+dehydrate
+    // health drain was -8/tick (-3 + -5) and 30-second ticks meant a captive went from
+    // 100 health to terminal in ~10 minutes real time, even with the player feeding her
+    // every few minutes. Per Gee verbatim: "why are my girls dying so fucking fast?"
+    // New rates give the player a meaningful window to react (~30-40 min from healthy
+    // to critical if completely neglected) while still rewarding attention.
     'starve-tick': {
-      stamina: -3, health: -3, mood: -5,
-      notes: 'Food at 0 — per-tick starvation drain. Compounds if persistent.'
+      stamina: -1, health: -1, mood: -3,
+      notes: 'Food at 0 — gentle starvation drain. Mood hits harder than health.'
     },
     'dehydrate-tick': {
-      stamina: -4, health: -5, mood: -6,
-      notes: 'Water at 0 — per-tick dehydration drain. More aggressive than starvation.'
+      stamina: -2, health: -2, mood: -4,
+      notes: 'Water at 0 — dehydration drains slightly faster than starvation but still gentle.'
     },
     'chronic-bruise-tick': {
-      stamina: -1, health: -2, mood: -2,
-      notes: 'Bruises ≥ 15 — chronic injury drain per tick.'
+      stamina: -1, health: -1, mood: -2,
+      notes: 'Bruises ≥ 15 — chronic injury drain per tick. Soft.'
     },
 
     // -----------------------------------------------------------------
@@ -198,13 +204,26 @@
     const bond = { ...girl.bond };
     const mood = { ...girl.mood };
 
-    if (action.stamina) {
-      const d = action.stamina < 0 ? action.stamina * strainMul : action.stamina;
-      body.stamina = clamp((body.stamina ?? 70) + d, 0, 100);
-    }
     if (action.health) {
       const d = action.health < 0 ? action.health * strainMul : action.health;
       body.health = clamp((body.health ?? 100) + d, 0, 100);
+    }
+    if (action.stamina) {
+      const d = action.stamina < 0 ? action.stamina * strainMul : action.stamina;
+      // BUG.15 — stamina capped by current health. Low health pulls down the
+      // stamina ceiling so a half-dead captive can't run at full stamina.
+      const ceiling = body.health ?? 100;
+      body.stamina = clamp((body.stamina ?? 70) + d, 0, ceiling);
+    }
+
+    // BUG.15 (2026-05-14) — feed/water actions reset the corresponding "last
+    // fed at" / "last watered at" game-clock timestamps so the grace-period
+    // model in tickStaminaHealth resets. Any action id starting with 'feed-'
+    // touches lastFedAt; any starting with 'water-' touches lastWateredAt.
+    if (window.SSDGame.gameClock) {
+      const now = window.SSDGame.gameClock.now();
+      if (actionId.startsWith('feed-')) body.lastFedAt = now;
+      if (actionId.startsWith('water-')) body.lastWateredAt = now;
     }
     if (action.arousal) body.arousal = clamp((body.arousal ?? 0) + action.arousal, 0, 100);
     if (action.wetness) body.wetness = clamp((body.wetness ?? 0) + action.wetness, 0, 100);
@@ -268,48 +287,65 @@
 
   // Defensive helper for any subsystem that needs to advance the body fields per-tick.
   // Used by tick.js to evaluate health-decline factors + passive rest regen.
+  // BUG.15 (2026-05-14) — grace-period model + stamina-capped-by-health.
+  // Gee verbatim: "3 game days with out water and 5 game days without food they
+  // will begin to lose health and have max stamina fall so if health is lower
+  // the maximum stamina can reach is reduced also".
+  //
+  // Health drain ONLY kicks in once the grace period expires:
+  //   - Water grace: 3 game days (body.lastWateredAt vs gameClock.now())
+  //   - Food grace:  5 game days (body.lastFedAt vs gameClock.now())
+  // Before the grace expires, the captive sits in passive-rest regen even
+  // when her consumable stocks are 0.
+  //
+  // Stamina max-cap = body.health. Low health pulls down the stamina ceiling,
+  // so a half-dead captive can't run at full stamina even when rested.
+  const WATER_GRACE_DAYS = 3;
+  const FOOD_GRACE_DAYS = 5;
   function tickStaminaHealth() {
     const s = window.SSDGame.state.current;
     if (!s) return;
+    const clock = window.SSDGame.gameClock;
     for (const girl of s.roster) {
       if (girl.encounterState !== 'captive') continue;
       const body = girl.body || {};
-      const food = girl.consumables?.food?.stock || 0;
-      const water = girl.consumables?.water?.stock || 0;
       const bruises = body.bruises || 0;
 
-      // Build a delta envelope; apply once.
-      let staminaDelta = 0;
-      let healthDelta = 0;
-      const reasons = [];
+      const daysSinceFed = clock ? clock.daysSince(body.lastFedAt) : 0;
+      const daysSinceWatered = clock ? clock.daysSince(body.lastWateredAt) : 0;
+      const starving = daysSinceFed > FOOD_GRACE_DAYS;
 
-      // Starvation
-      if (food === 0) {
-        staminaDelta += ACTIONS['starve-tick'].stamina;
-        healthDelta += ACTIONS['starve-tick'].health;
-        reasons.push('starving');
-      }
-      // Dehydration
-      if (water === 0) {
-        // Check if the hold provides plumbed water
+      // Plumbed-water override — captive with toilet tier 2+ or waterSupply tier 2+ never dehydrates.
+      let dehydrated = daysSinceWatered > WATER_GRACE_DAYS;
+      if (dehydrated) {
         const dungeon = window.SSDGame.state.getDungeon(girl.assignedDungeonId);
         const hold = dungeon?.holds?.[girl.assignedHoldIdx ?? 0];
         const toiletTier = hold?.upgrades?.toilet ?? 0;
         const waterSupplyTier = hold?.upgrades?.waterSupply ?? 0;
-        if (toiletTier < 2 && waterSupplyTier < 2) {
-          staminaDelta += ACTIONS['dehydrate-tick'].stamina;
-          healthDelta += ACTIONS['dehydrate-tick'].health;
-          reasons.push('dehydrated');
-        }
+        if (toiletTier >= 2 || waterSupplyTier >= 2) dehydrated = false;
       }
-      // Chronic bruising
+
+      let staminaDelta = 0;
+      let healthDelta = 0;
+      const reasons = [];
+
+      if (starving) {
+        staminaDelta += ACTIONS['starve-tick'].stamina;
+        healthDelta += ACTIONS['starve-tick'].health;
+        reasons.push('starving');
+      }
+      if (dehydrated) {
+        staminaDelta += ACTIONS['dehydrate-tick'].stamina;
+        healthDelta += ACTIONS['dehydrate-tick'].health;
+        reasons.push('dehydrated');
+      }
       if (bruises >= 15) {
         staminaDelta += ACTIONS['chronic-bruise-tick'].stamina;
         healthDelta += ACTIONS['chronic-bruise-tick'].health;
         reasons.push('chronic-injury');
       }
 
-      // Passive rest regen — only if there's no negative pressure this tick
+      // Passive rest regen — when no negative pressure this tick.
       if (staminaDelta === 0 && healthDelta === 0) {
         staminaDelta += ACTIONS['rest-tick'].stamina;
         healthDelta += ACTIONS['rest-tick'].health;
@@ -317,8 +353,11 @@
 
       if (staminaDelta !== 0 || healthDelta !== 0) {
         const newBody = { ...body };
-        newBody.stamina = clamp((body.stamina ?? 70) + staminaDelta, 0, 100);
-        newBody.health = clamp((body.health ?? 100) + healthDelta, 0, 100);
+        const newHealth = clamp((body.health ?? 100) + healthDelta, 0, 100);
+        // Stamina capped by health — low health pulls down the stamina ceiling.
+        const staminaCeiling = newHealth;
+        newBody.health = newHealth;
+        newBody.stamina = clamp((body.stamina ?? 70) + staminaDelta, 0, staminaCeiling);
         window.SSDGame.state.updateGirl(girl.id, { body: newBody, _lastStaminaReasons: reasons });
       }
     }

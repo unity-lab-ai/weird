@@ -26,11 +26,22 @@
   // LOCATIONS — outside world hunt locations. Each also doubles as a slot-item
   // the player plots into the town grid.
   // =========================================================================
+  // Each location carries TWO env strings:
+  //   `prompt`          — standalone town-overhead / establishing shot (used by the Town
+  //                       Plot view's full-res render). No person in frame.
+  //   `personEnvPrompt` — environment description for when a girl is rendered AT this
+  //                       location (hunt encounter thumbs, hunt previews, propositioner
+  //                       venue-at-location). Phrased as "in/at/on the X, with Y around
+  //                       her" so the image-gen places the captive INSIDE the scene
+  //                       instead of treating the location as a separate establishing
+  //                       shot. Per Gee 2026-05-14: "you may have to fill out the
+  //                       location data that dynamically is inserted into the meta prompts".
   const LOCATIONS = [
     {
       id: 'street', displayName: 'Main Street', emoji: '🏙️',
       category: 'location', subcategory: 'easy',
       prompt: 'wide documentary photograph of a downtown main street at dusk, neon signs reflecting on damp pavement, pedestrians passing blurred, brick facades, mood of a city that keeps its own business, 35mm film look, muted color grade',
+      personEnvPrompt: 'on a downtown main-street sidewalk at dusk, neon signs reflecting on damp pavement behind her, brick storefronts lining the block, an alley mouth to one side, distant pedestrian silhouettes passing in the background, sodium-lamp orange light mixing with neon, urban-street documentary atmosphere',
       cost: 0, unlock: { default: true },
       gridPlacement: { x: 0, y: 0 },
       notes: 'Starter location. Low-difficulty hunts. Public setting — tough for capture attempts.'
@@ -39,6 +50,7 @@
       id: 'club', displayName: 'Pink Room Club', emoji: '🍸',
       category: 'location', subcategory: 'medium',
       prompt: 'exterior establishing shot of a trendy urban nightclub, pink and purple neon signage, bouncer silhouette at velvet rope, wet city street reflecting the lights, moody nightlife photography, cinematic color grade',
+      personEnvPrompt: 'inside the pink-and-purple-lit nightclub, standing or leaning at the bar rail, pink neon glow on her skin, glassware reflecting the lights, dark silhouettes of dancing patrons in the background, low ceiling with hanging fixtures, wet-look bar surface, moody nightclub interior, faint smoke haze',
       cost: 500, unlock: { minNotoriety: 0 },
       gridPlacement: { x: 1, y: 0 },
       notes: 'Medium-difficulty. Drug-forward spawns. Loud, crowded.'
@@ -47,6 +59,7 @@
       id: 'library', displayName: 'Old Library', emoji: '📚',
       category: 'location', subcategory: 'medium',
       prompt: 'interior photograph of a vintage public library reading room, tall wooden shelves, warm reading lamps, late-afternoon light through arched windows, quiet studious atmosphere, shallow depth of field',
+      personEnvPrompt: 'inside a vintage public-library reading room, tall dark-wood shelves rising behind her, a long oak study table with green-shaded reading lamps casting warm pools of light, late-afternoon sun slanting through tall arched windows, dust motes hanging in the air, hush of stacked books, quiet studious atmosphere',
       cost: 400, unlock: { minNotoriety: 0 },
       gridPlacement: { x: 3, y: 0 },
       notes: 'Medium-difficulty. Shy bookish spawns. Quiet setting good for discreet approach.'
@@ -55,6 +68,7 @@
       id: 'park', displayName: 'Westwood Park', emoji: '🌳',
       category: 'location', subcategory: 'easy',
       prompt: 'golden hour photograph of an urban park, tree-lined paths, joggers and dog-walkers in background, sunlight through leaves, peaceful open setting, lifestyle photography',
+      personEnvPrompt: 'in an urban park during golden hour, tree-lined gravel path stretching behind her, dappled sunlight through tall oak leaves, distant joggers and dog-walkers as soft silhouettes, lifestyle-photography mood, late-afternoon warm color cast, peaceful open setting',
       cost: 200, unlock: { default: true },
       gridPlacement: { x: 4, y: 0 },
       notes: 'Easy. Mixed spawns. Very public — difficult for capture attempts.'
@@ -63,6 +77,7 @@
       id: 'gym', displayName: 'Iron Gym', emoji: '🏋️',
       category: 'location', subcategory: 'medium',
       prompt: 'interior of a modern fitness center, rack of weights, athletic-apparel silhouettes mid-workout, fluorescent lighting, active energy, commercial gym aesthetic, wide angle',
+      personEnvPrompt: 'inside a modern fitness center, weight rack and dumbbell display visible behind her, mirrored wall reflecting the floor, fluorescent overhead lighting, rubberized matting underfoot, distant silhouettes mid-workout, commercial-gym aesthetic, active energetic atmosphere',
       cost: 500, unlock: { minNotoriety: 1 },
       gridPlacement: { x: 1, y: 1 },
       notes: 'Medium. Athletic spawns. Members come and go — moderate foot traffic.'
@@ -71,6 +86,7 @@
       id: 'mall', displayName: 'Downtown Mall', emoji: '🏬',
       category: 'location', subcategory: 'medium',
       prompt: 'bright modern shopping mall concourse, skylights, window displays of boutique stores, reflective tile floor, shoppers crossing frame, commercial photography style',
+      personEnvPrompt: 'inside a bright modern shopping-mall concourse, skylights overhead, polished tile floor reflecting boutique storefronts behind her, soft-lit window displays in the background, distant shoppers crossing frame as silhouettes, indoor commercial atmosphere, daylight from above',
       cost: 600, unlock: { minNotoriety: 1 },
       gridPlacement: { x: 2, y: 1 },
       notes: 'Medium. Mixed spawns. Very public, lots of cameras.'
@@ -79,6 +95,7 @@
       id: 'coffee-shop', displayName: 'Cup & Saucer', emoji: '☕',
       category: 'location', subcategory: 'easy',
       prompt: 'warm interior of an independent coffee shop, exposed brick, hanging pendant lights, barista behind bar, plants on the counter, cozy third-wave-coffee aesthetic, natural lighting',
+      personEnvPrompt: 'inside a warm independent coffee shop, exposed brick wall behind her, hanging pendant lights casting amber pools, espresso bar with brass fittings to one side, hanging trailing plants near the window, chalkboard menu in the background, cozy third-wave-coffee aesthetic, natural daylight from a streetfront window',
       cost: 300, unlock: { default: true },
       gridPlacement: { x: 4, y: 1 },
       notes: 'Easy. Barista / student / writer spawns. Intimate setting.'
@@ -87,6 +104,7 @@
       id: 'sorority', displayName: 'Greek Row', emoji: '🏛️',
       category: 'location', subcategory: 'hard',
       prompt: 'afternoon shot of a stately Greek-letter house on a tree-lined college street, white-columned porch, landscaped lawn, banner with Greek letters, collegiate atmosphere, editorial photography',
+      personEnvPrompt: 'on the white-columned porch of a stately Greek-letter sorority house, hanging Greek-letter banner visible behind her, tree-lined college street and landscaped front lawn out of frame, afternoon sun warming the columns, ivy on the brick, collegiate editorial atmosphere, neighbors\' houses faintly visible down the row',
       cost: 1500, unlock: { minNotoriety: 3 },
       gridPlacement: { x: 0, y: 2 },
       notes: 'Hard. Vibrant, polished spawns. Alumni connections increase suspicion.'
@@ -95,6 +113,7 @@
       id: 'remote', displayName: 'Backroads', emoji: '🛣️',
       category: 'location', subcategory: 'hard',
       prompt: 'dusk landscape photograph of a two-lane backroad winding through scrubland, single car headlights approaching, power lines following the road, wide horizon, isolated-highway photography',
+      personEnvPrompt: 'on a two-lane backroad at dusk, scrubland and low brush stretching to a wide horizon behind her, power lines following the road into the distance, asphalt with painted yellow centerline visible at her feet, distant single car headlights approaching, isolated-highway atmosphere, deep-orange sunset color cast, nobody else in sight',
       cost: 800, unlock: { minNotoriety: 4 },
       gridPlacement: { x: 3, y: 2 },
       notes: 'Hard+. Rare hitchhiker-type spawns. Remote = excellent capture conditions.'
@@ -103,6 +122,7 @@
       id: 'hotel-lobby', displayName: 'Grand Hotel Lobby', emoji: '🏨',
       category: 'location', subcategory: 'hard',
       prompt: 'interior of an upscale hotel lobby, marble floor, modernist chandelier, concierge desk, leather seating areas, well-dressed guests crossing frame, luxury hospitality photography',
+      personEnvPrompt: 'inside an upscale hotel lobby, polished marble floor reflecting an enormous modernist crystal chandelier overhead, dark-wood concierge desk to one side, leather lobby seating areas in the background, brass elevator doors visible behind her, distant well-dressed guests crossing frame, luxury hospitality atmosphere, warm directional lighting',
       cost: 2000, unlock: { minNotoriety: 5 },
       gridPlacement: { x: 4, y: 2 },
       notes: 'Hard. High-end spawns. Heavy surveillance.'
@@ -111,6 +131,7 @@
       id: 'private-party', displayName: 'Private Party', emoji: '🎉',
       category: 'location', subcategory: 'hard',
       prompt: 'interior of an upscale house party, string lights, people mingling with drinks, record player in background, hardwood floors, warm ambient lighting, lifestyle-editorial photography',
+      personEnvPrompt: 'inside an upscale private house party, warm string lights crossing the ceiling above her, hardwood floors underfoot, vinyl record player on a side table playing, mid-century-modern furniture pushed back to a wall, partygoers mingling with drinks visible as soft-focus silhouettes behind her, lifestyle-editorial atmosphere, warm tungsten-tone lighting',
       cost: 1200, unlock: { minNotoriety: 6, requiredItems: ['fake-id'] },
       gridPlacement: { x: 0, y: 3 },
       notes: 'Hard. Invitation-only. Insider spawns. Risk of being recognized.'
@@ -119,6 +140,7 @@
       id: 'school-campus', displayName: 'Campus Quad', emoji: '🎓',
       category: 'location', subcategory: 'medium',
       prompt: 'wide shot of a university campus quad, ivy-covered brick buildings, students crossing with backpacks, autumn trees, cathedral-like clock tower in background, collegiate editorial photography',
+      personEnvPrompt: 'on a university campus quad, ivy-covered brick academic buildings rising behind her, autumn-leafed trees lining a flagstone path, distant students crossing with backpacks, cathedral-like clock tower visible in the background, autumn afternoon light, collegiate editorial atmosphere',
       cost: 700, unlock: { minNotoriety: 2 },
       gridPlacement: { x: 1, y: 3 },
       notes: 'Medium-hard. Young-adult spawns. Campus security.'

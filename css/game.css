@@ -7,7 +7,8 @@
   display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
 }
 .chrome-brand { font-family: var(--mono); letter-spacing: 0.08em; color: var(--accent); font-weight: 700; }
-.chrome-money { font-family: var(--mono); color: var(--ok); margin-left: auto; }
+.chrome-money { font-family: var(--mono); color: var(--ok); }
+.chrome-clock { font-family: var(--mono); color: var(--warn); margin-left: auto; padding: 4px 12px; border: 1px solid var(--border); border-radius: 6px; background: rgba(255,184,74,0.08); font-size: 0.88rem; letter-spacing: 0.04em; }
 .chrome-nav   { display: flex; gap: 8px; flex-wrap: wrap; }
 .chrome-nav a {
   padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px;

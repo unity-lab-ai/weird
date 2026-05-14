@@ -33,23 +33,36 @@
     return Math.floor(ageOffset + yearsElapsed);
   }
 
-  // Score per tick — positive = healthy, negative = degrading
+  // BUG.14 fix (2026-05-14) — lifespan state is now DERIVED from body.health + body.stamina
+  // rather than tracked as a separate scalar that drifted independently. Previous behavior
+  // showed a "🔴 Terminal" popup while the girl's HP bar still read 100% — the lifespan.score
+  // was a separate degrading variable that crashed within ~20 ticks even when the player was
+  // feeding her and her body.health was untouched.
+  //
+  // Gee verbatim 2026-05-14: "im getting popups saying Unity is terminal but her health
+  // shows health.. why are my girls dying so fucking fast?"
+  //
+  // New design: lifespan.state is a UX label for the composite body vital. body.health is
+  // the authoritative number (drained by tickStaminaHealth in action-effects.js, restored
+  // by heal/feed/water actions). Lifespan only labels it and applies soft per-state effects.
+  function vitalScore(girl) {
+    const health = girl.body?.health ?? 100;
+    const stamina = girl.body?.stamina ?? 70;
+    // 70% weight on health, 30% on stamina — stamina compounds neglect but doesn't dominate.
+    return Math.round(health * 0.7 + stamina * 0.3);
+  }
+
+  // Kept as the public API for any caller that wanted a raw careScore — but now reflects
+  // vital direction (positive = recovering, negative = strained). Caller code should
+  // prefer `vitalScore` or the lifespan.score field directly.
   function careScore(girl) {
-    let score = 0;
-    // Food stock positive
-    if ((girl.consumables?.food?.stock || 0) > 0) score += 2;
-    else score -= 4;
-    // Water stock positive
-    if ((girl.consumables?.water?.stock || 0) > 0) score += 1;
-    else score -= 3;
-    // Bond level is cushioning
-    score += (girl.bond?.bondLevel || 0) * 0.5;
-    // Heavy bruises are stress
-    if ((girl.body?.bruises || 0) > 15) score -= 3;
-    // Low mood compounds
-    const moodPenalty = { terrified: -2, broken: -3, defiant: -1 }[girl.mood?.mood] || 0;
-    score += moodPenalty;
-    return score;
+    const v = vitalScore(girl);
+    // Map vital score to a small delta sign for legacy callers — same range as before.
+    if (v >= 80) return 2;
+    if (v >= 60) return 1;
+    if (v >= 40) return 0;
+    if (v >= 20) return -2;
+    return -4;
   }
 
   // Evaluate lifespan state per girl — called every tick
@@ -57,17 +70,16 @@
     if (!girl || girl.encounterState !== 'captive') return null;
     let lifespan = girl.lifespan || { state: 'healthy', score: 100, ageAtCapture: girl.age || 22 };
 
-    const score = careScore(girl);
-    // Score trends the life meter — positive adds, negative subtracts
-    lifespan.score = Math.max(0, Math.min(100, (lifespan.score || 100) + score));
+    // State derives directly from body vital. No independent scalar drift.
+    const v = vitalScore(girl);
+    lifespan.score = v;
 
-    // State thresholds
     const prev = lifespan.state;
-    if      (lifespan.score >= 75) lifespan.state = 'healthy';
-    else if (lifespan.score >= 50) lifespan.state = 'strained';
-    else if (lifespan.score >= 25) lifespan.state = 'breaking';
-    else if (lifespan.score > 0)   lifespan.state = 'terminal';
-    else                           lifespan.state = girl.bond?.bondLevel >= 5 ? 'mentally-broken' : 'died-of-neglect';
+    if      (v >= 60) lifespan.state = 'healthy';
+    else if (v >= 40) lifespan.state = 'strained';
+    else if (v >= 20) lifespan.state = 'breaking';
+    else if (v > 0)   lifespan.state = 'terminal';
+    else              lifespan.state = girl.bond?.bondLevel >= 5 ? 'mentally-broken' : 'died-of-neglect';
 
     // Terminal aging — very long captivity with low care
     const dc = daysCaptive(girl);

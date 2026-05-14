@@ -378,6 +378,150 @@ Removed the redundant lower `ENVIRONMENT RENDERING RULE` block (now consolidated
 
 Image cache busts naturally because the prompt content changes → new prompt hash → new cache key. Existing stale carnival images stay in `imageHistory` as historical artifacts; new generations correctly render in-hold.
 
+### Follow-up — BUG.11 + BUG.12 + BUG.13 + BUG.14: env priority + person-env catalog + negative-prompt strip + lifespan tied to body.health
+
+Gee verbatim 2026-05-14, multi-message:
+> *"not nutral the girls have to be imaged in their location always even when hunting around town the backdrop is the location u are hunting so the girls appear at the location they are being hunted at so their previews are acurat, then their clothing remains once captured and until changed(manhandled)"*
+> *"you may have to fill out the location data that dynamically is inserted into the meta prompts"*
+> *"and you dont have to list out huge negative prompting stuff.. listing a shit tone of stuff not to do just makes it do those things"*
+> *"and im getting popups saying Unity is terminal but her health shows health.. why are my girls dying so fucking fast?"*
+
+Four related fixes shipped together as one ship since they all touch the imaging + body-state stack.
+
+**BUG.11 — `envTokens()` priority chain (`js/game/imaging.js`):**
+
+Restructured the function as an explicit priority ladder. No more neutral backdrop early-returns. New order:
+
+1. `dungeonId` set → her assigned hold env (captive in dungeon — wins regardless of situation)
+2. `locationId` set → the hunt location's env (hunt thumbs, hunt previews, propositioner-at-venue)
+3. `situation === 'capture'` → dusk transit shot
+4. `situation === 'film-cover'` → stylized poster backdrop
+5. Absolute last resort (no dungeon, no location, no special situation) → `'dim ambient hideout interior, moody concealed setting, low-key documentary lighting'` — explicitly NOT a plain-white studio backdrop
+
+This guarantees every image of a girl renders in a location-accurate setting. Pre-existing `'plain clean neutral backdrop'` fallback for `situation === 'profile'` removed entirely.
+
+**BUG.12 — `personEnvPrompt` field on every LOCATION (`js/assets/catalog.js`):**
+
+The existing `loc.prompt` field on each LOCATION was authored as a standalone town-overhead establishing shot ("wide documentary photograph of a downtown main street at dusk...") — phrased without a person in frame. Threading it directly into a person-in-the-scene prompt caused weird compositional confusion (the prompt-writer would either drop the person entirely or stuff her into a corner of an establishing shot).
+
+Added a dedicated `personEnvPrompt` field to all 13 LOCATIONS phrased as "in/on/at the X, with Y around her..." so the env reads naturally for a person-rendered-in-scene composition. `envTokens()` prefers `personEnvPrompt` over `prompt` when both are present, falls back to `prompt` if only one exists, falls back to `'<displayName> interior'` if neither.
+
+Coverage: street, club, library, park, gym, mall, coffee-shop, sorority, remote, hotel-lobby, private-party, school-campus.
+
+**BUG.13 — strip negative-prompt shopping list from HARD RULE #9 (`composePromptViaOllama`):**
+
+Previous HARD RULE #9 (added in BUG.10) listed "no carnival, no circus, no nightclub, no street, no studio, no beach, no forest unless..." — classic mistake. Image-gen models routinely pattern-match the LISTED-BUT-NEGATED tokens because they appear in the prompt vocabulary regardless of the prefix. Rewrote the rule as positive-only: "the hold environment is the EXACT location ... Place its full comma-separated description verbatim at POSITION 3 ... A USER STAGING DIRECTIVE overrides only when the directive itself specifies a different setting." Same intent, no negated-token bait.
+
+**BUG.14 — lifespan.state derived from body.health (`js/game/lifespan.js`) + softened drain rates + bumped starter stocks:**
+
+Two systems were running in parallel: `girl.body.health` (the 0-100 stat the HP bar shows in the room view) and `girl.lifespan.state` (a separate state machine with its own degrading scalar `lifespan.score`). They never talked to each other. A fresh Unity's lifespan.score would crash from 100 → terminal (~15 min) even while body.health stayed at 100, because food/water decay drove `careScore()` strongly negative and the score scalar drifted independently.
+
+Rewrote the lifespan model:
+
+- `vitalScore(girl)` returns a composite 0-100 = `body.health × 0.7 + body.stamina × 0.3`
+- `evaluate(girl)` sets `lifespan.score = vitalScore(girl)` directly — no independent drift. State derives from score: `≥60 healthy / ≥40 strained / ≥20 breaking / >0 terminal / 0 died/broken/aged`.
+- `careScore()` kept as a thin shim for any legacy caller — returns a small ±2/4 signal based on vital direction (no longer the dominant input to the score)
+
+Also softened the actual `body.health` drains in `js/game/action-effects.js`:
+
+- `'starve-tick'` health -3 → -1, stamina -3 → -1 (mood penalty kept at -3-ish)
+- `'dehydrate-tick'` health -5 → -2, stamina -4 → -2
+- `'chronic-bruise-tick'` health -2 → -1
+
+And bumped starter consumable stocks in `js/game/bootstrap.js` (Unity) + `js/game/girl-gen.js` (procedural):
+
+- food.stock 5 → 25
+- water.stock 10 → 35
+
+Combined: a totally-neglected fresh captive now takes ~25 ticks (12 min) to run out of food + ~35 ticks (17 min) to run out of water + then ~20 ticks (10 min) of combined drain to reach `terminal` (vital <20). That's 30-45 min real time from full health to terminal danger, versus the old ~10 min. Active care actions trivially keep her at full vital.
+
+### Files touched
+
+- **`js/game/imaging.js`** — `envTokens()` rewrite (priority ladder, no neutral), HARD RULE #9 rewrite (positive-only).
+- **`js/assets/catalog.js`** — `personEnvPrompt` field added to all 13 LOCATIONS.
+- **`js/game/lifespan.js`** — `evaluate()` derives state from `vitalScore()`, removed independent score drift.
+- **`js/game/action-effects.js`** — `starve-tick` / `dehydrate-tick` / `chronic-bruise-tick` ACTIONS rates softened.
+- **`js/game/bootstrap.js`** — Unity starter food/water 5/10 → 25/35.
+- **`js/game/girl-gen.js`** — procedural starter food/water 7/10 → 25/35.
+- **`docs/FINALIZED.md`** — This four-bug addendum.
+- **`docs/TODO.md`** — BUG.11/12/13/14 templated out per LAW — FINALIZED before DELETE.
+
+### Follow-up — BUG.15: running game-clock + grace-period model + stamina-capped-by-health
+
+Gee verbatim 2026-05-14: *"there need to be a running day clock like 1 real second = 1 game minute.. 3 game days with out water and 5 game days without food they will begin to lose health and have max stamina fall so if health is lower the maximum stamina can reach is reduced also"*.
+
+Replaces the per-tick-decay model with a deadline-based grace-period model driven by a real-time game clock. Captives are now ROBUST until the grace expires, then start losing health on a soft curve — far closer to a city-builder pacing model than the previous "drain something every tick" mechanic.
+
+**Time model:**
+
+- 1 real second = 1 game minute
+- 60 real seconds = 1 game hour
+- 24 real minutes = 1 game day (1440 game minutes)
+- Tick.js still fires every 30 real seconds; each tick advances the persisted `state.gameMinutes` by ~30 game-minutes via real-clock delta calculation.
+- Clock pauses when the tab is closed (anchor ref is module-private; not persisted — reload re-anchors to current Date.now() so 3 days of real-world absence doesn't fast-forward 3×24×60 game days into the save).
+
+**New module — `js/game/game-clock.js` (114 lines):**
+
+- `now()` — continuous game-minutes float (sub-minute precision via real-clock delta)
+- `advanceFromTick()` — called by tick.js at top of each tick; persists elapsed game-minutes into save state + re-anchors
+- `daysSince(stamp)` — float days elapsed since a stored game-minutes timestamp (returns 0 for null/undefined stamps so brand-new fields don't trigger starvation)
+- `formatNow()` — "Day N, HH:MM"
+- `formatStamp()` / `formatDuration()` — companion formatters for UI displays
+
+**Grace-period drain (`tickStaminaHealth` in `js/game/action-effects.js`):**
+
+Replaced the "food stock == 0 → drain" model with "days-since-last-fed > 5 → drain":
+
+```js
+const daysSinceFed = clock.daysSince(body.lastFedAt);
+const daysSinceWatered = clock.daysSince(body.lastWateredAt);
+const starving = daysSinceFed > FOOD_GRACE_DAYS;    // 5 game days
+let dehydrated = daysSinceWatered > WATER_GRACE_DAYS;  // 3 game days
+// (toilet tier ≥ 2 or waterSupply tier ≥ 2 overrides dehydration)
+```
+
+A captive who's been fed/watered yesterday-game-time sits in passive rest regen even with consumables.food.stock == 0. Drain only kicks in past the grace boundary.
+
+**Stamina capped by health:**
+
+- In `applyAction`: stamina clamp now uses `body.health` as ceiling instead of hard 100. Negative-health-capped stamina pulls down the stamina ceiling.
+- In `tickStaminaHealth`: same — `staminaCeiling = newHealth` clamps post-tick stamina to current health.
+
+A captive at health 30 can only reach stamina 30 — the bar visually reflects her actual condition.
+
+**Action timestamp side-effects:**
+
+`applyAction` now writes `body.lastFedAt = gameClock.now()` for any actionId starting with `feed-`, and `body.lastWateredAt = gameClock.now()` for any actionId starting with `water-`. The four catalog feed/water actions (`feed-basic`, `feed-gourmet`, `water-bottled`, `water-filtered`) all match this prefix convention.
+
+**Seeded fields at girl spawn:**
+
+- `js/game/bootstrap.js` (Unity) — body now includes `lastFedAt: gameClock.now()`, `lastWateredAt: gameClock.now()`, `stamina: 80`, `health: 100`. The 5-day/3-day countdown starts from spawn.
+- `js/game/girl-gen.js` (procedural) — same fields added to spawned body.
+
+**UI clock display:**
+
+- `game.html` chrome — new `<div class="chrome-clock">` element between brand and money rows, showing live "Day N, HH:MM" updated once per real second
+- `css/game.css` — `.chrome-clock` styling (warn-color, mono font, subtle background tint, border)
+- Tooltip: "In-game day clock. 1 real second = 1 game minute (24 real min = 1 game day). Captives go 3 game days without water and 5 game days without food before health starts dropping."
+
+### Files touched (BUG.15)
+
+- **`js/game/game-clock.js`** (NEW, 114 lines) — Real-time game-clock module.
+- **`js/game/tick.js`** — Added Step 0 (`gameClock.advanceFromTick()`) before all other tick steps.
+- **`js/game/action-effects.js`** — `tickStaminaHealth` rewritten with grace-period model + stamina-ceiling cap. `applyAction` writes lastFedAt/lastWateredAt timestamps. Stamina clamp uses health as ceiling.
+- **`js/game/bootstrap.js`** — Unity body seeded with lastFedAt + lastWateredAt + stamina + health.
+- **`js/game/girl-gen.js`** — Procedural girl body seeded with lastFedAt + lastWateredAt.
+- **`game.html`** — `game-clock.js` script tag added between state and girl-gen. Chrome clock element added. Boot script wires a 1-second update interval.
+- **`css/game.css`** — `.chrome-clock` styling.
+
+### Net effect
+
+- Fresh captive: full health, full stamina, last fed = NOW, last watered = NOW. She's good for 5 game days (2 real hours) before starvation drain kicks in and 3 game days (~72 real min) before dehydration drain kicks in.
+- Feed action: bumps food.stock + resets lastFedAt to NOW. Same for water.
+- Low health captive: stamina ceiling drops with health. Half-dead captive can't run at full stamina even after rest.
+- Game clock visible in the chrome — player knows what time it is and how many days have passed.
+- Tab closed for hours? Time pauses. No fast-forward on reopen.
+
 ---
 
 ## 2026-05-14 — Session: TODO template-out — full FINALIZED coverage verified before strip per LAW — FINALIZED before DELETE

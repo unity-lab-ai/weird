@@ -32,6 +32,7 @@
 
   <!-- Game engine -->
   <script src="js/game/state.js"></script>
+  <script src="js/game/game-clock.js"></script>
   <script src="js/game/girl-gen.js"></script>
   <script src="js/game/bootstrap.js"></script>
   <script src="js/game/ollama.js"></script>
@@ -106,6 +107,7 @@
       <a href="#slave-market" data-route="slave-market" data-tooltip="Buy untrained captives cheap. Sell trained ones premium.">⛓️ Slave Market</a>
       <a href="#achievements" data-route="achievements" data-tooltip="Milestones unlocked through the operation.">🏆</a>
     </nav>
+    <div class="chrome-clock" id="chrome-clock" data-tooltip="In-game day clock. 1 real second = 1 game minute (24 real min = 1 game day). Captives go 3 game days without water and 5 game days without food before health starts dropping.">Day 1, 00:00</div>
     <div class="chrome-money" id="chrome-money" data-tooltip="Liquid cash on hand. Spend on upgrades, captures, abortions, slaves.">$0</div>
     <button class="btn-small" id="chrome-voice" data-tooltip="Toggle Kokoro TTS voice playback on/off.">🔊</button>
     <button class="btn-small btn-danger" id="chrome-new-game" data-tooltip="WIPES your save and starts fresh. Use Settings → Save Slots to keep a copy first.">🔄 New Game</button>
@@ -135,6 +137,16 @@
     }
     syncChrome();
     window.SSDGame.state.onChange(syncChrome);
+
+    // BUG.15 — running game clock display. 1 real second = 1 game minute, so
+    // updating the display once a real second is enough to capture every
+    // game-minute boundary. The gameClock module is the source of truth.
+    const clockEl = document.getElementById('chrome-clock');
+    if (clockEl && window.SSDGame.gameClock) {
+      const updateClock = () => { clockEl.textContent = window.SSDGame.gameClock.formatNow(); };
+      updateClock();
+      setInterval(updateClock, 1000);
+    }
 
     // Chrome "New Game" button — wipes save + routes to new-game setup
     document.getElementById('chrome-new-game').onclick = async () => {

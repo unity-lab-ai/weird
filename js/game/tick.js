@@ -19,6 +19,12 @@
 
     window.SSDGame.state.bumpTick();
 
+    // 0. Advance the game clock — BUG.15 (2026-05-14). 1 real second = 1 game
+    // minute, so each 30-second tick advances game time by 30 game minutes.
+    // Computed from the real-clock delta so the clock stays continuous even if
+    // ticks miss/throttle (browser tab backgrounded, etc).
+    if (window.SSDGame.gameClock) window.SSDGame.gameClock.advanceFromTick();
+
     // 1. Consumable decay per girl
     for (const girl of s.roster) {
       if (girl.encounterState !== 'captive') continue;
