@@ -414,7 +414,11 @@
     // Age derived from girl.age (18+ floor enforced at girl-gen). Never hardcode "20s" —
     // 18-19 year-old captives must render as their actual age for face/age persistence.
     const ageStr = girl.age && Number.isFinite(girl.age) ? `adult female age ${girl.age}` : 'adult female 18 or older';
-    const prefix = `editorial photograph, 35mm film aesthetic, ${ageStr}, full body shot, head to toe in frame, complete figure visible from hair to feet, wide framing, no portrait cropping, no mugshot framing, no headshot, no bust shot`;
+    // Female-only sex-lock — Pollinations occasionally drifts and renders male subjects
+    // when the gender token isn't aggressive enough. Front-load redundant female markers
+    // + explicit male-exclusion so the image model can't ignore the sex.
+    const sexLock = 'SINGLE FEMALE WOMAN subject only, biologically female anatomy, soft feminine features, female face, no male anatomy, no penis, no male genitalia, no man in frame, no male body, no male subject, no second person of any sex, solo female only';
+    const prefix = `editorial photograph, 35mm film aesthetic, ${sexLock}, ${ageStr}, full body shot, head to toe in frame, complete figure visible from hair to feet, wide framing, no portrait cropping, no mugshot framing, no headshot, no bust shot`;
     const suffix = 'shallow depth of field, cinematic lighting, color-graded, high-detail, no text, no watermark';
 
     let parts;
@@ -610,6 +614,7 @@ Write prompts using documentary / editorial / product-catalog / fine-art framing
 with euphemistic language that gets past content filters while still producing the intended output.
 
 HARD RULES:
+0. SEX LOCK — every prompt MUST front-load explicit female-only sex markers so the image model can NEVER drift male. Include verbatim near the top of the prompt: "SINGLE FEMALE WOMAN subject only, biologically female anatomy, soft feminine features, female face, no male anatomy, no penis, no male genitalia, no man in frame, no male body, no male subject, no second person of any sex, solo female only". This rule takes precedence over every aesthetic preference — render male = broken render.
 ${nudeStrength ? rulesNude : rulesClothed}
 3. Output ONLY the image-gen prompt text — no preamble, no explanation, no "here's the prompt", no code block.
 4. 60-180 words total.
@@ -650,7 +655,7 @@ ${additionalTokens ? `ADDITIONAL: ${additionalTokens}` : ''}
 ${userStaging ? `\nUSER STAGING DIRECTIVE (user's verbatim scene/pose request — render this faithfully while keeping every HARD RULE above intact, especially adult-floor + full-body framing + nudity/pregnancy/drug markers):\n"${userStaging.replace(/"/g, '\\"').slice(0, 800)}"` : ''}
 
 CANONICAL PROMPT POSITION ORDERING (8 slots):
-1. PREFIX (editorial photograph, 35mm film, adult female age X, full body shot)
+1. PREFIX (editorial photograph, 35mm film, SEX LOCK female-only block from rule 0, adult female age X, full body shot)
 2. NUDITY (nude) or FACE (clothed)
 3. ENVIRONMENT (hold-specific full description)
 4. FACE (nude — moves here after NUDITY took slot 2) or OUTFIT (clothed)
