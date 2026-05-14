@@ -10,12 +10,16 @@
     if (!girl) return;
 
     // Pre-clamp the delta itself to safe per-turn ranges — defensive against bad model output
+    // Phase 21.17 (2026-05-14) — stamina + health delta keys added per Gee verbatim:
+    // "they also need a stamina bar thet gets used up and thinks like degrad build it back up"
     const safeDelta = {
       arousal:  clamp(delta.arousal  || 0, -30, 30),
       wetness:  clamp(delta.wetness  || 0, -30, 30),
       cumLoad:  clamp(delta.cumLoad  || 0, -2, 2),
       bruises:  clamp(delta.bruises  || 0, -10, 15),
       high:     clamp(delta.high     || 0, -30, 30),
+      stamina:  clamp(delta.stamina  || 0, -30, 30),
+      health:   clamp(delta.health   || 0, -30, 30),
       bondXP:   clamp(delta.bondXP   || 0, -20, 20),
       bondDebt: clamp(delta.bondDebt || 0, -20, 20),
       moodShift: typeof delta.moodShift === 'string' ? delta.moodShift.slice(0, 60) : '',
@@ -28,6 +32,8 @@
     body.cumLoad = Math.max(0, body.cumLoad + safeDelta.cumLoad);
     body.bruises = Math.max(0, Math.min(99, body.bruises + safeDelta.bruises));
     body.high = clamp(body.high + safeDelta.high, 0, 100);
+    body.stamina = clamp((body.stamina ?? 70) + safeDelta.stamina, 0, 100);
+    body.health = clamp((body.health ?? 100) + safeDelta.health, 0, 100);
     delta = safeDelta;   // use the clamped version for everything below
 
     const mood = { ...girl.mood };

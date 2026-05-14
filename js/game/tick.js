@@ -66,6 +66,10 @@
     // 12. Pregnancy — Phase 21.10 (2026-05-14). Advance gestation by GESTATION_DAYS_PER_TICK
     // for every pregnant captive; auto-resolve at day 280 (birthed / sold / lost branches).
     if (window.SSDGame.pregnancy) window.SSDGame.pregnancy.tickPregnancies();
+
+    // 13. Stamina + health drain/regen — Phase 21.17 (2026-05-14). Starvation/dehydration/
+    // chronic-bruise penalties + passive rest regen when no negative pressure is active.
+    if (window.SSDGame.actionEffects) window.SSDGame.actionEffects.tickStaminaHealth();
   }
 
   // Decay food + water per tick, GATED by the hold's automation tiers (Phase 21.9, 2026-05-14).

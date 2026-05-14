@@ -175,7 +175,12 @@
       backstoryFragment: generateBackstory(archetype, name, r),
 
       // state
-      body: { arousal: 14, wetness: 8, cumLoad: 0, bruises: 0, high: 0, activeDrugs: [], pose: 'seated, knees together', outfitState: 'intact' },
+      // Phase 21.17 (2026-05-14) — stamina + health added per Gee verbatim: "they also need
+      // a stamina bar thet gets used up and thinks like degrad build it back up and other
+      // things each have their stat boost and health + - 's for all actions". Stamina 70
+      // default (slightly fatigued from capture). Health 100 default (intact). Both 0-100.
+      // Action-effects.js tables per-action deltas; tick.js drains/regenerates.
+      body: { arousal: 14, wetness: 8, cumLoad: 0, bruises: 0, high: 0, stamina: 70, health: 100, activeDrugs: [], pose: 'seated, knees together', outfitState: 'intact' },
       mood: { mood: 'terrified', moodEmoji: '😱', history: [] },
       stats,
       bond: { bondLevel: 0, bondXP: 0, bondDebt: 0, milestones: [] },

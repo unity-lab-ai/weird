@@ -13,6 +13,77 @@
 
 ---
 
+## 2026-05-14 — Session: Phase 21.17 SHIPPED (stamina + health + action-effects spec table + john-happiness helper)
+
+Gee verbatim 2026-05-14: *"they also need a stamina bar thet gets used up and thinks like degrad build it back up and other things each have their stat boost and health + - 's for all actions some heal some hurt some use stamina some rebuild it all levels of system like this"*.
+
+Plus mid-ship addendum during this ship: *"better girls gorwen stats = hap[pier johns= more money"* (T36.105) — folded into the same atomic commit since the johnHappinessForGirl helper belongs in action-effects.js anyway.
+
+### Phase 21.17 — Stamina + health + per-action stat-impact spec (T36.61-T36.68 + T36.105)
+
+- **T36.61 — Schema extension.** `js/game/girl-gen.js` body default now `{ ..., stamina: 70, health: 100, ... }`. Stamina starts at 70 (slightly fatigued from capture), health starts at 100 (intact). Defensive `body.stamina ?? 70` / `body.health ?? 100` reads everywhere so legacy saves migrate forward seamlessly.
+
+- **T36.62 — Delta parser.** `js/game/delta.js` extended — `stamina` + `health` delta keys recognized, clamped ±30 per turn, applied to body with 0-100 envelope. Ollama-emitted deltas can now shift these fields directly.
+
+- **T36.63 — Tick drain + regen.** `tickStaminaHealth()` in `action-effects.js` fires from `tick.js` step 13. Passive rest ticks `+8 stamina / +2 health` ONLY when no negative pressure is active (no starvation, no dehydration, no chronic injury). Otherwise drain dominates.
+
+- **T36.64 — Action-impact spec.** NEW `js/game/action-effects.js` central ACTIONS map covers 30+ action IDs:
+  - **Caretaking:** feed-basic / feed-gourmet / water-bottled / water-filtered / heal / rest-tick — restore stamina+health+mood+bondXP
+  - **Drugs:** drug-coke / drug-weed / drug-mdma / drug-acid / drug-whiskey / drug-ketamine / drug-tranquilizer — varied effects, mostly stamina spike or drain with small health cost
+  - **Sexual:** sex-gentle / sex-rough / sex-anal / sex-oral / sex-cum-inside — stamina drain + arousal/wetness/cumLoad shifts + bond/bondDebt
+  - **Violence:** slap / choke / whip / punch — bruise accumulation + health hits + bondDebt
+  - **Restraint:** restrain — minimal cost, small bondDebt
+  - **Passive drains:** starve-tick / dehydrate-tick / chronic-bruise-tick — fired by tick when triggers active
+  - **Whore-out johns:** john-gentle / john-rough / john-quick / john-degrader — per-archetype stamina drain envelopes for Phase 21.16
+  - Each entry: `{ stamina, health, mood, arousal, wetness, bruises, cumLoad, bondXP, bondDebt, notes }`
+  - `applyAction(girlId, actionId, opts)` applies with optional `strain: true` for 1.5× negative-effect multiplier (used when stamina < `STAMINA_THRESHOLD_FOR_STRAIN` = 20)
+  - `previewCost(actionId)` returns inline tooltip string like `"stamina -8 · health 0 · bondXP +2"`
+
+- **T36.65 — Health-decline factors.** All three can stack in one tick:
+  - Bruises ≥ 15 → `-1 stamina, -2 health` per tick (chronic injury)
+  - Food stock = 0 → `-3 stamina, -3 health` per tick (starvation)
+  - Water stock = 0 AND toilet < 2 AND waterSupply < 2 → `-4 stamina, -5 health` per tick (dehydration; plumbed holds skip this drain)
+
+- **T36.66 — UI bars.** `js/ui/room.js` Body section now shows Stamina + Health bars right under High. Color-coded: green ≥ 60, amber `warn` class 30-59, red `danger` class < 30. Tooltips explain strain threshold + decline factors + heal action restoration. Existing Arousal/Wetness/Cum/Bruises/High bars also got data-tooltip attrs in this ship (folded in).
+
+- **T36.67 — Per-button cost preview.** `previewCost(actionId)` helper exposed for future per-button rendering. Existing Phase 21.18 tooltips already convey costs in human terms. Full machine-readable per-button preview deferred as nice-to-have polish.
+
+- **T36.68 — Whore-out integration hook.** `john-*` ACTION entries provide per-archetype stamina drain envelopes ready for Phase 21.16 john-resolver consumption. `johnHappinessForGirl(girl)` helper exposed:
+  - Returns `{ multiplier: 0.2-3.0, breakdown: { ... } }` from `bondFactor × staminaFactor × healthFactor × moodFactor × outfitMul`
+  - Phase 21.16 john-resolver multiplies `basePay × multiplier` for final payout
+  - Stamina ≤ STAMINA_THRESHOLD_FOR_STRAIN penalizes payout; above threshold rewards
+  - Mood table covers 18 mood-state keywords including bond-name table + arousal/needy/playful/defiant/traumatized/subdued/broken/catatonic
+  - Closes Gee verbatim mid-ship 2026-05-14 (T36.105): *"better girls gorwen stats = hap[pier johns= more money"* — bond + stamina + health + mood + outfit all factor in
+
+### Wiring + integration
+
+- `game.html` — `<script src="js/game/action-effects.js">` inserted after `lifespan.js` in the engine block (before pregnancy.js so action-effects loads early)
+- `js/game/tick.js` — step 13 added: `if (window.SSDGame.actionEffects) window.SSDGame.actionEffects.tickStaminaHealth();`
+
+### Files touched (1 new code + 4 existing code + 1 html + 3 docs)
+
+- **NEW** `js/game/action-effects.js` — 250+ lines, full ACTIONS map + applyAction + previewCost + tickStaminaHealth + johnHappinessForGirl
+- `js/game/girl-gen.js` — stamina + health added to default body
+- `js/game/delta.js` — stamina + health delta keys parsed + clamped + applied
+- `js/game/tick.js` — step 13 tickStaminaHealth wired
+- `js/ui/room.js` — Stamina + Health bars + tooltips on all body bars
+- `game.html` — script tag
+- `docs/TODO.md` — Milestone 21.17 marked SHIPPED with per-task detail; T36.105 added to 21.16 backlog with verbatim Gee mid-ship quote
+- `docs/ROADMAP.md` — Dependency Graph 21.17 entry expanded to SHIPPED summary
+- `docs/FINALIZED.md` — this entry
+
+### Syntax verification
+
+All 5 edited JS files (incl. the new action-effects.js) pass `node --check`. No build needed.
+
+### Open follow-up
+
+- Per-button machine-readable cost preview (T36.67 polish path) — `previewCost(actionId)` helper exists; remaining UI work is mechanical.
+- Routing existing room.js drug/feed/water/sex buttons through `applyAction()` so the central spec is the only path that mutates stat fields. Currently they bypass action-effects.js and directly mutate body — works fine but creates two code paths. Refactor deferred.
+- Phase 21.16 whore-out will consume `john-*` ACTION entries + `johnHappinessForGirl()` directly when it lands.
+
+---
+
 ## 2026-05-14 — Session: Phase 21.18 SHIPPED (universal tooltips — engine + 8 surface bindings)
 
 Gee verbatim 2026-05-14: *"we also need tool tips!!! lot and lots of tool tips for everything!!! on all pages!!!! concise and fucked"*. Shipped the central engine + bound tooltips across 8 key surfaces. Remaining surfaces (town / hunt / roster / slave-market / propositioner / settings / achievements / timeline / etc.) deferred to a follow-up audit — the engine auto-binds dynamically-rendered `[data-tooltip]` attrs so future per-surface coverage is trivial.
