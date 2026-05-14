@@ -178,6 +178,31 @@ The whole BUG.4 fix is invisible without a hard-refresh because `python -m http.
 
 LAW #1 audited — `scripts/serve.py` header comment carries only project name, no AI-vendor attribution. All new code commits clean.
 
+### Follow-up — BUG.6: dev port 8080 → 9535
+
+Gee verbatim 2026-05-14: *"is it a problem that we are using the same port ollama uses 8080? should we have our own port for the weird project like 9535"*.
+
+Diagnosis clarified: Ollama actually defaults to **11434**, not 8080, so there was no actual collision between Ollama and the game server. However, 8080 is one of the most-collided dev ports in existence — Tomcat, Jenkins, Docker, Spring Boot, every Node tutorial defaults there — so the probability of *some other tool* on the user's machine binding 8080 first (and crashing the launcher with `[Errno 48] Address already in use`) is non-trivial. 9535 is in the IANA-unassigned range and effectively no other tool defaults there, making it an identifiable dedicated port for the weird project.
+
+### Replacements
+
+Five files migrated from `8080` → `9535`:
+
+- **`start.bat`** — 8 occurrences (server-command set lines for python/py/npx/php, status echo lines, browser-open URL)
+- **`start.sh`** — 12 occurrences (server-command set lines for python3/python/npx/php, status echo lines, xdg-open / open URLs)
+- **`scripts/serve.py`** — 2 occurrences (default port constant + header comment)
+- **`scripts/screenshots.mjs`** — 2 occurrences (Usage comment + `BASE` const for Playwright)
+- **`SETUP-README.md`** — 1 occurrence (Quick-start "starts serving on" sentence)
+
+`docs/FINALIZED.md` historical entries that mention port 8080 were deliberately left alone — those entries describe what the launcher *was* at the time they were written; rewriting them would falsify the archive. Future readers will see this BUG.6 entry as the port-move milestone.
+
+### Verification
+
+Re-grep `8080` post-replacement turned up matches only in `docs/FINALIZED.md` (historical). Re-grep `9535` confirmed all 5 active files carry the new port. Smoke-tested `start.bat` via `cmd /c .\start.bat`: Steps 0-1-2 progress cleanly with the new port label; serve.py default port is now 9535. New canonical URLs:
+
+- Landing: `http://localhost:9535/index.html`
+- Game: `http://localhost:9535/game.html`
+
 ---
 
 ## 2026-05-14 — Session: TODO template-out — full FINALIZED coverage verified before strip per LAW — FINALIZED before DELETE

@@ -97,25 +97,25 @@ SERVER_LABEL=""
 
 if command -v python3 >/dev/null 2>&1; then
   if [ -f "$PROJECT_DIR/scripts/serve.py" ]; then
-    SERVER_CMD="python3 scripts/serve.py 8080"
+    SERVER_CMD="python3 scripts/serve.py 9535"
     SERVER_LABEL="Python 3 no-cache server"
   else
-    SERVER_CMD="python3 -m http.server 8080"
+    SERVER_CMD="python3 -m http.server 9535"
     SERVER_LABEL="Python 3 http.server"
   fi
 elif command -v python >/dev/null 2>&1; then
   if [ -f "$PROJECT_DIR/scripts/serve.py" ]; then
-    SERVER_CMD="python scripts/serve.py 8080"
+    SERVER_CMD="python scripts/serve.py 9535"
     SERVER_LABEL="Python no-cache server"
   else
-    SERVER_CMD="python -m http.server 8080"
+    SERVER_CMD="python -m http.server 9535"
     SERVER_LABEL="Python http.server"
   fi
 elif command -v npx >/dev/null 2>&1; then
-  SERVER_CMD="npx --yes http-server . -p 8080 -c-1 --cors"
+  SERVER_CMD="npx --yes http-server . -p 9535 -c-1 --cors"
   SERVER_LABEL="Node npx http-server"
 elif command -v php >/dev/null 2>&1; then
-  SERVER_CMD="php -S localhost:8080"
+  SERVER_CMD="php -S localhost:9535"
   SERVER_LABEL="PHP built-in server"
 else
   echo
@@ -132,21 +132,21 @@ echo "  + Using: $SERVER_LABEL"
 echo
 
 # --- Open browser + start server -------------------------------------
-echo "[3/3] Starting server on http://localhost:8080"
+echo "[3/3] Starting server on http://localhost:9535"
 echo "      Opening browser in 2 seconds..."
 echo
 
 ( sleep 2
   if command -v xdg-open >/dev/null 2>&1; then
-    xdg-open http://localhost:8080/index.html
+    xdg-open http://localhost:9535/index.html
   elif command -v open >/dev/null 2>&1; then
-    open http://localhost:8080/index.html
+    open http://localhost:9535/index.html
   fi ) &
 
 echo "===================================================="
-echo "  Server running at http://localhost:8080"
-echo "  Landing: http://localhost:8080/index.html"
-echo "  Game:    http://localhost:8080/game.html"
+echo "  Server running at http://localhost:9535"
+echo "  Landing: http://localhost:9535/index.html"
+echo "  Game:    http://localhost:9535/game.html"
 echo "  Ctrl-C to stop."
 echo "===================================================="
 echo

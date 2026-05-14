@@ -73,10 +73,10 @@ set "SERVER_LABEL="
 where python >nul 2>&1
 if not errorlevel 1 (
     if exist "%PROJECT_DIR%\scripts\serve.py" (
-        set "SERVER_CMD=python scripts\serve.py 8080"
+        set "SERVER_CMD=python scripts\serve.py 9535"
         set "SERVER_LABEL=Python no-cache server"
     ) else (
-        set "SERVER_CMD=python -m http.server 8080"
+        set "SERVER_CMD=python -m http.server 9535"
         set "SERVER_LABEL=Python http.server"
     )
     goto :have_server
@@ -85,10 +85,10 @@ if not errorlevel 1 (
 where py >nul 2>&1
 if not errorlevel 1 (
     if exist "%PROJECT_DIR%\scripts\serve.py" (
-        set "SERVER_CMD=py scripts\serve.py 8080"
+        set "SERVER_CMD=py scripts\serve.py 9535"
         set "SERVER_LABEL=Python launcher (no-cache server)"
     ) else (
-        set "SERVER_CMD=py -m http.server 8080"
+        set "SERVER_CMD=py -m http.server 9535"
         set "SERVER_LABEL=Python launcher"
     )
     goto :have_server
@@ -96,14 +96,14 @@ if not errorlevel 1 (
 
 where npx >nul 2>&1
 if not errorlevel 1 (
-    set "SERVER_CMD=npx --yes http-server . -p 8080 -c-1 --cors"
+    set "SERVER_CMD=npx --yes http-server . -p 9535 -c-1 --cors"
     set "SERVER_LABEL=Node npx http-server"
     goto :have_server
 )
 
 where php >nul 2>&1
 if not errorlevel 1 (
-    set "SERVER_CMD=php -S localhost:8080"
+    set "SERVER_CMD=php -S localhost:9535"
     set "SERVER_LABEL=PHP built-in server"
     goto :have_server
 )
@@ -128,18 +128,18 @@ echo   + Using: %SERVER_LABEL%
 echo.
 
 REM === STEP 3: Open browser + start server ===========================
-echo [3/3] Starting server on http://localhost:8080
+echo [3/3] Starting server on http://localhost:9535
 echo       Opening browser in 2 seconds...
 echo.
 echo       This window runs the server.  Close it or hit Ctrl+C to stop.
 echo.
 
-start "" /min cmd /c "powershell -NoProfile -Command Start-Sleep -Seconds 2 && start http://localhost:8080/index.html"
+start "" /min cmd /c "powershell -NoProfile -Command Start-Sleep -Seconds 2 && start http://localhost:9535/index.html"
 
 echo ====================================================
-echo   Server running at http://localhost:8080
-echo   Landing page: http://localhost:8080/index.html
-echo   Game:         http://localhost:8080/game.html
+echo   Server running at http://localhost:9535
+echo   Landing page: http://localhost:9535/index.html
+echo   Game:         http://localhost:9535/game.html
 echo ====================================================
 echo.
 

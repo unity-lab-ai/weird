@@ -3,7 +3,7 @@
 # Wraps Python's stdlib http.server with Cache-Control: no-store on every
 # response. Without this, browsers aggressively cache .js / .html / .css and
 # JS edits don't show up until the user hard-refreshes (Ctrl+Shift+R). Bound
-# to localhost:8080 by default; pass a port as the first arg to change.
+# to localhost:9535 by default; pass a port as the first arg to change.
 #
 # Used by start.bat and start.sh in preference to bare `python -m http.server`.
 
@@ -27,7 +27,7 @@ class NoCacheHandler(SimpleHTTPRequestHandler):
 
 
 def main() -> int:
-    port = 8080
+    port = 9535
     if len(sys.argv) > 1:
         try:
             port = int(sys.argv[1])

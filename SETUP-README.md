@@ -108,7 +108,7 @@ Double-click **`start.bat`** in the repo root. It:
 
 1. Checks for Ollama on PATH, launches it in a new window with `OLLAMA_ORIGINS=*`
 2. Finds a local web server (Python / Node / PHP — whichever is installed)
-3. Starts serving on `http://localhost:8080`
+3. Starts serving on `http://localhost:9535`
 4. Opens your default browser to the landing page
 
 Close the server window to stop.

@@ -6,7 +6,7 @@
 // play through.
 //
 // Usage:
-//   1. Make sure http://localhost:8080/index.html is serving (python -m http.server 8080)
+//   1. Make sure http://localhost:9535/index.html is serving (python -m http.server 9535)
 //   2. Make sure Ollama is running with dolphin-mistral:7b pulled and OLLAMA_ORIGINS=*
 //   3. node scripts/screenshots.mjs
 
@@ -16,7 +16,7 @@ import { join, resolve } from 'node:path';
 
 const PROJECT_DIR = resolve(import.meta.dirname, '..');
 const OUT_DIR = join(PROJECT_DIR, 'docs', 'screenshots');
-const BASE = 'http://localhost:8080';
+const BASE = 'http://localhost:9535';
 
 const SHOTS = [];
 
