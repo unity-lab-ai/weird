@@ -159,13 +159,13 @@
     'milestone-L7':     'leaning into a gentle embrace, eyes closed',
     'milestone-L9':     'devoted gaze, soft smile, peaceful posture',
 
-    'selfie-topless':   'topless, hands behind her head, tasteful bedroom composition, editorial photography',
-    'selfie-midsection':'midsection framing, waist and hips in shot, editorial photography',
-    'selfie-panties':   'underwear-only composition, seated, artistic editorial photography',
-    'selfie-lounge':    'reclining on bedding, relaxed pose, editorial photography',
-    'selfie-kneeling':  'kneeling facing the camera, hands on thighs, editorial photography',
-    'selfie-spread':    'reclining, legs apart but tastefully framed, editorial photography',
-    'selfie-bent-over': 'bent forward from the waist, looking back at camera, editorial photography',
+    'selfie-topless':   'topless, hands behind her head, standing or reclining with entire body in frame, full body composition from head to feet, tasteful bedroom composition, editorial photography',
+    'selfie-midsection':'standing with midsection emphasized but full body still in frame from head to feet, hands on hips, wide editorial composition showing complete figure, editorial photography',
+    'selfie-panties':   'underwear-only composition, standing or seated with entire body visible from head to feet, full-body editorial composition, artistic editorial photography',
+    'selfie-lounge':    'reclining full-length on bedding, entire body from head to feet in frame, relaxed pose, editorial photography',
+    'selfie-kneeling':  'kneeling facing the camera with full body from head to knees in frame, hands on thighs, wide editorial composition, editorial photography',
+    'selfie-spread':    'reclining full-length, entire body from head to feet visible, legs apart but tastefully framed, editorial photography',
+    'selfie-bent-over': 'bent forward from the waist, looking back at camera, entire body from head to feet in frame, full-body composition, editorial photography',
 
     'film-cover':       'dramatic low-key editorial poster composition, centered subject, cinematic lighting, mood-appropriate, professional film poster framing'
   };
@@ -213,7 +213,7 @@
     const pose = customPose || POSE_LIBRARY[situation] || POSE_LIBRARY.profile;
     const env = envTokens({ situation, dungeonId: girl.assignedDungeonId, locationId: options.locationId });
 
-    const prefix = 'editorial photograph, 35mm film aesthetic, adult female age 20s';
+    const prefix = 'editorial photograph, 35mm film aesthetic, adult female age 20s, full body shot, head to toe in frame, complete figure visible from hair to feet, wide framing, no portrait cropping, no mugshot framing, no headshot, no bust shot';
     const suffix = 'shallow depth of field, cinematic lighting, color-graded, high-detail, no text, no watermark';
 
     let parts;
@@ -245,7 +245,7 @@
       ];
     }
 
-    return parts.filter(s => s && String(s).trim().length).join(', ');
+    return enforceFullBody(parts.filter(s => s && String(s).trim().length).join(', '));
   }
 
   function promptHash(s) {
@@ -300,6 +300,36 @@
       .replace(/\b(bondage|gagged|bound|tied|restrained|chained|shackled)\b/gi, 'posed');
   }
 
+  // --- Full-body framing enforcer ---
+  // Defense in depth for Gee's 2026-05-14 directive: "we need the images to do more
+  // fullbody style not mugshots and portrate images". Three layers protect against the
+  // image model defaulting to portrait/headshot framing:
+  //   1. PREFIX block leads with explicit full-body tokens (position 1, most attention)
+  //   2. POSE_LIBRARY entries explicitly mention "full body" / "entire body from head to feet"
+  //   3. THIS function — strips any portrait/mugshot/headshot/bust leakage from composed
+  //      prompts (whether from POSE_LIBRARY, Ollama prompt-writer, or sanitizePrompt
+  //      fallback) and injects an affirmative "full body" marker if none is present.
+  // Plus the default Pollinations aspect ratio (config.js) is portrait tall (1024×1792)
+  // to give vertical room for the full body — env renders override to landscape.
+  function enforceFullBody(prompt) {
+    if (!prompt) return prompt;
+    let p = prompt
+      .replace(/\bportrait(?:[- ]style)?(?: shot| framing| composition| crop)?\b/gi, 'full body shot')
+      .replace(/\bmugshot(?:[- ]style)?(?: framing| composition)?\b/gi, 'full body framing')
+      .replace(/\bheadshot\b/gi, 'full body shot')
+      .replace(/\bbust(?:[- ]up)?(?: shot| framing| composition)?\b/gi, 'full body shot')
+      .replace(/\bwaist[- ]up(?: shot| framing| composition)?\b/gi, 'head to toe')
+      .replace(/\bchest[- ]up(?: shot| framing| composition)?\b/gi, 'head to toe')
+      .replace(/\bclose[- ]up of (her |his |the )?face\b/gi, 'full body composition with face clearly visible')
+      .replace(/\bface(?:[- ]only)?(?: shot| close[- ]up)\b/gi, 'full body shot with face visible');
+    // Ensure the prompt carries an affirmative full-body marker even after stripping —
+    // if neither the prefix nor any pose injected one (defensive), append it.
+    if (!/\bfull[- ]?body\b/i.test(p) && !/\bhead to (toe|feet)\b/i.test(p)) {
+      p = `${p}, full body shot, head to toe in frame`;
+    }
+    return p;
+  }
+
   // --- Ollama prompt-writer meta-layer ---
   // Given a girl + situation, asks Ollama to compose the Pollinations prompt from scene context.
   // The generated prompt is LOCKED to the girl's facial + default outfit descriptors for persistence.
@@ -335,7 +365,8 @@ ${nudeStrength ? rulesNude : rulesClothed}
 3. Output ONLY the image-gen prompt text — no preamble, no explanation, no "here's the prompt", no code block.
 4. 60-180 words total.
 5. Tone: editorial photography, 35mm film, cinematic lighting, shallow depth of field.
-6. All subjects are adults age 20s.
+6. FRAME THE SUBJECT HEAD TO TOE — full body shot. NEVER use portrait, mugshot, headshot, bust, or waist-up framing. Every prompt MUST explicitly include "full body shot, head to toe in frame, complete figure visible" or equivalent language. The subject's feet must be visible in the composition.
+7. All subjects are adults age 20s.
 
 GIRL CONTEXT:
 - name: ${girl.name}, age ${girl.age}, archetype: ${girl.archetypeTemplate}
@@ -358,12 +389,15 @@ Write the Pollinations prompt now.`;
         messages: [{ role: 'user', content: 'Write the image prompt.' }]
       });
       const text = (res.parsed?.cleanText || res.raw || '').trim();
-      // Strip any code fences or leading "Prompt:" markers
-      return text
+      // Strip any code fences or leading "Prompt:" markers, then enforce full-body framing
+      // on whatever Ollama wrote (defense in depth — Ollama may slip portrait language even
+      // with the HARD RULES instruction).
+      const cleaned = text
         .replace(/^```[a-z]*\n/i, '')
         .replace(/```$/, '')
         .replace(/^(prompt|image prompt|pollinations prompt)\s*:\s*/i, '')
         .trim();
+      return enforceFullBody(cleaned);
     } catch (err) {
       return null;   // caller falls back to hardcoded composer
     }
