@@ -252,6 +252,22 @@ End with the delta block.`,
     if (memory?.length) {
       parts.push(`Relevant memory:\n${memory.map(m => `  - ${m}`).join('\n')}`);
     }
+    // Phase 21.16 (2026-05-14) — Gee verbatim: "the girls can talk about their johns and
+    // stuff". When she's been whored out, surface the last 5 johns so she can reference
+    // them by tone / acts / payment / time-ago in her replies.
+    if (girl && window.SSDGame?.whoreOut) {
+      const johnText = window.SSDGame.whoreOut.contextBlockText(girl.id);
+      if (johnText) parts.push(johnText);
+    }
+    // Phase 21.10 (2026-05-14) — surface pregnancy state so Ollama can speak about it.
+    if (girl?.pregnancy?.status && girl.pregnancy.status !== 'none') {
+      const p = girl.pregnancy;
+      if (p.status === 'pregnant') {
+        parts.push(`Pregnancy: PREGNANT — gestation day ${p.gestationDays || 0}/280, trimester ${p.trimester || 1}. Source: ${p.conceptionSource || 'organic'}.`);
+      } else {
+        parts.push(`Pregnancy status: ${p.status}${p.lastAbortMethod ? ` (last abortion method: ${p.lastAbortMethod})` : ''}.`);
+      }
+    }
     return parts.join('\n\n');
   }
 

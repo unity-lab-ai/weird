@@ -100,6 +100,60 @@
           </div>
 
           ${(() => {
+            // Phase 21.16 (2026-05-14) — Whore-out panel. Toggle + rate + condom-required +
+            // session totals + recent ledger + cashout button.
+            if (!window.SSDGame.whoreOut) return '';
+            const wo = window.SSDGame.whoreOut.getWhoreOut(girl);
+            const totals = wo.sessionTotals || {};
+            const ledger = (wo.johnLedger || []).slice(-5).reverse();
+            const happy = window.SSDGame.actionEffects?.johnHappinessForGirl
+              ? window.SSDGame.actionEffects.johnHappinessForGirl(girl)
+              : null;
+            const happyPct = happy ? Math.round(happy.multiplier * 100) : 100;
+            return `<h3>💸 Whore-out</h3>
+              <div class="stat-row" data-tooltip="Passive john arrivals per tick at the selected rate. Cash accrues in unclaimedEarnings until you cash out.">
+                <span>Enabled</span>
+                <b>${wo.enabled ? '✅ ON' : '⛔ off'}</b>
+                <button class="btn-small ${wo.enabled ? 'btn-danger' : 'btn-primary'}" data-whore-toggle data-tooltip="${wo.enabled ? 'Stop john arrivals.' : 'Open her up to john arrivals. Each tick rolls per the rate setting.'}">${wo.enabled ? 'Disable' : 'Enable'}</button>
+              </div>
+              ${wo.enabled ? `
+                <div class="stat-row" data-tooltip="Arrival rate per tick. low = 10% / 1 max. standard = 25% / 2. premium = 40% / 3. all-comers = 60% / 4."><span>Rate</span>
+                  <select id="whore-rate" class="inline-select">
+                    ${['low','standard','premium','all-comers'].map(r => `<option value="${r}" ${wo.rate === r ? 'selected' : ''}>${r}</option>`).join('')}
+                  </select>
+                </div>
+                <div class="stat-row" data-tooltip="If on, every john MUST use a condom (override their compliance rate). Blocks pregnancy conception via this path.">
+                  <span>Condom required</span>
+                  <label><input type="checkbox" id="whore-condom" ${wo.condomRequired ? 'checked' : ''}/> enforce</label>
+                </div>
+                <div class="stat-row" data-tooltip="Pay multiplier from her current stats (bond × stamina × health × mood × outfit). Higher = bigger payouts per john. Per Gee verbatim: 'better girls gorwen stats = hap[pier johns= more money'.">
+                  <span>John happiness multiplier</span>
+                  <b class="${happyPct > 110 ? 'gold' : happyPct < 80 ? 'danger' : ''}">${(happy?.multiplier || 1).toFixed(2)}×</b>
+                </div>
+              ` : ''}
+              ${totals.encounters > 0 ? `
+                <div class="stat-row small" data-tooltip="Cumulative session count of johns this girl has serviced"><span>Total encounters</span><b>${totals.encounters}</b></div>
+                <div class="stat-row small" data-tooltip="Cumulative gross + tips this session"><span>Lifetime earnings</span><b>$${((totals.gross||0) + (totals.tips||0)).toLocaleString()}</b></div>
+              ` : ''}
+              ${wo.unclaimedEarnings > 0 ? `
+                <div class="stat-row" data-tooltip="Cash that has accrued but hasn't been moved to treasury yet. Click cashout to claim.">
+                  <span>💰 Unclaimed earnings</span>
+                  <b class="gold">$${wo.unclaimedEarnings.toLocaleString()}</b>
+                  <button class="btn-small btn-primary" data-whore-cashout data-tooltip="Move all unclaimed earnings to your wallet. Resets the unclaimed counter to 0.">💰 Cashout</button>
+                </div>
+              ` : ''}
+              ${ledger.length > 0 ? `
+                <div class="small muted" style="margin-top:6px"><b>Recent johns (last ${ledger.length}):</b></div>
+                <ul class="small muted">
+                  ${ledger.map(e => {
+                    const ago = Math.max(0, Math.round((Date.now() - e.ts) / 60000));
+                    return `<li data-tooltip="${(e.notes || '').replace(/"/g, '&quot;')}">${ago}min ago · ${e.johnDescription} · $${e.totalPaid}${e.tip > 0 ? ` (+$${e.tip} tip)` : ''}${e.condomUsed ? ' · 🎈' : ' · 🚫'} · ${e.acts.join(', ')}</li>`;
+                  }).join('')}
+                </ul>
+              ` : ''}`;
+          })()}
+
+          ${(() => {
             // Phase 21.10 (2026-05-14) — Pregnancy panel. Status + gestation day + trimester +
             // abort options gated by current window + outcome history.
             const preg = girl.pregnancy || { status: 'none' };
@@ -483,6 +537,41 @@
         } catch (e) { alert(e.message); }
       };
     });
+
+    // Phase 21.16 — Whore-out controls.
+    const toggleBtn = el.querySelector('[data-whore-toggle]');
+    if (toggleBtn) {
+      toggleBtn.onclick = () => {
+        const wo = window.SSDGame.whoreOut.getWhoreOut(girl);
+        const next = !wo.enabled;
+        if (next && !confirm(`Open ${girl.name} up to john arrivals? Johns drain her stamina + accrue passive income.`)) return;
+        window.SSDGame.whoreOut.toggle(girl.id, next);
+        window.SSDRouter.handle();
+      };
+    }
+    const rateSel = el.querySelector('#whore-rate');
+    if (rateSel) {
+      rateSel.onchange = () => {
+        window.SSDGame.whoreOut.updateSettings(girl.id, { rate: rateSel.value });
+      };
+    }
+    const condomChk = el.querySelector('#whore-condom');
+    if (condomChk) {
+      condomChk.onchange = () => {
+        window.SSDGame.whoreOut.updateSettings(girl.id, { condomRequired: condomChk.checked });
+      };
+    }
+    const cashoutBtn = el.querySelector('[data-whore-cashout]');
+    if (cashoutBtn) {
+      cashoutBtn.onclick = () => {
+        try {
+          const r = window.SSDGame.whoreOut.cashout(girl.id);
+          if (!r.ok) { alert(r.reason || 'cashout failed'); return; }
+          if (window.SSDNotify) window.SSDNotify.show(`💰 Cashed out $${r.amount.toLocaleString()} from ${girl.name}'s johns.`, { type: 'success', durationMs: 2500 });
+          window.SSDRouter.handle();
+        } catch (e) { alert(e.message); }
+      };
+    }
 
     // Phase 21.10 — Abortion method buttons. Each consumes 1 of the corresponding catalog
     // item from inventory and applies the resolver. Confirmation dialog before firing.

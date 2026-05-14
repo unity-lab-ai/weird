@@ -70,6 +70,12 @@
     // 13. Stamina + health drain/regen — Phase 21.17 (2026-05-14). Starvation/dehydration/
     // chronic-bruise penalties + passive rest regen when no negative pressure is active.
     if (window.SSDGame.actionEffects) window.SSDGame.actionEffects.tickStaminaHealth();
+
+    // 14. Whore-out john arrivals — Phase 21.16 (2026-05-14). Per-rate arrival rolls per
+    // whored-out captive; each arrival resolves the encounter, drains stamina via action-
+    // effects, accrues unclaimedEarnings, persists to johnLedger, fires pregnancy hook on
+    // vaginal-cum + !condomUsed.
+    if (window.SSDGame.whoreOut) window.SSDGame.whoreOut.runJohnTick();
   }
 
   // Decay food + water per tick, GATED by the hold's automation tiers (Phase 21.9, 2026-05-14).

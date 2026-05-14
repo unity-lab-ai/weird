@@ -13,6 +13,94 @@
 
 ---
 
+## 2026-05-14 — Session: Phase 21.16 SHIPPED (whore-out passive-income + john ledger + pregnancy hook + memory recall)
+
+Gee verbatim 2026-05-14: *"also want a whore out option that allows girls to generate passive income and tracks all the johns and what they did to where the girls can talk about their johns and stuff idk figure it out"*. Distinct from Propositioner (bespoke single deals, upmarket clientele) — whore-out is continuous general-public batch flow.
+
+Closes T36.105 (Gee verbatim mid-ship: *"better girls gorwen stats = hap[pier johns= more money"*) via the johnHappinessForGirl multiplier path shipped in Phase 21.17.
+
+### Phase 21.16 — Whore-out passive-income + john ledger (T36.55-T36.60 + T36.105)
+
+- **T36.55 — Schema + module.** NEW `js/game/whore-out.js` (280+ lines). Schema on `girl.whoreOut`: enabled / enabledAt / rate / condomRequired / permittedActs / blockedJohnTypes / johnLedger / sessionTotals / unclaimedEarnings. JohnEncounter shape persisted to ledger: id / ts / johnArchetype / johnDescription / acts / duration_min / payment / tip / totalPaid / condomUsed / girlMoodBefore/After / bondDeltaApplied / bondDebtAdded / bruisesAdded / cumLoadAdded / staminaDrained / notes / pregnancyHookFired.
+
+- **T36.56 — John archetype catalog.** NEW `js/templates/john-archetypes.js` with 10 archetypes:
+  - **regular** ($40-80, polite/transactional, 85% condom)
+  - **rough** ($55-110, aggressive/demanding, 50% condom, bruises +1)
+  - **cheap** ($20-40, haggling, 70% condom)
+  - **generous** ($100-200 big tipper, complimentary, 90% condom, 1.6× tip mul)
+  - **repeat** ($60-120, familiar/knows-her-name, 80% condom, repeatable flag)
+  - **weirdo** ($80-150 kink, unsettling, 65% condom)
+  - **quick** ($50-90, in-and-out, 80% condom)
+  - **talkative** ($70-130, overshares, 85% condom)
+  - **pregnant-want** ($120-250 breeder, almost-never-condom 5%, 1.8× pregnant bias)
+  - **degrader** ($90-180 verbal abuse, 40% condom, mood -15)
+  - `rollJohnArchetype(rng, {isPregnant})` weighted by arrivalWeight × pregnantWantBias
+  - `rollJohnActs(archetypeId)` picks 1-3 acts from preferences
+
+- **T36.57 — Tick wiring + encounter resolver.** `runJohnTick()` fires per-rate-arrival-chance for every whored-out captive. Rate params:
+  - low: 10% arrival / 1 max per tick
+  - standard: 25% / 2
+  - premium: 40% / 3
+  - all-comers: 60% / 4
+  - Stamina floor: ≤ 10 = she refuses, no arrivals
+  - BondDebt overflow: > 60 = she protests, no arrivals
+  - Each arrival: roll archetype → roll acts → check player blacklist + permittedActs → check condom-required → compute pay via `johnHappinessForGirl(girl).multiplier` → roll tip → apply `john-*` action via action-effects (drains stamina/health/mood) → persist encounter to ledger → accrue to unclaimedEarnings → bump notoriety +1 per 4 encounters
+  - Wired into `tick.js` step 14
+
+- **T36.58 — Pregnancy integration.** When `acts` includes a VAGINAL_CUM_ACT (creampie / breeding / cum-in-pussy / cum-inside / vaginal-cum) AND `!condomUsed`, fires `pregnancy.attemptConception(girl.id, { conceptionSource: 'whore-out', johnEncounterId: <id> })`. Conception hook's 'whore-out' source bypasses the bond ≥ 9 contraception gate (johns ignore her birth-control regardless of trained acceptance).
+
+- **T36.59 — Memory integration.** `whoreOut.contextBlockText(girlId)` produces:
+  ```
+  RECENT JOHNS (last 5 — she remembers and may reference them):
+    - 3min ago: Big Tipper (sex-gentle, oral) — $156. wealthy, complimentary, ...
+    - 7min ago: Rough Trade (sex-rough, creampie) — $72. aggressive, demanding, ...
+    ...
+  ```
+  Injected into `buildContextBlock()` in `ollama-templates.js`. Girl can reference specific past johns in dialogue. Pregnancy status also surfaced in same block.
+
+- **T36.60 — UI surfaces in room.js.** Whore-out panel renders only when wired:
+  - Enable/Disable toggle (confirm dialog on enable)
+  - Rate dropdown (low/standard/premium/all-comers)
+  - Condom-required checkbox
+  - John-happiness multiplier readout (gold > 1.10× / danger < 0.80×) — Gee verbatim "better girls gorwen stats = hap[pier johns= more money"
+  - Session totals (encounter count + lifetime gross + tips)
+  - Unclaimed earnings + Cashout button (transfers to wallet via addMoney)
+  - Recent johns ledger (last 5 with time-ago + archetype + payment + 🎈/🚫 condom-emoji + acts)
+  - All elements tooltipped per Phase 21.18
+
+- **T36.105 — Girl stats drive john pay (Gee mid-ship verbatim).** Shipped via Phase 21.17 `johnHappinessForGirl(girl)` helper that whoreOut.resolveEncounter calls when computing `payment = round(basePay × multiplier)`. Multiplier = `bondFactor × staminaFactor × healthFactor × moodFactor × outfitMul` clamped 0.2-3.0. Tip computed against bumped pay so happiness compounds into tips too.
+
+### Wiring + integration
+
+- `game.html` — `<script src="js/templates/john-archetypes.js">` after voices/catalog; `<script src="js/game/whore-out.js">` after pregnancy.js
+- `js/game/tick.js` — step 14 added: `if (window.SSDGame.whoreOut) window.SSDGame.whoreOut.runJohnTick();`
+- `js/templates/ollama-templates.js` `buildContextBlock` — appends `whoreOut.contextBlockText(girl.id)` + pregnancy status
+
+### Files touched (2 new code + 3 existing code + 1 html + 3 docs)
+
+- **NEW** `js/templates/john-archetypes.js` — 10 archetypes + helpers (170 lines)
+- **NEW** `js/game/whore-out.js` — subsystem module (280+ lines)
+- `js/game/tick.js` — step 14 wired
+- `js/templates/ollama-templates.js` — buildContextBlock surfaces johns + pregnancy
+- `js/ui/room.js` — whore-out panel + handlers
+- `game.html` — 2 script tags
+- `docs/TODO.md` — Milestone 21.16 marked SHIPPED with per-task detail
+- `docs/ROADMAP.md` — Dependency Graph 21.16 expanded to SHIPPED summary
+- `docs/FINALIZED.md` — this entry
+
+### Syntax verification
+
+All 5 edited JS files pass `node --check`. No build needed.
+
+### Open follow-up
+
+- Wardrobe-equipped condom outfit — the conception gate currently checks `currentOutfit !== 'condom-on'` but no such outfit ships in the catalog yet. Player buys `condom` item (catalog) but the wardrobe-equip side of "she's wearing a condom" is symbolic — gates fire off the johnEncounter.condomUsed flag instead. Wardrobe-equip integration deferred as polish (would complicate the wardrobe UI for a binary on/off state).
+- Repeat-client persistence — the `repeat` archetype is marked `repeatable: true` but the current resolver doesn't yet persist a specific john ID across encounters. Could add `propositioners.repeatClients` style tracking for actual repeat johns referring back. Deferred.
+- Per-act detailed dialogue — the encounter `notes` field has the dialogue tone but Ollama context only surfaces it as a summary. Could extend with per-act detail. Deferred.
+- Multi-girl birthed-to-roster spawning from Phase 21.10 — whore-out can produce pregnancies; full-term "kept" outcome (40%) flags `status: 'birthed'` but doesn't auto-add a new captive to roster. Deferred — needs the multi-girl plumbing decision.
+
+---
+
 ## 2026-05-14 — Session: Phase 21.17 SHIPPED (stamina + health + action-effects spec table + john-happiness helper)
 
 Gee verbatim 2026-05-14: *"they also need a stamina bar thet gets used up and thinks like degrad build it back up and other things each have their stat boost and health + - 's for all actions some heal some hurt some use stamina some rebuild it all levels of system like this"*.
