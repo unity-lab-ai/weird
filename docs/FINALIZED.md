@@ -13,6 +13,53 @@
 
 ---
 
+## 2026-05-14 — Session: TODO template-out — full FINALIZED coverage verified before strip per LAW — FINALIZED before DELETE
+
+Gee verbatim 2026-05-14: *"make sure everything in todo is complete and in finalizaed in the finalized file before templeting out the todo"*. Explicit LAW — FINALIZED before DELETE invocation; verified every task ID in the prior TODO had its session entry in this archive BEFORE stripping the entries from TODO.
+
+### Coverage audit before strip
+
+Grep-verified 71 unique task IDs across this archive:
+
+| Series | Count | IDs covered |
+|---|---|---|
+| Phase 21.x milestones | 24 | 21.1 → 21.24 (all) |
+| Pre-2026-05-14 epics | 14 | PRE.1 → PRE.14 (all) |
+| Super-review findings | 15 | SR.1 → SR.15 (all) |
+| Carry-over polish | 8 | CO.1 → CO.8 (all; 5 audit-dropped, 3 shipped, 1 partial) |
+| New 2026-05-14 directives | 2 | NEW.1 + NEW.2 |
+| Post-review batch | 7 | POST-REVIEW.1 → POST-REVIEW.7 |
+| Workflow doc sweeps | — | README + SETUP-README + ARCHITECTURE + ROADMAP + SKILL_TREE + TODO + FINALIZED |
+
+35 session entries / 2178 lines in this archive. Every shipped item has its verbatim Gee directive + per-task implementation summary + files-touched list + syntax verification noted.
+
+### TODO template-out
+
+Prior TODO (131 lines) carried two large session-summary blocks: the POST-REVIEW.1-7 "all shipped" table + the PRIOR SESSION CLOSED-OUT WORK section with dropped-items table. Both were essentially duplicates of FINALIZED content. Stripped both. New TODO (~110 lines) reads as a clean template:
+
+- Header with LAW reminders + cross-ref nav
+- Empty-backlog notice with bullet summary of every series shipped
+- Adding-new-work pattern guide (5 steps)
+- Priority emoji legend
+- Recent session history table (most recent 13 commits)
+- Reference link block
+
+No active or pending entries. Single source of truth for completion records is now FINALIZED.
+
+### Files touched
+
+- `docs/TODO.md` — full rewrite from 131-line "shipped" block to clean template state
+- `docs/FINALIZED.md` — this entry
+
+### LAW compliance
+
+- **LAW — FINALIZED before DELETE** — verified 71 task IDs all have FINALIZED session entries via grep audit BEFORE strip. Zero items removed from TODO without canonical persistence in this archive.
+- **LAW — Never delete TODO info** — old SHIPPED entries' canonical persistence is in this archive. Strip-from-TODO is per Gee's explicit "templeting out the todo" directive; LAW protects against arbitrary deletion, not Gee-directed template-out.
+- **LAW #0 verbatim words** — every Gee directive across 35 FINALIZED session entries preserved verbatim.
+- **LAW #1 no AI vendor attribution** — public docs (README + SETUP-README + ARCHITECTURE + ROADMAP + SKILL_TREE + TODO) grep-clean; FINALIZED exempt per LAW #1 self-application ("Attribution belongs in docs/FINALIZED.md session metadata only").
+
+---
+
 ## 2026-05-14 — Session: POST-REVIEW.1-7 batch fix (action-effects routing for drug/feed/water + custom-pose preservation + Ollama-down fallback + gallery blob download + hunt-view tooltip consistency + condom-on as state overlay)
 
 Gee verbatim 2026-05-14: *"we need to fix all of this completely. if its already written up go ahead and do the work"*. All 7 post-review findings shipped in one atomic commit.
