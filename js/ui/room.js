@@ -63,7 +63,10 @@
             <button class="btn-small" data-feed="basic-meal">Feed (basic)</button>
             <button class="btn-small" data-feed="gourmet-meal">Feed (gourmet)</button>
           </div>
-          <div class="stat-row"><span>💧 Water</span><b>${girl.consumables?.water?.stock ?? '?'}</b></div>
+          <div class="stat-row"><span>💧 Water</span><b>${girl.consumables?.water?.stock ?? '?'}</b>
+            <button class="btn-small" data-water="bottled-water">Water (24pk)</button>
+            <button class="btn-small" data-water="filtered-water">Water (5gal)</button>
+          </div>
 
           <h3>Drugs</h3>
           <div class="btn-row">
@@ -132,7 +135,7 @@
       el.classList.toggle('inflight', on);
       const sendBtn = el.querySelector('#send');
       if (sendBtn) sendBtn.disabled = on;
-      el.querySelectorAll('.qa-btn, [data-drug], [data-feed], #selfie-btn, #heal-btn, [data-mode], #record-toggle, #list-sale')
+      el.querySelectorAll('.qa-btn, [data-drug], [data-feed], [data-water], #selfie-btn, #heal-btn, [data-mode], #record-toggle, #list-sale')
         .forEach(b => { b.disabled = on; });
       const status = el.querySelector('#stream-status');
       if (status) status.textContent = on ? '⏳ waiting for her to finish…' : '';
@@ -380,6 +383,27 @@
           cs.food.tier = Math.max(cs.food.tier || 0, itemId === 'gourmet-meal' ? 3 : 1);
           window.SSDGame.state.updateGirl(girl.id, { consumables: cs });
           const newBond = { ...girl.bond, bondXP: girl.bond.bondXP + (itemId === 'gourmet-meal' ? 3 : 1) };
+          window.SSDGame.state.updateGirl(girl.id, { bond: newBond });
+        } catch (e) { alert(e.message); }
+      };
+    });
+
+    // Water buttons — mirror the feed pattern. Bottled water = 6 stock + 1 bondXP at tier 1;
+    // filtered water = 12 stock + 2 bondXP at tier 2. Phase 21.9 will gate water decay by
+    // hold's toilet/waterSupply tier so plumbed holds (toilet >= 2) stop consuming this
+    // entirely — but the buttons stay available for manual top-ups regardless.
+    el.querySelectorAll('[data-water]').forEach(b => {
+      b.onclick = () => {
+        const itemId = b.dataset.water;
+        try {
+          window.SSDGame.shop.use(itemId, { girlId: girl.id, action: 'water' });
+          const cs = { ...girl.consumables };
+          if (!cs.water) cs.water = { tier: 0, stock: 0, decayPerTick: 1, unitCost: 1 };
+          cs.water.stock = (cs.water.stock || 0) + (itemId === 'filtered-water' ? 12 : 6);
+          cs.water.tier = Math.max(cs.water.tier || 0, itemId === 'filtered-water' ? 2 : 1);
+          window.SSDGame.state.updateGirl(girl.id, { consumables: cs });
+          const xpGain = itemId === 'filtered-water' ? 2 : 1;
+          const newBond = { ...girl.bond, bondXP: girl.bond.bondXP + xpGain };
           window.SSDGame.state.updateGirl(girl.id, { bond: newBond });
         } catch (e) { alert(e.message); }
       };

@@ -285,6 +285,20 @@
       cost: 45, tier: 3
     },
     {
+      id: 'bottled-water', displayName: 'Bottled Water (24pk)', emoji: '💧',
+      category: 'item', subcategory: 'food',
+      prompt: 'product photograph of a 24-pack flat of plain plastic water bottles in clear plastic shrink-wrap on a plain backdrop, grocery-catalog style',
+      cost: 8, tier: 1,
+      notes: 'Water consumable for captives. Refills girl.consumables.water.stock by 6. Plumbed-toilet holds (toilet >= 2) draw their own water — no need to buy.'
+    },
+    {
+      id: 'filtered-water', displayName: 'Filtered Water (5gal)', emoji: '💦',
+      category: 'item', subcategory: 'food',
+      prompt: 'product photograph of a 5-gallon office water cooler jug on a plain backdrop, commercial-supply catalog style',
+      cost: 18, tier: 2,
+      notes: 'Higher-tier water consumable. Refills stock by 12. Small bond XP bonus over bottled.'
+    },
+    {
       id: 'wine', displayName: 'Bottle of Red', emoji: '🍷',
       category: 'item', subcategory: 'drugs',
       prompt: 'product photograph of a single bottle of red wine on a plain dark backdrop, minimal label, wine-catalog editorial style',
