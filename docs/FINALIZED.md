@@ -13,6 +13,62 @@
 
 ---
 
+## 2026-05-14 — Session: Phase 21.12 SHIPPED (real public landing page replacing setup-wizard-as-landing)
+
+Gee verbatim 2026-05-14: *"and make a real landing page with start new game button settings, about, terms and privacy, ect ect"*. Replaces the setup-wizard-as-landing pattern with a true public landing page. Setup wizard preserved at `#setup` route so existing landing.js DOM bindings work untouched.
+
+### Phase 21.12 — Real public landing page (T36.36-T36.41)
+
+- **T36.36 — Six anchor-routed sections.** `index.html` rewritten with:
+  - `#home` (default) — hero + 3 CTAs (Start New Game / Continue / Settings) + 9-card feature highlights grid
+  - `#setup` — the existing setup wizard cards (status / Ollama / model / Kokoro / Pollinations / Launch button + How-this-works) wrapped in `.landing-section` so they show/hide together
+  - `#about` — game description + game loop + tech stack + version
+  - `#terms` — 18+ banner + adult-character invariant + taboo-fiction framing + jurisdiction notes + no-warranty + content-extremity warning + Exit CTA
+  - `#privacy` — everything stays on device + Ollama-local + Pollinations BYO-key + Kokoro CDN + no telemetry + save export/import
+  - `#settings` — pointer to the full setup wizard
+  - Hash-router script: `hashchange` event toggles `.landing-section.active` class on the matching section. Default route = home.
+
+- **T36.37 — Settings reachability.** Landing nav `#settings` link routes to in-page Settings section. The existing slide-out aside settings panel (driven by `#open-settings-btn` in the hero) preserved untouched for back-compat.
+
+- **T36.38 — About section.** Game premise framed as "persistent text-and-emoji city-builder with the structural skeleton of a dungeon-harem evil-taboo simulator". Game loop documented (Hunt / Hold / Interact / Record / Sell / Expand). Tech stack documented (Ollama localhost / Kokoro in-browser / Pollinations optional / IndexedDB persistence). Version v0.0.1. **LAW #1 compliant** — zero AI vendor attribution anywhere.
+
+- **T36.39 — Terms of Use section.** Top banner: "⚠ 18+ ONLY ... taboo themes, depictions of non-consensual scenarios, drug use, violence, and other extreme content." Adult-character-only invariant called out as enforced in code at multiple layers. Taboo-fiction framing: simulation only, not endorsement. Jurisdiction + legality note (user is responsible). No-warranty disclaimer. Content-extremity warning. "✕ Exit the tab" CTA button (uses `window.close()`).
+
+- **T36.40 — Privacy Policy section.** "What stays on your device: everything" — full IndexedDB story. "What calls out (and only with your consent)" — Ollama localhost / Pollinations BYO-key / Kokoro CDN model-weights cached on first visit. No telemetry / analytics / accounts. Save export/import. No tracking cookies. Generated-content responsibility note.
+
+- **T36.41 — Visual chrome consistent with game.html.** Dark aesthetic palette (#181410 background / #2a2a2a borders / #ffc8a0 accent / #c8b8a0 text / #6b2840 → #8a3450 primary CTA). Inline `<style>` block adds `.landing-section` / `.landing-nav` / `.home-hero` / `.home-feature` grid / `.policy-content` typography. Responsive feature grid `repeat(auto-fit, minmax(220px, 1fr))`. No marketing bloat / no AI vendor logos / no third-party analytics.
+
+### Continue Game button logic
+
+JS in the page:
+- On `DOMContentLoaded`, reads `window.SSDStorage.save.get('main')`
+- If a save with `createdAt` exists: enables Continue button, sets its label to "⏵ Continue (YYYY-MM-DD)", surfaces "(saved game detected)" status text
+- If no save: Continue stays disabled, status reads "(no save detected)"
+- Continue click → `location.href = './game.html'` (existing game.html boot path handles the resume)
+- Start New Game click → if save exists, confirm dialog; route to `#setup` to ensure environment is ready
+
+### Files touched (1 code + 3 docs)
+
+- `index.html` — full rewrite (122 → ~340 lines): inline style block, 6 sections, hash-router script, IDB save detection
+- `docs/TODO.md` — Milestone 21.12 marked SHIPPED with per-task detail
+- `docs/ROADMAP.md` — Dependency Graph 21.12 expanded to SHIPPED summary
+- `docs/FINALIZED.md` — this entry
+
+### Manual verification recommended
+
+Static HTML — no `node --check`. To smoke-test:
+1. Open `index.html` in a browser
+2. Default route should show home with hero + CTAs + feature grid
+3. Click each nav link — each section should swap cleanly
+4. With no save in IDB: Continue disabled. After playing game.html, return: Continue enabled with date.
+5. `#setup` should show the existing setup wizard cards working (landing.js still drives them)
+
+### Open follow-up
+
+- The Settings in-page section currently just points users to `#setup`. A dedicated settings UI (key entry / endpoint config / save management) inside the landing would be polish — currently the slide-out aside settings panel + the in-game settings cover it.
+
+---
+
 ## 2026-05-14 — Session: Phase 21.16 SHIPPED (whore-out passive-income + john ledger + pregnancy hook + memory recall)
 
 Gee verbatim 2026-05-14: *"also want a whore out option that allows girls to generate passive income and tracks all the johns and what they did to where the girls can talk about their johns and stuff idk figure it out"*. Distinct from Propositioner (bespoke single deals, upmarket clientele) — whore-out is continuous general-public batch flow.

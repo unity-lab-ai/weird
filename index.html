@@ -8,6 +8,33 @@
   <meta name="robots" content="noindex,nofollow" />
 
   <link rel="stylesheet" href="css/landing.css" />
+  <style>
+    /* Phase 21.12 (2026-05-14) — public landing page sectioning. Each top-level section
+       is anchor-routed via simple hash-based show/hide; default route = home. */
+    .landing-section { display: none; }
+    .landing-section.active { display: block; }
+    .landing-nav { display: flex; gap: 12px; flex-wrap: wrap; padding: 8px 0 18px; border-bottom: 1px solid #2a2a2a; margin-bottom: 18px; }
+    .landing-nav a { text-decoration: none; color: #c8b8a0; padding: 4px 10px; border-radius: 4px; transition: background 100ms; }
+    .landing-nav a:hover { background: #2a2a2a; }
+    .landing-nav a.active { background: #3a2820; color: #ffc8a0; }
+    .home-hero { padding: 32px 0; text-align: center; }
+    .home-hero h1 { font-size: 2.8rem; letter-spacing: 0.04em; margin: 0 0 12px; color: #ffc8a0; }
+    .home-hero p.tag { font-size: 1.1rem; color: #b0a090; margin: 0 0 28px; }
+    .home-cta-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin: 24px 0; }
+    .home-cta-row button { font-size: 1.1rem; padding: 14px 28px; cursor: pointer; }
+    .home-cta-primary { background: #6b2840; color: #fff; border: 1px solid #8a3450; border-radius: 6px; font-weight: 600; }
+    .home-cta-primary:hover { background: #8a3450; }
+    .home-cta-secondary { background: #2a2018; color: #c8b8a0; border: 1px solid #4a3828; border-radius: 6px; }
+    .home-cta-secondary:hover { background: #3a2820; }
+    .home-cta-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .home-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 24px 0; }
+    .home-feature { padding: 14px; border: 1px solid #2a2a2a; border-radius: 6px; background: #181410; }
+    .home-feature h3 { margin: 0 0 6px; color: #ffc8a0; font-size: 1.05rem; }
+    .home-feature p { margin: 0; font-size: 0.9rem; color: #a89888; line-height: 1.45; }
+    .policy-content h3 { color: #ffc8a0; margin-top: 22px; }
+    .policy-content p, .policy-content li { color: #c0b0a0; line-height: 1.55; }
+    .policy-content .warn-banner { background: rgba(180, 0, 0, .15); border: 1px solid #8a2020; padding: 14px; border-radius: 6px; margin: 12px 0; color: #ffb0a0; }
+  </style>
 </head>
 <body>
 
@@ -37,76 +64,243 @@
   </header>
 
   <main class="container">
+    <!-- Phase 21.12 — top-level nav (anchor-routed) -->
+    <nav class="landing-nav">
+      <a href="#home" data-route="home">🏠 Home</a>
+      <a href="#setup" data-route="setup">⚡ Setup</a>
+      <a href="#about" data-route="about">ℹ️ About</a>
+      <a href="#terms" data-route="terms">📜 Terms</a>
+      <a href="#privacy" data-route="privacy">🔒 Privacy</a>
+      <a href="#settings" data-route="settings">⚙️ Settings</a>
+    </nav>
 
-    <!-- Status dashboard -->
-    <section class="card" aria-label="Status">
-      <h2>⚡ Status</h2>
-      <div id="status-dash"></div>
-    </section>
-
-    <!-- Step 1: Ollama setup -->
-    <section class="card" aria-label="Ollama setup">
-      <h2>🦙 Ollama (local LLM — the brain)</h2>
-      <div id="ollama-setup">
-        <p class="small muted">Detecting…</p>
+    <!-- ============= HOME SECTION ============= -->
+    <section class="landing-section" id="home-section" data-section="home">
+      <div class="home-hero">
+        <h1>🔗 SEX SLAVE DUNGEON</h1>
+        <p class="tag">a persistent city-builder dungeon harem evil taboo where you hunt your prey with purchased tools</p>
+        <div class="home-cta-row">
+          <button class="home-cta-primary" id="cta-start-new-game">🎬 Start New Game</button>
+          <button class="home-cta-secondary" id="cta-continue-game" disabled>⏵ Continue Game</button>
+          <button class="home-cta-secondary" id="cta-open-settings">⚙️ Settings</button>
+        </div>
+        <p class="small muted" id="save-status">(checking for saved game…)</p>
       </div>
-    </section>
 
-    <!-- Step 2: Model pull -->
-    <section class="card" aria-label="Model pull">
-      <h2>📦 Model</h2>
-      <div id="model-setup">
-        <p class="small muted">Waiting for Ollama…</p>
+      <div class="home-features">
+        <div class="home-feature">
+          <h3>🎯 4-stage capture</h3>
+          <p>Approach → Engage → Subdue → Secure. Per-tool stage stats versus per-archetype resistance. Spam dies; strategy survives.</p>
+        </div>
+        <div class="home-feature">
+          <h3>🏚️ Dungeon portfolio</h3>
+          <p>Start in a hole in the wall. Upgrade to cinderblock cells, container in the woods, sewer alcoves, cold-war bunkers, mountain compounds. Buy more dungeons.</p>
+        </div>
+        <div class="home-feature">
+          <h3>💉 Drug pharmacology</h3>
+          <p>Cocaine, weed, MDMA, acid, whiskey, ketamine, tranquilizer dart (4-minute knockout). Each with onset/peak/wear-off curves. Effects show in image prompts + Ollama dialogue.</p>
+        </div>
+        <div class="home-feature">
+          <h3>👗 Wardrobe + nudity</h3>
+          <p>Captives keep the outfit they were wearing at capture. Buy specialty outfits (school uniform / latex / bondage harness / pony-play / 20+ catalog). Derobe (nude) or Strip everything (no accessories). Outfit multiplies film value.</p>
+        </div>
+        <div class="home-feature">
+          <h3>🎙️ Real Ollama brain + Kokoro voice</h3>
+          <p>Every reply streamed from your local uncensored Ollama. 16 Kokoro voices, per-girl voice override. Voice-in via Pollinations transcribe. No canned strings.</p>
+        </div>
+        <div class="home-feature">
+          <h3>🤰 Pregnancy + abortion</h3>
+          <p>Vaginal-cum conception roll, fertility curve, per-drug protection. Plan-B, medical pill, back-alley surgical kit, OB-GYN referral — each with a gestation window + complication risk. Per-trimester visible image markers.</p>
+        </div>
+        <div class="home-feature">
+          <h3>💸 Whore-out + john ledger</h3>
+          <p>Open her to general-public johns. 10 archetypes, per-tick passive arrivals, pay scales with Stockholm bond × stamina × health × mood × outfit. She remembers her johns and may reference them in conversation.</p>
+        </div>
+        <div class="home-feature">
+          <h3>🎬 Films auto-sell forever</h3>
+          <p>Record every interaction. Films stay listed permanently as infinite-copy passive earners. Premium 💣 sell-negatives action destroys the master for a 3.5× lump sum.</p>
+        </div>
+        <div class="home-feature">
+          <h3>⚱️ Final image per disposal</h3>
+          <p>Bury / lose-at-sea / incinerate / release / finalization-film / trade. Each disposal method renders its own final-scene image. Premium finalization films sell 3-5× regular.</p>
+        </div>
       </div>
-    </section>
 
-    <!-- Step 3: Kokoro -->
-    <section class="card" aria-label="Kokoro TTS">
-      <h2>🎙️ Kokoro TTS (in-browser voices)</h2>
-      <div id="kokoro-setup">
-        <p class="small muted">Preparing…</p>
-      </div>
-    </section>
-
-    <!-- Step 4: Pollinations -->
-    <section class="card" aria-label="Pollinations">
-      <h2>🖼️ Pollinations (optional — images)</h2>
-      <div id="polly-setup">
-        <p class="small muted">Waiting…</p>
-      </div>
-      <p class="small muted" style="margin-top:10px">
-        <b>Key type matters:</b> browser-side use needs a <code>pk_</code> publishable key
-        (rate-limited, 1 image/hour/IP on free tier). <code>sk_</code> secret keys are
-        server-side only and Pollinations will reject them from the browser with 403.
-        Get your key at <a href="https://enter.pollinations.ai" target="_blank" rel="noopener">enter.pollinations.ai</a>.
-        <br>If the key fails, the game falls back to the legacy free endpoint automatically.
+      <p class="small muted" style="text-align:center;padding:18px 0">
+        Every character is 18 or older. Adult fiction. Local-first — your save lives in your browser's IndexedDB. No telemetry. No accounts. No cloud.
       </p>
     </section>
 
-    <!-- Launch -->
-    <div class="launch-row">
-      <button id="launch-btn" disabled>🔒 Finish setup to launch</button>
-    </div>
+    <!-- ============= SETUP SECTION (existing wizard) ============= -->
+    <section class="landing-section" id="setup-section" data-section="setup">
 
-    <!-- Info -->
-    <section class="card" aria-label="About">
-      <h2>ℹ️ How this works</h2>
-      <p class="small">
-        Everything in <strong>SEX SLAVE DUNGEON</strong> runs <strong>on your machine</strong>.
-        The static site you're looking at is served from GitHub Pages — zero backend.
-        <strong>Ollama</strong> runs your local LLM (the girls' minds).
-        <strong>Kokoro</strong> runs in your browser for voice (models cached in your browser storage).
-        <strong>Pollinations</strong> (optional) generates images via your own key.
-        Your save data lives in your browser's IndexedDB. Export / import anytime from Settings.
+      <!-- Status dashboard -->
+      <section class="card" aria-label="Status">
+        <h2>⚡ Status</h2>
+        <div id="status-dash"></div>
+      </section>
+
+      <!-- Step 1: Ollama setup -->
+      <section class="card" aria-label="Ollama setup">
+        <h2>🦙 Ollama (local LLM — the brain)</h2>
+        <div id="ollama-setup">
+          <p class="small muted">Detecting…</p>
+        </div>
+      </section>
+
+      <!-- Step 2: Model pull -->
+      <section class="card" aria-label="Model pull">
+        <h2>📦 Model</h2>
+        <div id="model-setup">
+          <p class="small muted">Waiting for Ollama…</p>
+        </div>
+      </section>
+
+      <!-- Step 3: Kokoro -->
+      <section class="card" aria-label="Kokoro TTS">
+        <h2>🎙️ Kokoro TTS (in-browser voices)</h2>
+        <div id="kokoro-setup">
+          <p class="small muted">Preparing…</p>
+        </div>
+      </section>
+
+      <!-- Step 4: Pollinations -->
+      <section class="card" aria-label="Pollinations">
+        <h2>🖼️ Pollinations (optional — images)</h2>
+        <div id="polly-setup">
+          <p class="small muted">Waiting…</p>
+        </div>
+        <p class="small muted" style="margin-top:10px">
+          <b>Key type matters:</b> browser-side use needs a <code>pk_</code> publishable key
+          (rate-limited, 1 image/hour/IP on free tier). <code>sk_</code> secret keys are
+          server-side only and Pollinations will reject them from the browser with 403.
+          Get your key at <a href="https://enter.pollinations.ai" target="_blank" rel="noopener">enter.pollinations.ai</a>.
+          <br>If the key fails, the game falls back to the legacy free endpoint automatically.
+        </p>
+      </section>
+
+      <!-- Launch -->
+      <div class="launch-row">
+        <button id="launch-btn" disabled>🔒 Finish setup to launch</button>
+      </div>
+
+      <!-- Info -->
+      <section class="card" aria-label="About">
+        <h2>ℹ️ How this works</h2>
+        <p class="small">
+          Everything in <strong>SEX SLAVE DUNGEON</strong> runs <strong>on your machine</strong>.
+          The static site you're looking at is served from GitHub Pages — zero backend.
+          <strong>Ollama</strong> runs your local LLM (the girls' minds).
+          <strong>Kokoro</strong> runs in your browser for voice (models cached in your browser storage).
+          <strong>Pollinations</strong> (optional) generates images via your own key.
+          Your save data lives in your browser's IndexedDB. Export / import anytime from Settings.
+        </p>
+        <p class="small muted">
+          This is adult fiction. All characters are 18+. Content is taboo, extreme, uncensored. If that's not for you, close the tab.
+        </p>
+      </section>
+    </section>
+
+    <!-- ============= ABOUT SECTION ============= -->
+    <section class="landing-section policy-content" id="about-section" data-section="about">
+      <h2>ℹ️ About SEX SLAVE DUNGEON</h2>
+      <p>
+        SEX SLAVE DUNGEON is a persistent text-and-emoji city-builder game with the structural skeleton
+        of a dungeon-harem evil-taboo simulator. You play the villain — the dungeon operator, the predator,
+        the collector. Gameplay is loop-based, construction-focused, persistent across sessions, growth-oriented.
+        There is no win state — the game is the ever-growing collection and the ever-upgrading dungeon.
       </p>
-      <p class="small muted">
-        This is adult fiction. All characters are 18+. Content is taboo, extreme, uncensored. If that's not for you, close the tab.
+
+      <h3>Game loop</h3>
+      <ul>
+        <li><b>Hunt</b> — visit Town, pick a location, run a 4-stage capture attempt against girls who spawn there</li>
+        <li><b>Hold</b> — bring captives back to your dungeons, assign them holds, upgrade their conditions across 12+ tracks</li>
+        <li><b>Interact</b> — talk to them via real Ollama-powered dialogue with persistent body state, drugs, mood, bond</li>
+        <li><b>Record</b> — every session can be recorded as a film; films sell on the content market forever</li>
+        <li><b>Sell / dispose</b> — list captives on slave market, accept propositioner gigs, dispose via various methods</li>
+        <li><b>Expand</b> — buy more dungeons, own properties around town, upgrade everything</li>
+      </ul>
+
+      <h3>Tech stack</h3>
+      <ul>
+        <li><b>Frontend</b> — single-file HTML game with bundled JS, no build step</li>
+        <li><b>Ollama</b> at localhost:11434 — local uncensored LLM (dolphin-mistral / abliterated variants)</li>
+        <li><b>Kokoro</b> — in-browser TTS with 16 voice options</li>
+        <li><b>Pollinations</b> — optional image generation via your own key</li>
+        <li><b>Persistence</b> — IndexedDB save state, fully local</li>
+      </ul>
+
+      <h3>Version</h3>
+      <p>v0.0.1 — Phase 21 in flight. See <a href="#setup">⚡ Setup</a> for environment configuration.</p>
+    </section>
+
+    <!-- ============= TERMS SECTION ============= -->
+    <section class="landing-section policy-content" id="terms-section" data-section="terms">
+      <h2>📜 Terms of Use</h2>
+
+      <div class="warn-banner">
+        ⚠ <b>18+ ONLY.</b> This game contains explicit adult content, taboo themes, depictions of non-consensual scenarios, drug use, violence, and other extreme content. By using this software you affirm you are at least 18 years old (or the age of majority in your jurisdiction, whichever is higher).
+      </div>
+
+      <h3>Adult-character-only invariant</h3>
+      <p>Every character generated, depicted, or referenced in SEX SLAVE DUNGEON is an adult age 18 or older. The procedural girl-generator enforces a hard minimum age of 18 at spawn time. No content depicts minors. This invariant is non-negotiable and is enforced in the codebase at multiple layers.</p>
+
+      <h3>Taboo-fiction framing</h3>
+      <p>This is a work of fiction. Depicted scenarios — including kidnapping, captivity, sex slavery, forced pregnancy, drug administration, and violence — are roleplay/simulation only. The software depicts these acts in a fantastical game context; it does not endorse, advocate, or encourage them in reality. Real-world harm to real people is a crime.</p>
+
+      <h3>Jurisdiction + legality</h3>
+      <p>You are solely responsible for verifying that consumption of explicit adult fiction and simulated taboo content is legal in your jurisdiction. The software is provided as-is with no warranty as to legality in your location. If consumption is restricted where you are, close this tab and do not return.</p>
+
+      <h3>No warranty</h3>
+      <p>This software is provided "AS IS" without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement.</p>
+
+      <h3>Content-extremity warning</h3>
+      <p>The game's Ollama brain is uncensored and may generate content significantly more extreme than what's described above. If at any point the content disturbs you, exit the tab. You are not obligated to continue.</p>
+
+      <p style="text-align:center;padding:18px 0">
+        <button class="home-cta-secondary" onclick="window.close()">✕ Exit the tab</button>
       </p>
+    </section>
+
+    <!-- ============= PRIVACY SECTION ============= -->
+    <section class="landing-section policy-content" id="privacy-section" data-section="privacy">
+      <h2>🔒 Privacy Policy</h2>
+
+      <h3>What stays on your device</h3>
+      <p>Everything. The entire game state — save data, captive profiles, generated content, films, propositioner ledgers, john encounters, dungeon configurations, settings — lives in your browser's <b>IndexedDB</b>. Nothing about your gameplay is transmitted anywhere. No accounts, no logins, no telemetry.</p>
+
+      <h3>What calls out (and only with your consent)</h3>
+      <ul>
+        <li><b>Your local Ollama at localhost:11434</b> — only reachable from your own machine. Powers the girls' dialogue. You install + run it yourself; the game just sends HTTP requests to your local instance.</li>
+        <li><b>Pollinations API (optional)</b> — only fires if you provide your own API key. Images generated via your key; bandwidth + rate limits are your account's. If you don't provide a key, the game falls back to free Pollinations endpoints (still on your IP).</li>
+        <li><b>Kokoro model weights</b> — downloaded once from a public CDN on first visit, then cached in browser IDB for all future sessions. No telemetry around download.</li>
+      </ul>
+
+      <h3>No telemetry, no analytics</h3>
+      <p>This site ships zero tracking. No Google Analytics, no Sentry, no mixpanel, no plausible, no nothing. The page-load HTTP request to wherever you're loading the static site from is the only network event we have any visibility into — and that's hosting-platform-level, not us.</p>
+
+      <h3>Save export / import</h3>
+      <p>You own your save. In-game Settings → Save Slots lets you export your full save as a JSON blob and import it back later, on the same machine or a different one. Factory-reset wipes everything from IndexedDB.</p>
+
+      <h3>No cookies for tracking</h3>
+      <p>The game uses <b>localStorage</b> for a handful of UI preferences (voice toggle, last-used Ollama model, last-used Pollinations key). None of these leave your machine.</p>
+
+      <h3>Adult content</h3>
+      <p>Generated dialogue, images, and films are produced on your own machine (Ollama) or via your own Pollinations key. Generated content is your responsibility — keep it private to your machine; do not share generated content where it would constitute illegal distribution in your jurisdiction.</p>
+    </section>
+
+    <!-- ============= SETTINGS SECTION ============= -->
+    <section class="landing-section" id="settings-section" data-section="settings">
+      <div class="card">
+        <h2>⚙️ Settings</h2>
+        <div id="settings-body-inline"></div>
+        <p class="small muted">Need Ollama / Kokoro / Pollinations setup? Go to <a href="#setup">⚡ Setup</a> for the wizard.</p>
+      </div>
     </section>
 
   </main>
 
-  <!-- Settings slide-out -->
+  <!-- Settings slide-out (existing — fired from chrome icon for back-compat) -->
   <aside class="settings-panel" aria-label="Settings">
     <div id="settings-body"></div>
   </aside>
@@ -118,5 +312,59 @@
   <!-- UI controllers load last -->
   <script src="js/ui/settings.js"></script>
   <script src="js/ui/landing.js"></script>
+
+  <!-- Phase 21.12 (2026-05-14) — public landing page router. Hash-based show/hide for the
+       top-level sections (home / setup / about / terms / privacy / settings). Continue Game
+       button visibility driven by IDB save detection. -->
+  <script>
+  (function () {
+    'use strict';
+    const SECTIONS = ['home', 'setup', 'about', 'terms', 'privacy', 'settings'];
+    function route() {
+      const h = (location.hash || '#home').replace('#', '');
+      const target = SECTIONS.includes(h) ? h : 'home';
+      for (const s of SECTIONS) {
+        const el = document.getElementById(s + '-section');
+        if (el) el.classList.toggle('active', s === target);
+        const nav = document.querySelector(`.landing-nav a[data-route="${s}"]`);
+        if (nav) nav.classList.toggle('active', s === target);
+      }
+      window.scrollTo(0, 0);
+    }
+    window.addEventListener('hashchange', route);
+    document.addEventListener('DOMContentLoaded', async () => {
+      route();
+      // Detect save presence — toggle Continue Game button
+      const continueBtn = document.getElementById('cta-continue-game');
+      const startBtn = document.getElementById('cta-start-new-game');
+      const settingsBtn = document.getElementById('cta-open-settings');
+      const saveStatus = document.getElementById('save-status');
+      try {
+        const saved = window.SSDStorage && await window.SSDStorage.save.get('main');
+        if (saved && saved.createdAt) {
+          continueBtn.disabled = false;
+          continueBtn.textContent = `⏵ Continue (${new Date(saved.createdAt).toLocaleDateString()})`;
+          if (saveStatus) saveStatus.textContent = '(saved game detected — click Continue to resume)';
+        } else {
+          if (saveStatus) saveStatus.textContent = '(no save detected — Start New Game to begin)';
+        }
+      } catch (err) {
+        if (saveStatus) saveStatus.textContent = '(save check failed: ' + err.message + ')';
+      }
+      if (startBtn) startBtn.onclick = () => {
+        // If save exists, confirm before overwriting
+        if (!continueBtn.disabled && !confirm('A saved game was detected. Starting a new game will NOT delete the old save until you confirm in-game. Continue?')) return;
+        // Route to setup wizard if not all systems green; else jump straight to game
+        location.hash = '#setup';
+      };
+      if (continueBtn) continueBtn.onclick = () => {
+        location.href = './game.html';
+      };
+      if (settingsBtn) settingsBtn.onclick = () => {
+        location.hash = '#settings';
+      };
+    });
+  })();
+  </script>
 </body>
 </html>
