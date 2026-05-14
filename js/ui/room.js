@@ -77,13 +77,13 @@
             ).join('')}
           </div>
           <h3>Supplies</h3>
-          <div class="stat-row"><span>🍱 Food</span><b>${girl.consumables?.food?.stock ?? '?'}</b>
-            <button class="btn-small" data-feed="basic-meal">Feed (basic)</button>
-            <button class="btn-small" data-feed="gourmet-meal">Feed (gourmet)</button>
+          <div class="stat-row" data-tooltip="Food stock. Hits 0 = mood drop + health decay. Auto-fed once feedAutomation ≥ 2."><span>🍱 Food</span><b>${girl.consumables?.food?.stock ?? '?'}</b>
+            <button class="btn-small" data-feed="basic-meal" data-tooltip="Slop. +3 stock, +1 bondXP. Cheap and keeps her alive.">Feed (basic)</button>
+            <button class="btn-small" data-feed="gourmet-meal" data-tooltip="Fancy meal. +7 stock, +3 bondXP, mood bump. She remembers who fed her.">Feed (gourmet)</button>
           </div>
-          <div class="stat-row"><span>💧 Water</span><b>${girl.consumables?.water?.stock ?? '?'}</b>
-            <button class="btn-small" data-water="bottled-water">Water (24pk)</button>
-            <button class="btn-small" data-water="filtered-water">Water (5gal)</button>
+          <div class="stat-row" data-tooltip="Water stock. Hits 0 = dehydration. Plumbed holds (toilet ≥ 2 OR waterSupply ≥ 2) draw automatically."><span>💧 Water</span><b>${girl.consumables?.water?.stock ?? '?'}</b>
+            <button class="btn-small" data-water="bottled-water" data-tooltip="24-pack of bottled water. +6 stock, +1 bondXP. Cheap top-up.">Water (24pk)</button>
+            <button class="btn-small" data-water="filtered-water" data-tooltip="5-gallon filtered jug. +12 stock, +2 bondXP. Better tier.">Water (5gal)</button>
           </div>
 
           ${(() => {
@@ -118,27 +118,27 @@
 
           <h3>Drugs</h3>
           <div class="btn-row">
-            <button class="btn-small" data-drug="coke">❄️ Line of coke</button>
-            <button class="btn-small" data-drug="weed">🌿 Roll a joint</button>
-            <button class="btn-small" data-drug="mdma">💊 Share molly</button>
-            <button class="btn-small" data-drug="acid">🧪 Tab of acid</button>
-            <button class="btn-small" data-drug="whiskey">🥃 Pour whiskey</button>
-            <button class="btn-small" data-drug="ketamine">🐴 Bump of K</button>
-            <button class="btn-small btn-danger" data-drug="tranquilizer" title="Tranquilizer dart — full unconscious knockout for 4 minutes. Distinct from ketamine (dissociation). Consumes 1 from inventory.">🎯 Tranquilizer (4-min knockout)</button>
+            <button class="btn-small" data-drug="coke" data-tooltip="Line of coke. Rapid-fire chatter, jaw clench, dilated pupils. 45-min curve.">❄️ Line of coke</button>
+            <button class="btn-small" data-drug="weed" data-tooltip="Roll her a joint. Slow blinks, drifty word choice, relaxed posture. 2-hour curve.">🌿 Roll a joint</button>
+            <button class="btn-small" data-drug="mdma" data-tooltip="Share a molly. Emotional flooding, 'i love you' leak, glowing skin. 4-hour curve.">💊 Share molly</button>
+            <button class="btn-small" data-drug="acid" data-tooltip="Tab of acid. Things-aren't-real perception, blown pupils, time dilation. 10-hour curve.">🧪 Tab of acid</button>
+            <button class="btn-small" data-drug="whiskey" data-tooltip="Pour whiskey. Slurred, looser-tongued, more honest. 90-min curve.">🥃 Pour whiskey</button>
+            <button class="btn-small" data-drug="ketamine" data-tooltip="Bump of K. Dissociated stare, slack jaw, limp posture. 40-min curve. NOT a knockout.">🐴 Bump of K</button>
+            <button class="btn-small btn-danger" data-drug="tranquilizer" data-tooltip="Tranquilizer dart. FULL knockout — eyes closed, limp, unresponsive. 4-min unconscious window. Consumes 1 from inventory.">🎯 Tranquilizer (4-min knockout)</button>
           </div>
 
           <h3>Actions</h3>
           <div class="btn-row">
-            <button id="record-toggle" class="btn-small">${window.SSDGame.film.isRecording() && window.SSDGame.film.activeSession().girlId === girl.id ? '⏹ Stop recording' : '🎬 Start recording'}</button>
-            <button id="selfie-btn" class="btn-small">📸 Demand selfie</button>
-            <button id="derobe-btn" class="btn-small ${girl.currentOutfit === 'nude' ? 'btn-primary' : ''}" title="${girl.currentOutfit === 'nude' ? 'Currently nude — click to put her captured-at outfit back on' : 'Strip her nude — front-loads nudity in image prompts (accessories still allowed if equipped)'}">🍑 ${girl.currentOutfit === 'nude' ? 'Re-dress' : 'Derobe (nude)'}</button>
-            <button id="strip-all-btn" class="btn-small ${girl.currentOutfit === 'none' ? 'btn-primary' : ''}" title="${girl.currentOutfit === 'none' ? 'Currently stripped of everything — click to put her captured-at outfit back on' : 'Strip EVERYTHING — no garments, no accessories, no jewelry, no collar, no restraints'}">🚫 ${girl.currentOutfit === 'none' ? 'Re-dress' : 'Strip everything'}</button>
-            <button id="heal-btn" class="btn-small">❤️‍🩹 Heal (reset damage)</button>
-            <button class="btn-small" data-mode="sexy">Mode: Sexy</button>
-            <button class="btn-small" data-mode="hurtme">Mode: Hurt Me</button>
-            <a class="btn-small" href="#dispose?girl=${girl.id}">⚱️ Dispose / trade</a>
-            <button id="list-sale" class="btn-small">⛓️ List on slave market</button>
-            <a class="btn-small" href="#timeline?girl=${girl.id}">📖 Timeline</a>
+            <button id="record-toggle" class="btn-small" data-tooltip="${window.SSDGame.film.isRecording() && window.SSDGame.film.activeSession().girlId === girl.id ? 'Stop the recording. Film gets cover-image generated and listed on the market.' : 'Start recording this session. Every turn captured; sells passive on tick.'}">${window.SSDGame.film.isRecording() && window.SSDGame.film.activeSession().girlId === girl.id ? '⏹ Stop recording' : '🎬 Start recording'}</button>
+            <button id="selfie-btn" class="btn-small" data-tooltip="Make her pose for a Pollinations-generated selfie. Random pose from the library. Uses her locked face seed.">📸 Demand selfie</button>
+            <button id="derobe-btn" class="btn-small ${girl.currentOutfit === 'nude' ? 'btn-primary' : ''}" data-tooltip="${girl.currentOutfit === 'nude' ? 'Currently nude — click to put her captured-at outfit back on.' : 'Strip her nude. Front-loads nudity in image prompts. Accessories still allowed if equipped.'}">🍑 ${girl.currentOutfit === 'nude' ? 'Re-dress' : 'Derobe (nude)'}</button>
+            <button id="strip-all-btn" class="btn-small ${girl.currentOutfit === 'none' ? 'btn-primary' : ''}" data-tooltip="${girl.currentOutfit === 'none' ? 'Currently stripped of everything — click to put her captured-at outfit back on.' : 'Strip EVERYTHING — no garments, no accessories, no jewelry, no collar, no restraints. Raw nakedness.'}">🚫 ${girl.currentOutfit === 'none' ? 'Re-dress' : 'Strip everything'}</button>
+            <button id="heal-btn" class="btn-small" data-tooltip="Heal her bruises + reset mood to baseline. Sometimes you patch them up before they break.">❤️‍🩹 Heal (reset damage)</button>
+            <button class="btn-small" data-mode="sexy" data-tooltip="Sexy mode — default register. Sex acts emphasized in Ollama replies.">Mode: Sexy</button>
+            <button class="btn-small" data-mode="hurtme" data-tooltip="Hurt Me mode — violence register. Bruises accumulate; pain emphasized.">Mode: Hurt Me</button>
+            <a class="btn-small" href="#dispose?girl=${girl.id}" data-tooltip="End the relationship. Bury / lose-at-sea / incinerate / release / final film / trade-away. Each method has different notoriety + premium-content tradeoffs.">⚱️ Dispose / trade</a>
+            <button id="list-sale" class="btn-small" data-tooltip="List her on the slave market. Buyers tick in over time. Price scales with Stockholm rating + training.">⛓️ List on slave market</button>
+            <a class="btn-small" href="#timeline?girl=${girl.id}" data-tooltip="Her full history — every turn, every drug, every milestone.">📖 Timeline</a>
           </div>
           <div id="selfie-slot"></div>
         </section>

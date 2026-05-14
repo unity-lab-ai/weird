@@ -18,44 +18,44 @@
 
     el.innerHTML = `
       <div class="grid-2">
-        <section class="panel">
+        <section class="panel" data-tooltip="Liquid cash on hand. Notoriety = total heat from the operation. Tick = elapsed game-time ticks.">
           <h2>💰 Treasury</h2>
           <div class="big-num">$${s.wallet.money.toLocaleString()}</div>
           <div class="sub">Notoriety: ${s.wallet.notoriety} · Tick: ${s.tickCount}</div>
         </section>
-        <section class="panel">
+        <section class="panel" data-tooltip="Films auto-sell on tick. Listed = passive earners. Sold = closed sales. Total earned = lifetime payouts.">
           <h2>🎬 Film Market</h2>
-          <div class="stat-row"><span>Listed</span><b>${listedFilms}</b></div>
-          <div class="stat-row"><span>Sold</span><b>${soldFilms}</b></div>
-          <div class="stat-row"><span>Total earned</span><b>$${totalEarned.toLocaleString()}</b></div>
-          <a data-route="market" href="#market" class="btn-small">Open market →</a>
+          <div class="stat-row" data-tooltip="Films currently listed. Each pays per-tick passive income — they NEVER unlist unless you 💣 sell negatives.">Listed<b>${listedFilms}</b></div>
+          <div class="stat-row" data-tooltip="Legacy sold count (pre-auto-sell). Auto-sell films stay listed.">Sold<b>${soldFilms}</b></div>
+          <div class="stat-row" data-tooltip="Cumulative payouts from films across the entire save.">Total earned<b>$${totalEarned.toLocaleString()}</b></div>
+          <a data-route="market" href="#market" class="btn-small" data-tooltip="Open the films market — list / sell-negatives / view passive income.">Open market →</a>
         </section>
-        <section class="panel">
+        <section class="panel" data-tooltip="Captives in your operation across all dungeons.">
           <h2>🔗 Captives</h2>
           <div class="big-num">${captives.length}</div>
           <div class="sub">across ${s.dungeons.length} dungeon${s.dungeons.length === 1 ? '' : 's'}</div>
-          <a data-route="roster" href="#roster" class="btn-small">Roster →</a>
-          <a data-route="dungeon" href="#dungeon" class="btn-small">Dungeons →</a>
+          <a data-route="roster" href="#roster" class="btn-small" data-tooltip="Full roster + disposal log + listings.">Roster →</a>
+          <a data-route="dungeon" href="#dungeon" class="btn-small" data-tooltip="Dungeon portfolio + hold upgrades.">Dungeons →</a>
         </section>
-        <section class="panel">
+        <section class="panel" data-tooltip="John inbox — upmarket clientele requesting specific rental gigs. Accept/reject per request.">
           <h2>📬 Propositioners</h2>
-          <div class="stat-row"><span>Inbox</span><b>${s.propositioners.inbox.length}</b></div>
-          <div class="stat-row"><span>Active</span><b>${s.propositioners.active.length}</b></div>
-          <div class="stat-row"><span>Completed</span><b>${s.propositioners.completed.length}</b></div>
-          <a data-route="propositioners" href="#propositioners" class="btn-small">Inbox →</a>
+          <div class="stat-row" data-tooltip="Waiting for your review.">Inbox<b>${s.propositioners.inbox.length}</b></div>
+          <div class="stat-row" data-tooltip="Currently being fulfilled by your girls.">Active<b>${s.propositioners.active.length}</b></div>
+          <div class="stat-row" data-tooltip="Completed engagements — drove repeat-client reputation.">Completed<b>${s.propositioners.completed.length}</b></div>
+          <a data-route="propositioners" href="#propositioners" class="btn-small" data-tooltip="Review inbox + manage active engagements.">Inbox →</a>
         </section>
       </div>
 
       <section class="panel">
         <h2>Quick actions</h2>
         <div class="btn-row">
-          <a href="#town" class="btn-primary">🌆 Town</a>
-          <a href="#hunt" class="btn-small">🎯 Hunt</a>
-          <a href="#shop" class="btn-small">🛒 Shop</a>
-          <a href="#slave-market" class="btn-small">⛓️ Slave market</a>
-          <a href="#achievements" class="btn-small">🏆 Achievements</a>
-          ${window.SSDGame.escapeRecovery && window.SSDGame.escapeRecovery.recoverable().length > 0 ? `<a href="#escape-recovery" class="btn-small btn-danger">🏃 ${window.SSDGame.escapeRecovery.recoverable().length} on the run</a>` : ''}
-          ${captives.length > 0 ? `<a href="#room?girl=${captives[0].id}" class="btn-small">🚪 Enter ${captives[0].name}'s hold</a>` : ''}
+          <a href="#town" class="btn-primary" data-tooltip="The map. Visit locations + own properties.">🌆 Town</a>
+          <a href="#hunt" class="btn-small" data-tooltip="Pick a target + loadout. Run a 4-stage capture attempt.">🎯 Hunt</a>
+          <a href="#shop" class="btn-small" data-tooltip="Buy tools, drugs, food, water, contraception, abortion supplies.">🛒 Shop</a>
+          <a href="#slave-market" class="btn-small" data-tooltip="Buy/sell captives. Untrained cheap, trained premium.">⛓️ Slave market</a>
+          <a href="#achievements" class="btn-small" data-tooltip="Unlocked milestones.">🏆 Achievements</a>
+          ${window.SSDGame.escapeRecovery && window.SSDGame.escapeRecovery.recoverable().length > 0 ? `<a href="#escape-recovery" class="btn-small btn-danger" data-tooltip="Girls have escaped — recapture them before they alert authorities.">🏃 ${window.SSDGame.escapeRecovery.recoverable().length} on the run</a>` : ''}
+          ${captives.length > 0 ? `<a href="#room?girl=${captives[0].id}" class="btn-small" data-tooltip="Jump straight into ${captives[0].name}'s hold.">🚪 Enter ${captives[0].name}'s hold</a>` : ''}
         </div>
       </section>
 

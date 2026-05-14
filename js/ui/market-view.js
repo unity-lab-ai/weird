@@ -123,8 +123,8 @@
           <b>$${lifetime.toLocaleString()}</b>
         </div>
         <div class="stat-row small">
-          <button class="btn-small" data-unlist="${f.id}">Unlist</button>
-          <button class="btn-small btn-danger" data-sell-negatives="${f.id}" title="Destroys the master for a one-time premium payout — film stops earning forever">💣 Sell negatives — $${premium.toLocaleString()}</button>
+          <button class="btn-small" data-unlist="${f.id}" data-tooltip="Pull this film off the market temporarily. Goes to archive. Relist any time. No income while unlisted.">Unlist</button>
+          <button class="btn-small btn-danger" data-sell-negatives="${f.id}" data-tooltip="Destroys the master copy for a one-time 3.5× premium payout. Film stops earning forever. +2 notoriety hit.">💣 Sell negatives — $${premium.toLocaleString()}</button>
         </div>
       </li>
     `;

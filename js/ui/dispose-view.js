@@ -13,25 +13,26 @@
       <div class="panel">
         <h2>⚱️ Dispose of ${girl.name}</h2>
         <p class="small muted">${girl.backstoryFragment}</p>
-        <div class="stat-row"><span>Stockholm rating</span><b>L${girl.bond.bondLevel}/9</b></div>
-        <div class="stat-row"><span>Dungeon isolation</span><b>${Math.round((dungeonTpl?.isolation || 0) * 100)}%</b></div>
-        <a href="#room?girl=${girl.id}" class="btn-small">← cancel</a>
+        <div class="stat-row" data-tooltip="Her Stockholm bond level 0-9. Higher levels = bigger premium on finalization films + lower notoriety on bury/release."><span>Stockholm rating</span><b>L${girl.bond.bondLevel}/9</b></div>
+        <div class="stat-row" data-tooltip="How isolated this dungeon is. Higher isolation reduces notoriety bumps on every method."><span>Dungeon isolation</span><b>${Math.round((dungeonTpl?.isolation || 0) * 100)}%</b></div>
+        <a href="#room?girl=${girl.id}" class="btn-small" data-tooltip="Back to her hold — no harm done.">← cancel</a>
       </div>
 
       <div class="panel">
         <h2>Choose a method</h2>
         <div class="girl-grid">
-          ${Object.entries(window.SSDGame.disposal.METHODS).map(([key, m]) => `
-            <div class="model-card">
+          ${Object.entries(window.SSDGame.disposal.METHODS).map(([key, m]) => {
+            const cardTip = (m.notes || '').replace(/"/g, '&quot;');
+            return `<div class="model-card" data-tooltip="${cardTip}">
               <div class="model-name">${m.emoji} ${m.displayName}</div>
               <div class="model-notes small">${m.notes}</div>
-              <div class="stat-row small"><span>Cost</span><b>$${m.moneyCost}</b></div>
-              <div class="stat-row small"><span>Notoriety</span><b>+${m.notorietyFactor(girl, dungeonTpl) || 0}</b></div>
-              ${m.generatesFilm ? `<div class="small gold">🎬 Generates finalization film</div>` : ''}
-              ${m.requiresFacility ? `<div class="small warn">Requires facility: ${m.requiresFacility}</div>` : ''}
-              <button data-method="${key}" class="btn-small btn-danger">Dispose via ${m.displayName}</button>
-            </div>
-          `).join('')}
+              <div class="stat-row small" data-tooltip="Up-front money cost for this disposal method"><span>Cost</span><b>$${m.moneyCost}</b></div>
+              <div class="stat-row small" data-tooltip="Notoriety added to your operation. Higher = more heat from authorities."><span>Notoriety</span><b>+${m.notorietyFactor(girl, dungeonTpl) || 0}</b></div>
+              ${m.generatesFilm ? `<div class="small gold" data-tooltip="Generates a premium finalization film — 3-5× regular film value, one-shot.">🎬 Generates finalization film</div>` : ''}
+              ${m.requiresFacility ? `<div class="small warn" data-tooltip="Requires this specific facility built into your dungeon">Requires facility: ${m.requiresFacility}</div>` : ''}
+              <button data-method="${key}" class="btn-small btn-danger" data-tooltip="Dispose via ${m.displayName}. Cannot be undone.">Dispose via ${m.displayName}</button>
+            </div>`;
+          }).join('')}
         </div>
       </div>
     `;

@@ -52,18 +52,19 @@
         <div class="girl-grid">
           ${window.SSDGame.wardrobe.catalog().map(o => {
             const isOwned = owned.has(o.id);
-            return `<div class="model-card">
+            const cardTip = (o.description || '').replace(/"/g, '&quot;');
+            return `<div class="model-card" data-tooltip="${cardTip}">
               <div class="model-name">${o.emoji} ${o.displayName}</div>
               <div class="model-notes small">${o.description}</div>
               <div class="model-meta">
-                <span>$${o.price}</span>
-                <span>tier ${o.tier}</span>
-                <span>×${o.multiplier} film value</span>
-                <span class="muted">${o.roleplay}</span>
+                <span data-tooltip="Purchase cost in dollars">$${o.price}</span>
+                <span data-tooltip="Outfit tier — higher tier = more elaborate, costlier, bigger film-value multiplier">tier ${o.tier}</span>
+                <span data-tooltip="Multiplies film sale price when she's wearing this outfit during recording">×${o.multiplier} film value</span>
+                <span class="muted" data-tooltip="Roleplay flavor — informs Ollama scene composition">${o.roleplay}</span>
               </div>
               ${isOwned
-                ? `<div class="small gold">Already owns</div>`
-                : `<button class="btn-small ${money >= o.price ? 'btn-primary' : ''}" data-buy="${o.id}" ${money >= o.price ? '' : 'disabled'}>
+                ? `<div class="small gold" data-tooltip="She owns this. Equip via the card in 'Owned' section above.">Already owns</div>`
+                : `<button class="btn-small ${money >= o.price ? 'btn-primary' : ''}" data-buy="${o.id}" ${money >= o.price ? '' : 'disabled'} data-tooltip="Buy this outfit + add it to her wardrobe. Then equip via the 'Owned' card.">
                      ${money >= o.price ? 'Buy + add to wardrobe' : 'Too poor'}
                    </button>`
               }

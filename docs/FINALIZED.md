@@ -13,6 +13,61 @@
 
 ---
 
+## 2026-05-14 — Session: Phase 21.18 SHIPPED (universal tooltips — engine + 8 surface bindings)
+
+Gee verbatim 2026-05-14: *"we also need tool tips!!! lot and lots of tool tips for everything!!! on all pages!!!! concise and fucked"*. Shipped the central engine + bound tooltips across 8 key surfaces. Remaining surfaces (town / hunt / roster / slave-market / propositioner / settings / achievements / timeline / etc.) deferred to a follow-up audit — the engine auto-binds dynamically-rendered `[data-tooltip]` attrs so future per-surface coverage is trivial.
+
+### Phase 21.18 — Universal tooltips on all pages (T36.69-T36.74)
+
+- **T36.69 — Engine shipped.** NEW `js/ui/tooltips.js` (180+ lines):
+  - Hover delay 200ms, touch long-press 350ms
+  - Edge-aware bubble positioning — above by default, flip-below + clamp-to-viewport
+  - Dark-themed bubble with inline cssText so no separate CSS load required
+  - Single tooltip visible at a time, hides on Escape / hashchange / scroll
+  - Auto-binds via event delegation on document — `mouseover`/`mouseout`/`touchstart`/`touchmove`/`touchend` listeners. Dynamically-rendered router views pick up new `[data-tooltip]` elements automatically
+  - `SSDTooltips.register(elOrSelector, text)` + `.show(target)` + `.hide()` exposed for programmatic use
+  - Wired into `game.html` script load order after `asset-img.js`
+
+- **T36.71 — Shop tooltips bound.** `js/ui/shop-view.js`:
+  - SUBCAT_TOOLTIPS map covering all 13 subcategories (blunt / sedation / restraint / containment / toys / drugs / food / dungeon-upgrade / consumables / utility / tech / contraception / reproductive-medical) — explains what each subcategory contains
+  - Every item card carries `notes` field as tooltip
+  - Meta pills (price / tier / have) each tooltipped
+  - Buy + Buy×5 buttons explain exact cost deducted
+
+- **T36.73 — Dungeon + Room tooltips bound.**
+  - `js/ui/dungeon-view.js`: dungeon-card tooltips, isolation/concealment/capacity meta pills tooltipped, Acquire buttons explain cost + capacity benefit, per-hold tiles tooltipped per captive
+  - `js/ui/room.js`: Supplies stat rows + Feed/Water buttons tooltipped, every Drug button (coke / weed / mdma / acid / whiskey / ketamine / tranquilizer) tooltipped with curve duration, every Actions button (record / selfie / derobe / strip / heal / mode-sexy / mode-hurtme / dispose / list-sale / timeline) tooltipped concise vulgar register
+
+- **T36.74 — Cross-cutting audit (partial).**
+  - Chrome nav in `game.html` — every top-level link (dashboard / roster / dungeons / town / hunt / shop / market / inbox / slave-market / achievements) + Treasury + voice toggle + new-game + settings + landing back-link all tooltipped
+  - `js/ui/dashboard.js`: Treasury / Film Market / Captives / Propositioners panels tooltipped, every stat-row tooltipped, every quick-action button tooltipped
+  - `js/ui/market-view.js`: Unlist + Sell-negatives buttons tooltipped with explicit consequence
+  - `js/ui/dispose-view.js`: method cards + Stockholm rating row + dungeon isolation row + Cost/Notoriety meta + finalization-film flag + facility-required warn all tooltipped
+  - `js/ui/wardrobe-view.js`: outfit purchase cards + price/tier/multiplier meta + Buy button all tooltipped
+
+- **T36.70 + T36.72 + remaining T36.74 — Deferred to follow-up audit.** Engine is in place; per-surface tooltip addition is mechanical from here. Town view / hunt view / roster / slave-market / propositioner / in-game-settings / achievements / timeline / escape-recovery / upgrade view / newgame / landing index.html — each needs a focused pass adding `data-tooltip="..."` attrs.
+
+### Files touched (1 new code + 6 existing code + 1 html + 3 docs)
+
+- **NEW** `js/ui/tooltips.js` — tooltip engine (180+ lines)
+- `game.html` — script tag + chrome nav data-tooltip attrs
+- `js/ui/room.js` — supplies + drugs + actions tooltipped
+- `js/ui/dashboard.js` — panels + quick actions tooltipped
+- `js/ui/shop-view.js` — SUBCAT_TOOLTIPS map + item card binding
+- `js/ui/dungeon-view.js` — dungeon cards + acquire + holds tooltipped
+- `js/ui/market-view.js` — unlist + sell-negatives buttons tooltipped
+- `js/ui/dispose-view.js` — method cards tooltipped
+- `js/ui/wardrobe-view.js` — purchase cards tooltipped
+- `docs/TODO.md` — Milestone 21.18 marked SHIPPED with detail + follow-up notes
+- `docs/ROADMAP.md` — Dependency Graph entry expanded
+- `docs/FINALIZED.md` — this entry
+
+### Syntax verification
+
+All 8 edited JS files pass `node --check`. Engine is browser-only (DOM-dependent); functional validation is manual — open game in browser, hover any element with a `title=` or `data-tooltip=` attr to see the new bubble.
+
+---
+
 ## 2026-05-14 — Session: Phase 21.13 SHIPPED (cleanup carry-overs from super-review)
 
 Tail-end cleanup of the 4 carry-overs left open by the 2026-05-14 super-review audit. Mostly verification — 3 of 4 items had already been shipped in prior milestone batches; one small code change for the remaining one.

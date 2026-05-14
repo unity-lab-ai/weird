@@ -75,6 +75,7 @@
   <script src="js/ui/town-view.js"></script>
   <script src="js/ui/dungeon-plot-view.js"></script>
   <script src="js/ui/asset-img.js"></script>
+  <script src="js/ui/tooltips.js"></script>
   <script src="js/ui/notify.js"></script>
   <script src="js/ui/voice-queue.js"></script>
   <script src="js/ui/timeline-view.js"></script>
@@ -86,22 +87,22 @@
   <header class="app-chrome">
     <div class="chrome-brand">SEX SLAVE DUNGEON</div>
     <nav class="chrome-nav">
-      <a href="#dashboard" data-route="dashboard">🏠 Dashboard</a>
-      <a href="#roster" data-route="roster">📋 Roster</a>
-      <a href="#dungeon" data-route="dungeon">🏚️ Dungeons</a>
-      <a href="#town" data-route="town">🌆 Town</a>
-      <a href="#hunt" data-route="hunt">🎯 Hunt</a>
-      <a href="#shop" data-route="shop">🛒 Shop</a>
-      <a href="#market" data-route="market">🎬 Films</a>
-      <a href="#propositioners" data-route="propositioners">📬 Inbox</a>
-      <a href="#slave-market" data-route="slave-market">⛓️ Slave Market</a>
-      <a href="#achievements" data-route="achievements">🏆</a>
+      <a href="#dashboard" data-route="dashboard" data-tooltip="Treasury + captive count + film market — your operation at a glance.">🏠 Dashboard</a>
+      <a href="#roster" data-route="roster" data-tooltip="Every captive, every escaped girl, every dispatched corpse — the full ledger.">📋 Roster</a>
+      <a href="#dungeon" data-route="dungeon" data-tooltip="Your dungeons + per-hold upgrades. Throw cash at security, restraints, plumbing.">🏚️ Dungeons</a>
+      <a href="#town" data-route="town" data-tooltip="The map. Hunt locations + properties you can buy + own.">🌆 Town</a>
+      <a href="#hunt" data-route="hunt" data-tooltip="Pick a target. Pick your loadout. Run the 4-stage capture attempt.">🎯 Hunt</a>
+      <a href="#shop" data-route="shop" data-tooltip="Buy tools, drugs, restraints, water, food, contraception, abortion supplies.">🛒 Shop</a>
+      <a href="#market" data-route="market" data-tooltip="Films auto-sell on tick. Premium 💣 sell-negatives kills the film for 3.5× payout.">🎬 Films</a>
+      <a href="#propositioners" data-route="propositioners" data-tooltip="John inbox. Accept/reject specific rental gigs from upmarket clientele.">📬 Inbox</a>
+      <a href="#slave-market" data-route="slave-market" data-tooltip="Buy untrained captives cheap. Sell trained ones premium.">⛓️ Slave Market</a>
+      <a href="#achievements" data-route="achievements" data-tooltip="Milestones unlocked through the operation.">🏆</a>
     </nav>
-    <div class="chrome-money" id="chrome-money">$0</div>
-    <button class="btn-small" id="chrome-voice" title="Toggle voice (Kokoro TTS)">🔊</button>
-    <button class="btn-small btn-danger" id="chrome-new-game" title="Start a new game (wipes current save)">🔄 New Game</button>
-    <a href="#settings" class="btn-small" title="In-game settings">⚙</a>
-    <a href="./index.html" class="btn-small" title="Back to landing">🏠</a>
+    <div class="chrome-money" id="chrome-money" data-tooltip="Liquid cash on hand. Spend on upgrades, captures, abortions, slaves.">$0</div>
+    <button class="btn-small" id="chrome-voice" data-tooltip="Toggle Kokoro TTS voice playback on/off.">🔊</button>
+    <button class="btn-small btn-danger" id="chrome-new-game" data-tooltip="WIPES your save and starts fresh. Use Settings → Save Slots to keep a copy first.">🔄 New Game</button>
+    <a href="#settings" class="btn-small" data-tooltip="Ollama / Kokoro / Pollinations / save slots / factory reset.">⚙</a>
+    <a href="./index.html" class="btn-small" data-tooltip="Back to the landing page.">🏠</a>
   </header>
 
   <main class="app-main" id="app"></main>
