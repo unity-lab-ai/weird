@@ -243,19 +243,22 @@
           })()}
 
           ${(() => {
-            // Pregnancy panel. Status + gestation day + trimester +
-            // abort options gated by current window + outcome history.
+            // Pregnancy panel — always visible so the player can see her current
+            // reproductive state. Shows NOT PREGNANT explicitly when status is 'none'
+            // and no past outcomes, instead of hiding the panel entirely.
             const preg = girl.pregnancy || { status: 'none' };
-            if (preg.status === 'none' && !(preg.outcomeHistory || []).length) return '';
             const methods = window.DMTHGame.pregnancy
               ? window.DMTHGame.pregnancy.allAbortionMethodsForDisplay(girl)
               : [];
             const statusEmoji = {
-              pregnant: '🤰', aborted: '⚪', miscarried: '🩸',
-              birthed: '🍼', lost: '🚨'
+              none: '🚫', pregnant: '🤰', aborted: '⚪', miscarried: '🩸',
+              'stillbirth-trash': '🩸', 'firestation-drop': '🚒',
+              'sold-to-black-market': '💸', 'abandoned-trash': '🗑️',
+              'lost-to-authorities': '🚨', birthed: '🍼', lost: '🚨'
             }[preg.status] || '·';
+            const statusLabel = preg.status === 'none' ? 'NOT PREGNANT' : preg.status.toUpperCase().replace(/-/g, ' ');
             return `<h3>${statusEmoji} Pregnancy</h3>
-              <div class="stat-row"><span>Status</span><b>${preg.status.toUpperCase()}</b></div>
+              <div class="stat-row"><span>Status</span><b>${statusLabel}</b></div>
               ${preg.status === 'pregnant' ? `
                 <div class="stat-row"><span>Gestation</span><b>day ${preg.gestationDays}/280 · trimester ${preg.trimester}</b></div>
                 <div class="bar-row"><label>Term</label><div class="bar"><div class="bar-fill" style="width:${Math.min(100, Math.round((preg.gestationDays/280)*100))}%"></div></div><b>${Math.round((preg.gestationDays/280)*100)}%</b></div>
@@ -569,8 +572,13 @@
         {
           const voiceToggleOn = !window.DMTHIsVoiceOn || window.DMTHIsVoiceOn();
           if (voiceToggleOn && window.DMTHKokoro && window.DMTHKokoro.isReady()) {
-            // Strip asterisk-action tokens so TTS doesn't pronounce "asterisk gasps asterisk"
-            const speakable = clean.replace(/\*[^*]*\*/g, '').replace(/\s+/g, ' ').trim();
+            // Keep asterisk-action content (read it aloud as narration), just strip the
+            // wrapping asterisk characters so Kokoro doesn't pronounce them. The action
+            // text fills audible space between short spoken fragments, producing one
+            // continuous longer clip instead of a stop-start "yes Master." …silence…
+            // "I don't want this" rhythm. Net result: a single Kokoro call for the
+            // whole turn that actually carries the scene.
+            const speakable = clean.replace(/\*([^*]+)\*/g, '$1').replace(/\s+/g, ' ').trim();
             // Lonely-yes-Master detector — if the spoken portion after asterisk-stripping
             // is <= 3 words, the model violated the SPEECH-FIRST RULE (asterisk action led,
             // spoken line was a single trailing "Yes Master"). Surface a NotifyToast so the

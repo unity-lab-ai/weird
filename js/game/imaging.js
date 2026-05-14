@@ -151,7 +151,12 @@
   // maximum-bump appearance. All tiers enforce the adult-floor invariant via callers
   // (girl.age >= 18 is already gated in girl-gen).
   function pregnancyTokens(pregnancy) {
-    if (!pregnancy || pregnancy.status !== 'pregnant') return '';
+    // When she's NOT actively pregnant, emit a positive non-pregnant body marker so
+    // Pollinations doesn't drift toward a baby bump on its own. Positive-only — no
+    // "not pregnant" negation language that would pattern-match pregnancy tokens.
+    if (!pregnancy || pregnancy.status !== 'pregnant') {
+      return 'flat toned belly, slim flat midsection, slim waist, non-pregnant body shape';
+    }
     const days = pregnancy.gestationDays || 0;
     const tri  = pregnancy.trimester || 1;
     if (days >= 250) {
