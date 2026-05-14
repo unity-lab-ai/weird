@@ -11,6 +11,7 @@
     const owned = new Set((girl.wardrobe || []).map(w => w.id));
 
     const isNude = girl.currentOutfit === 'nude';
+    const isStripped = girl.currentOutfit === 'none';
     el.innerHTML = `
       <div class="panel">
         <h2>👗 ${girl.name}'s wardrobe</h2>
@@ -18,10 +19,12 @@
         <div class="btn-row">
           <a href="#room?girl=${girl.id}" class="btn-small">← back to her hold</a>
           <button class="btn-small ${isNude ? '' : 'btn-primary'}" data-derobe>${isNude ? '👗 Re-dress (default outfit)' : '🍑 Derobe — strip her fully nude'}</button>
+          <button class="btn-small ${isStripped ? '' : 'btn-danger'}" data-strip-all>${isStripped ? '👗 Re-dress (default outfit)' : '🚫 Strip everything — no accessories'}</button>
         </div>
         <p class="small muted" style="margin-top:8px">
-          Derobe puts <code>nude</code> at position 2 of the image prompt — front-loaded so Pollinations
-          can't bury it as a one-word tail token. Outfit description is suppressed entirely. Free, always available.
+          <b>🍑 Derobe</b> puts <code>nude</code> at position 2 of the image prompt — accessories (collars, cuffs, harnesses) still allowed if equipped.<br>
+          <b>🚫 Strip everything</b> (Phase 21.14) is more aggressive — bans accessories, jewelry, collars, restraints. Raw nakedness, no body adornment whatsoever.
+          Both options free, always available.
         </p>
       </div>
 
@@ -87,6 +90,19 @@
             window.SSDGame.wardrobe.equip(girl.id, 'default');
           } else {
             window.SSDGame.wardrobe.derobe(girl.id);
+          }
+          window.SSDRouter.handle();
+        } catch (e) { alert(e.message); }
+      };
+    }
+    const stripAllBtn = el.querySelector('[data-strip-all]');
+    if (stripAllBtn) {
+      stripAllBtn.onclick = () => {
+        try {
+          if (girl.currentOutfit === 'none') {
+            window.SSDGame.wardrobe.equip(girl.id, 'default');
+          } else {
+            window.SSDGame.wardrobe.stripEverything(girl.id);
           }
           window.SSDRouter.handle();
         } catch (e) { alert(e.message); }

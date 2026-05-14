@@ -13,7 +13,7 @@
       <div class="panel">
         <h2>⚱️ Dispose of ${girl.name}</h2>
         <p class="small muted">${girl.backstoryFragment}</p>
-        <div class="stat-row"><span>Bond L</span><b>${girl.bond.bondLevel}/9</b></div>
+        <div class="stat-row"><span>Stockholm rating</span><b>L${girl.bond.bondLevel}/9</b></div>
         <div class="stat-row"><span>Dungeon isolation</span><b>${Math.round((dungeonTpl?.isolation || 0) * 100)}%</b></div>
         <a href="#room?girl=${girl.id}" class="btn-small">← cancel</a>
       </div>

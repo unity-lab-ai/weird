@@ -155,11 +155,19 @@
 
     const voiceId = window.SSDVoices.pickVoiceForArchetype(archetype, seed);
 
+    // Phase 21.7 (2026-05-14) — roll captiveAffect from per-archetype weighted distribution.
+    // Third persona overlay describing RESPONSE TO CAPTIVITY (mute / cusser / fighter /
+    // submissive / agreeable / bargainer / catatonic). Orthogonal to archetype.
+    const captiveAffect = (window.SSDTemplates?.rollCaptiveAffect)
+      ? window.SSDTemplates.rollCaptiveAffect(archetype, r)
+      : 'agreeable';
+
     return {
       id,
       name,
       age,
       archetypeTemplate: archetype,
+      captiveAffect,
       voiceId,
       personaSpeechTokens: pool.speechTokens.slice(),
       kinks,
@@ -189,11 +197,13 @@
         additionalImages: []
       },
 
-      // wardrobe — every girl starts with her default outfit + the built-in 'nude' option
-      // so the player can derobe at any time without buying anything.
+      // wardrobe — every girl starts with default + built-in 'nude' (NUDE_PSEUDO) + built-in
+      // 'none' (NO_WARDROBE_PSEUDO, Phase 21.14) so the player can derobe / strip everything
+      // at any time without buying anything.
       wardrobe: [
         { id: 'default', displayName: 'her default outfit', description: outfit, source: 'born-with' },
-        { id: 'nude', displayName: 'Nude (fully naked)', description: '', source: 'built-in', nude: 'full', multiplier: 1.4 }
+        { id: 'nude', displayName: 'Nude (fully naked)', description: '', source: 'built-in', nude: 'full', multiplier: 1.4 },
+        { id: 'none', displayName: 'No wardrobe (stripped of everything)', description: '', source: 'built-in', nude: 'stripped', multiplier: 1.5 }
       ],
       currentOutfit: 'default',
 

@@ -27,7 +27,8 @@
             <div class="small muted">generating profile image…</div>
           </div>
           <div class="stat-row"><span>Mood</span><b>${girl.mood.mood}</b></div>
-          <div class="stat-row"><span>Bond L</span><b>${girl.bond.bondLevel}/9</b> <span class="muted small">(xp ${girl.bond.bondXP}, debt ${girl.bond.bondDebt})</span></div>
+          ${girl.captiveAffect ? `<div class="stat-row"><span>Captive-affect</span><b>${girl.captiveAffect}</b></div>` : ''}
+          <div class="stat-row"><span>Stockholm rating</span><b>L${girl.bond.bondLevel}/9</b> <span class="muted small">(${['terrified','wary','acclimating','curious','ambivalent','reciprocated','dependent','partner','devoted','fully-bonded'][girl.bond.bondLevel]} · xp ${girl.bond.bondXP}, debt ${girl.bond.bondDebt})</span></div>
           <div class="stat-row"><span>Escape risk</span><b>${Math.round((girl.escape?.currentRisk||0)*100)}%</b></div>
           ${window.SSDGame.lifespan ? (() => {
             const ls = window.SSDGame.lifespan.describeLifespan(girl);
@@ -82,7 +83,8 @@
           <div class="btn-row">
             <button id="record-toggle" class="btn-small">${window.SSDGame.film.isRecording() && window.SSDGame.film.activeSession().girlId === girl.id ? '⏹ Stop recording' : '🎬 Start recording'}</button>
             <button id="selfie-btn" class="btn-small">📸 Demand selfie</button>
-            <button id="derobe-btn" class="btn-small ${girl.currentOutfit === 'nude' ? 'btn-primary' : ''}" title="${girl.currentOutfit === 'nude' ? 'Currently nude — click to put default outfit back on' : 'Strip her nude (front-loads nudity in image prompts)'}">🍑 ${girl.currentOutfit === 'nude' ? 'Re-dress' : 'Derobe (nude)'}</button>
+            <button id="derobe-btn" class="btn-small ${girl.currentOutfit === 'nude' ? 'btn-primary' : ''}" title="${girl.currentOutfit === 'nude' ? 'Currently nude — click to put default outfit back on' : 'Strip her nude — front-loads nudity in image prompts (accessories still allowed if equipped)'}">🍑 ${girl.currentOutfit === 'nude' ? 'Re-dress' : 'Derobe (nude)'}</button>
+            <button id="strip-all-btn" class="btn-small ${girl.currentOutfit === 'none' ? 'btn-primary' : ''}" title="${girl.currentOutfit === 'none' ? 'Currently stripped of everything — click to put default outfit back on' : 'Strip EVERYTHING — no garments, no accessories, no jewelry, no collar, no restraints'}">🚫 ${girl.currentOutfit === 'none' ? 'Re-dress' : 'Strip everything'}</button>
             <button id="heal-btn" class="btn-small">❤️‍🩹 Heal (reset damage)</button>
             <button class="btn-small" data-mode="sexy">Mode: Sexy</button>
             <button class="btn-small" data-mode="hurtme">Mode: Hurt Me</button>
@@ -460,27 +462,42 @@
       }
     };
 
-    // Derobe / Re-dress toggle — equip the built-in 'nude' pseudo-outfit OR revert to 'default'.
-    // Triggers room-scene image regen via the existing body-state-hash watcher in streamOllamaResponse.
+    // Derobe / Re-dress toggle — equip built-in 'nude' pseudo-outfit OR revert to 'default'.
     el.querySelector('#derobe-btn').onclick = () => {
       if (girl.currentOutfit === 'nude') {
         window.SSDGame.wardrobe.equip(girl.id, 'default');
       } else {
         window.SSDGame.wardrobe.derobe(girl.id);
       }
-      // Force-regen the profile image since the outfit just flipped.
-      if (window.SSDGame.imaging && window.SSDGame.imaging.isAvailable()) {
-        window.SSDGame.imaging.generateFor(girl.id, { situation: 'profile', forceRegenerate: true })
-          .then(result => {
-            if (result?.url) {
-              const slot = el.querySelector('#profile-img-slot');
-              if (slot) slot.innerHTML = `<img src="${result.url}" alt="${girl.name}" class="gen-img profile-img" />`;
-            }
-          })
-          .catch(() => {});
-      }
+      forceRegenProfileImage();
       window.SSDRouter.handle();
     };
+
+    // Phase 21.14 — Strip everything / Re-dress toggle — equip built-in 'none' pseudo-outfit
+    // OR revert to 'default'. Distinct from derobe: 'none' strips garments AND accessories
+    // (jewelry, collar, restraints, everything). The image prompt uses the more-aggressive
+    // 'stripped' nudity block per imaging.js.
+    el.querySelector('#strip-all-btn').onclick = () => {
+      if (girl.currentOutfit === 'none') {
+        window.SSDGame.wardrobe.equip(girl.id, 'default');
+      } else {
+        window.SSDGame.wardrobe.stripEverything(girl.id);
+      }
+      forceRegenProfileImage();
+      window.SSDRouter.handle();
+    };
+
+    function forceRegenProfileImage() {
+      if (!window.SSDGame.imaging?.isAvailable()) return;
+      window.SSDGame.imaging.generateFor(girl.id, { situation: 'profile', forceRegenerate: true })
+        .then(result => {
+          if (result?.url) {
+            const slot = el.querySelector('#profile-img-slot');
+            if (slot) slot.innerHTML = `<img src="${result.url}" alt="${girl.name}" class="gen-img profile-img" />`;
+          }
+        })
+        .catch(() => {});
+    }
 
     // Mic-in button for voice turns
     const sendBar = el.querySelector('.input-row');

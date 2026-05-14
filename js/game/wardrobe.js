@@ -18,7 +18,26 @@
     description: '',                        // <<INTENTIONAL EMPTY — DO NOT FILL IN>> imaging.js suppresses the outfit block entirely when nude:full, replacing it with the front-loaded nudeTokens() block at prompt position 2. Filling this in would force the suppressed-outfit string back into composition and break the position-2 front-load contract for nudity.
     multiplier: 1.4,
     roleplay: 'naked',
-    nude: 'full',                           // 'full' | 'accessories'
+    nude: 'full',                           // 'full' | 'accessories' | 'stripped'
+    builtIn: true                            // always available, no purchase
+  };
+
+  // Phase 21.14 (2026-05-14) — NO_WARDROBE_PSEUDO. Gee verbatim: "need a no wardrobe option
+  // too, add to task list". Distinct from NUDE_PSEUDO: NUDE is "fully naked, no clothing"
+  // (accessories like collar/cuffs are STILL allowed if equipped). NO_WARDROBE is "stripped
+  // of EVERYTHING — no garments, no accessories, no jewelry, no collar, no restraints,
+  // no anything on her body". Raw nakedness, more aggressive nudity prompt-block in imaging.js.
+  const NO_WARDROBE_PSEUDO_ID = 'none';
+  const NO_WARDROBE_PSEUDO = {
+    id: NO_WARDROBE_PSEUDO_ID,
+    displayName: 'No wardrobe (stripped of everything)',
+    emoji: '🚫',
+    price: 0,
+    tier: 1,
+    description: '',                        // <<INTENTIONAL EMPTY — DO NOT FILL IN>> imaging.js suppresses the outfit block entirely when nude:'stripped', replacing it with the more-aggressive no-wardrobe block at prompt position 2 (which explicitly bans accessories/jewelry/collar/restraints). Filling this would break the position-2 front-load contract.
+    multiplier: 1.5,                        // slightly higher than NUDE since it's more extreme
+    roleplay: 'stripped',
+    nude: 'stripped',                       // NEW value — distinct from 'full' / 'accessories'
     builtIn: true                            // always available, no purchase
   };
 
@@ -277,15 +296,16 @@
 
   function getById(id) {
     if (id === NUDE_PSEUDO_ID) return NUDE_PSEUDO;
+    if (id === NO_WARDROBE_PSEUDO_ID) return NO_WARDROBE_PSEUDO;
     return OUTFITS.find(o => o.id === id);
   }
 
-  // Built-in outfits every girl can equip without buying (currently just 'nude').
+  // Built-in outfits every girl can equip without buying (NUDE_PSEUDO + NO_WARDROBE_PSEUDO).
   function builtIns() {
-    return [NUDE_PSEUDO];
+    return [NUDE_PSEUDO, NO_WARDROBE_PSEUDO];
   }
 
-  // Is this outfit a nude variant?  Returns 'full' | 'accessories' | false.
+  // Is this outfit a nude variant?  Returns 'full' | 'accessories' | 'stripped' | false.
   function isNude(outfitOrId) {
     if (!outfitOrId) return false;
     const o = typeof outfitOrId === 'string' ? getById(outfitOrId) : outfitOrId;
@@ -319,15 +339,16 @@
   function equip(girlId, outfitId) {
     const girl = window.SSDGame.state.getGirl(girlId);
     if (!girl) throw new Error('no such girl');
-    // Built-in outfits (currently just NUDE) are always equippable without buying.
-    const isBuiltIn = outfitId === NUDE_PSEUDO_ID;
+    // Built-in pseudo-outfits (NUDE_PSEUDO + NO_WARDROBE_PSEUDO) are always equippable
+    // without buying. Auto-add to wardrobe array if missing so legacy saves get the option.
+    const isBuiltIn = outfitId === NUDE_PSEUDO_ID || outfitId === NO_WARDROBE_PSEUDO_ID;
     if (!isBuiltIn && !(girl.wardrobe || []).some(w => w.id === outfitId)) {
       throw new Error('outfit not in her wardrobe');
     }
-    // Auto-add built-in to wardrobe if missing so legacy saves get the option
     let wardrobe = girl.wardrobe || [];
     if (isBuiltIn && !wardrobe.some(w => w.id === outfitId)) {
-      wardrobe = [...wardrobe, { ...NUDE_PSEUDO, source: 'built-in' }];
+      const builtIn = outfitId === NUDE_PSEUDO_ID ? NUDE_PSEUDO : NO_WARDROBE_PSEUDO;
+      wardrobe = [...wardrobe, { ...builtIn, source: 'built-in' }];
     }
     window.SSDGame.state.updateGirl(girlId, { currentOutfit: outfitId, wardrobe });
     return { ok: true };
@@ -338,6 +359,12 @@
     return equip(girlId, NUDE_PSEUDO_ID);
   }
 
+  // Phase 21.14 — Convenience: equip the built-in no-wardrobe pseudo-outfit (strips
+  // EVERYTHING including accessories). Always succeeds.
+  function stripEverything(girlId) {
+    return equip(girlId, NO_WARDROBE_PSEUDO_ID);
+  }
+
   // Get content-value multiplier for what she's currently wearing
   function currentMultiplier(girl) {
     const current = (girl.wardrobe || []).find(w => w.id === girl.currentOutfit);
@@ -346,8 +373,9 @@
 
   window.SSDGame = window.SSDGame || {};
   window.SSDGame.wardrobe = Object.freeze({
-    OUTFITS, catalog, getById, buyForGirl, equip, derobe, currentMultiplier,
-    builtIns, isNude,
-    NUDE_PSEUDO_ID, NUDE_PSEUDO
+    OUTFITS, catalog, getById, buyForGirl, equip, derobe, stripEverything,
+    currentMultiplier, builtIns, isNude,
+    NUDE_PSEUDO_ID, NUDE_PSEUDO,
+    NO_WARDROBE_PSEUDO_ID, NO_WARDROBE_PSEUDO
   });
 })();

@@ -70,15 +70,15 @@
 #### Milestone 21.4 — Deterministic seed fallback (~30min) — SHIPPED 2026-05-14
 - [x] **T36.9** 🟠 `clampSeed(s, fallbackKey)` signature extended. djb2 hash of fallback key replaces the prior random-fallback. `generateFor()` passes `girl.id` as fallback. Facial persistence invariant preserved for seed-less captives. console.warn surfaces the still-broken state if neither seed nor fallback is provided.
 
-#### Milestone 21.6 — Forced chemical-state effects in Ollama text (~1h)
-- [ ] **T36.14** 🟠 `## CHEMICAL STATE EFFECTS` block in BASE_SLUT — slur / rapid-fire / drift / flooding / sensory leak / swearing-up
-- [ ] **T36.15** 🟠 Drug names NEVER mentioned in speech rule — rhythm IS the signal
+#### Milestone 21.6 — Forced chemical-state effects in Ollama text (~1h) — SHIPPED 2026-05-14
+- [x] **T36.14** 🟠 `## CHEMICAL STATE EFFECTS` block added to BASE_SLUT — sedatives/coke/weed/mdma/acid/alcohol mapped to speech-pattern signals + "drugs none = sober" guard
+- [x] **T36.15** 🟠 Block explicitly states "NEVER mention the drug NAME in speech. The pattern, slur, sensory leak IS the signal."
 
-#### Milestone 21.7 — CAPTIVE_AFFECTS register + girl-gen rolling (~2h)
-- [ ] **T36.16** 🔴 `CAPTIVE_AFFECTS` register in `ollama-templates.js` — mute / cusser / fighter / submissive / agreeable / bargainer / catatonic
-- [ ] **T36.17** 🔴 Inject as third persona overlay in `buildSystemPrompt()` (after archetype, before mode)
-- [ ] **T36.18** 🔴 Roll `girl.captiveAffect` at girl-gen from per-archetype weighted distribution
-- [ ] **T36.19** 🟠 Persist `captiveAffect` on every girl, surface in room UI
+#### Milestone 21.7 — CAPTIVE_AFFECTS register + girl-gen rolling (~2h) — SHIPPED 2026-05-14
+- [x] **T36.16** 🔴 `CAPTIVE_AFFECTS` register added to `ollama-templates.js` — 7 affects (mute / cusser / fighter / submissive / agreeable / bargainer / catatonic) each multi-sentence overlay
+- [x] **T36.17** 🔴 Injected as third overlay in `buildSystemPrompt()`: `[BASE_SLUT, archetype, captiveAffect, mode, scene]`
+- [x] **T36.18** 🔴 `rollCaptiveAffect(archetypeId, rng)` + `CAPTIVE_AFFECT_WEIGHTS_BY_ARCHETYPE` covering all 11 archetypes; `girl-gen.js` calls at gen time
+- [x] **T36.19** 🟠 `girl.captiveAffect` persisted; stat row in `room.js` + inline in `buildContextBlock` "You are..." header
 
 #### Milestone 21.10 — Pregnancy subsystem (~3-4h, biggest new vertical)
 - [ ] **T36.25** 🔴 New file `js/game/pregnancy.js` — Pregnancy schema + `attemptConception()` + `applyAbortion()` + outcome resolver
@@ -111,11 +111,11 @@
 - [ ] **T36.44** 🟡 Tighten `extractDelta` closing-tag tolerance after `truncateResponse` enforces clean endings
 - [ ] **T36.45** 🟡 Migrate remaining SHIPPED entries to FINALIZED.md (subsumed by MIG.1 + MIG.2 above + this Phase 21 work as each milestone ships)
 
-#### Milestone 21.14 — No-wardrobe option (~30min, Gee verbatim 2026-05-14: *"need a no wardrobe option too, add to task list"*)
-- [ ] **T36.46** 🟠 Add `NO_WARDROBE_PSEUDO` built-in entry to `wardrobe.js` (id `none` or `unwardrobed`) — distinct from existing `NUDE_PSEUDO`. Represents the explicit "wardrobe slot empty / completely stripped of every garment, every accessory, every piece of jewelry, every collar, every restraint" state. `equip()` allows it as a built-in without buying. `currentOutfit === 'none'` is a legitimate game state distinct from `'nude'`.
-- [ ] **T36.47** 🟠 Wire "🚫 No wardrobe / Strip everything" button in `room.js` Actions row alongside the 🍑 Derobe button + featured action in `wardrobe-view.js`. Click triggers `wardrobe.equip(girlId, 'none')` and force-regenerates the image.
-- [ ] **T36.48** 🟠 Update `imaging.js` `composePrompt()` + `composePromptViaOllama()` HARD RULES to handle the no-wardrobe state — front-loaded position 2 block emphasizing "completely stripped, no garments of any kind, no accessories of any kind, no jewelry, no collar, no restraints, no anything on her body, raw nakedness, fully exposed" — distinct from NUDE_PSEUDO's "FULLY NUDE adult woman" framing in that it explicitly bans accessories too.
-- [ ] **T36.49** 🟡 Girl-gen update — every new girl spawns with `default` + `nude` + `none` in her wardrobe so all three options are usable immediately, no buy required.
+#### Milestone 21.14 — No-wardrobe option (~30min) — SHIPPED 2026-05-14 (Gee verbatim 2026-05-14: *"need a no wardrobe option too, add to task list"*)
+- [x] **T36.46** 🟠 `NO_WARDROBE_PSEUDO` added to `wardrobe.js` (id `'none'`, nude tier `'stripped'`, multiplier 1.5). `getById`/`builtIns`/`isNude`/`equip` updated. `stripEverything(girlId)` exposed.
+- [x] **T36.47** 🟠 "🚫 Strip everything" button in `room.js` Actions row + `wardrobe-view.js` featured action. Toggles between equipped/default. Force-regen profile image on toggle.
+- [x] **T36.48** 🟠 `nudeTokens('stripped', …)` in `imaging.js` emits the aggressive no-wardrobe block explicitly banning accessories/jewelry/collars/restraints. Front-loaded at prompt position 2 via existing `nudeStateOf` flow.
+- [x] **T36.49** 🟡 `girl-gen.js` — every new girl spawns with `default` + `nude` + `none` in her wardrobe.
 
 #### Milestone 21.20 — Films auto-sell + sell-negatives premium action (~2h) — SHIPPED 2026-05-14
 - [x] **T36.82** 🟠 "Sales pass" button + `#run-tick` handler removed; UI surfaces "🔄 Auto-selling on tick — $X / tick (N listed)" status line; `tick.js` schedule still drives `runSaleTick()`
@@ -133,11 +133,11 @@
 - [x] **T36.91** 🟢 Adult-age + `enforceFullBody` + `sanitizePrompt` + `queuedFetch` all honored.
 - [x] **Bonus** — `.dispose-final-image-slot` + `.dispose-final-img` CSS in `game.css`.
 
-#### Milestone 21.22 — Sexualized body-part references in dialogue, bond-tiered + Stockholm surfacing (~1h, Gee verbatim 2026-05-14: *"we also need gilr to mention thir tits, ass, and vag and other sexualized things in different ways as they agree or fight back eect ect in the meta prompts .. ie the girls all should have a stockholm rating or what ever so over time and with actions they become more complient"*)
-> Note: the "Stockholm rating" is the existing `girl.bond.bondLevel` 0-9 mechanic — just needs explicit "Stockholm L{n}" surfacing in UI.
-- [ ] **T36.92** 🔴 Add `## SEXUALIZED BODY-PART REFERENCES` block to `BASE_SLUT` — body parts (tits/ass/pussy/cunt/thighs/mouth/throat/clit/nipples) named in dialogue with tone shaped by bond tier
-- [ ] **T36.93** 🟠 Surface bond as "Stockholm L{n}" in UI (room/roster/dispose/dashboard/hunt) alongside existing bond-name label
-- [ ] **T36.94** 🟠 Verify per-bond-tier prompt instructions get reinforced via mood/bond overlay in `buildSystemPrompt()`
+#### Milestone 21.22 — Sexualized body-part references in dialogue, bond-tiered + Stockholm surfacing (~1h) — SHIPPED 2026-05-14
+- [x] **T36.92** 🔴 `## SEXUALIZED BODY-PART REFERENCES` block added to BASE_SLUT — 3-tier instruction with verbatim example lines for LOW/MID/HIGH Stockholm. Body-part lexicon: tits/ass/pussy/cunt/thighs/mouth/throat/clit/nipples/asshole. "Never skip body-part naming."
+- [x] **T36.93** 🟠 Bond surfaced as "Stockholm rating: L{n}/9" in `room.js` stat row + `dispose-view.js` stat row. BASE_SLUT BOND-LEVEL AFFECT block relabeled "(a.k.a. Stockholm rating)" so Ollama sees both names. Bond-name table preserved as qualitative tier in muted-small annotation.
+- [x] **T36.94** 🟠 `buildContextBlock()` passes "Stockholm rating: L{n}/9 (use the Stockholm tier instructions for SEXUALIZED BODY-PART REFERENCES tone)" so the model gets the tier reference every turn.
+- [x] **Bonus** — `[[feedback-ai-values-with-scale]]` LAW + memory: every numerical value in `buildContextBlock` + `composePromptViaOllama` GIRL CONTEXT now paired with its scale (`arousal=50%/100%`, `bruises=4 (count)`, `cumLoad=1.2L`, `Stockholm L3/9`). Closes Gee 2026-05-14: *"remmebr if u are giving the ai values u need to give it the full spread not just a number ie not just a 0.3 but 0.3/1"*.
 
 #### Milestone 21.19 — README split: gameplay-wiki README + technical SETUP-README (~3-4h, Gee verbatim 2026-05-14: *"we need to also remake the readem into just a gameplay and game playout and design with the images... so that the readme is gamepaly only like wiki with everything thats in the game in the readme, then make a setupreadme that has all the code , setup, and technical information for the game layout in both amazingly and beautifully with some ascii write ups for explinations and beauty, add this to the todo"*)
 - [ ] **T36.76** 🟠 Audit existing README, split gameplay vs technical content, migrate accordingly, verify GitHub Pages still uses README.md as repo browse landing

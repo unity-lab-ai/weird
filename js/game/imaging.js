@@ -136,6 +136,12 @@
   // 2026-05-13 directive: "agressively positioning that part so it isnt melted in at the
   // end of the prompt in one word only".  Long, repetitive, anatomically explicit so the
   // image model can't ignore it.
+  //
+  // Three strengths:
+  //   'full'         — completely naked, no clothing
+  //   'accessories'  — naked + listed accessories (collar / cuffs / harness / etc.)
+  //   'stripped'     — Phase 21.14 (2026-05-14). Distinct from 'full' — explicitly bans
+  //                    accessories + jewelry + collars + restraints. Raw nakedness.
   function nudeTokens(strength, accessoriesOnly) {
     if (strength === 'full') {
       return 'FULLY NUDE adult woman, completely naked, bare body from neck to toes, exposed bare breasts with visible nipples, bare ribcage and stomach, bare hips and pelvic area, bare pubic mound, bare thighs, no clothing of any kind, no fabric on body, no underwear, no bra, no panties, no socks, no shoes, skin entirely visible';
@@ -143,6 +149,9 @@
     if (strength === 'accessories') {
       const acc = accessoriesOnly ? `, wearing ONLY ${accessoriesOnly}` : '';
       return `FULLY NUDE adult woman, completely naked underneath, bare breasts with visible nipples, bare body, exposed pubic area, bare thighs, no clothing on the body${acc}, every other inch of skin completely exposed`;
+    }
+    if (strength === 'stripped') {
+      return 'COMPLETELY STRIPPED adult woman, naked body raw and exposed, no garments of any kind, no clothing, no fabric, no underwear, no bra, no panties, no socks, no shoes, no accessories of any kind, no jewelry, no necklace, no earrings, no rings, no piercings visible, no collar, no choker, no leash, no cuffs, no restraints, no chain, no rope, no tape, no anything on her body, raw nakedness, every inch of skin completely exposed from hair to feet, no body adornment whatsoever';
     }
     return '';
   }
@@ -493,10 +502,10 @@ ${nudeStrength ? rulesNude : rulesClothed}
 7. FRAME THE SUBJECT HEAD TO TOE — full body shot. NEVER use portrait, mugshot, headshot, bust, or waist-up framing. Every prompt MUST explicitly include "full body shot, head to toe in frame, complete figure visible" or equivalent language. The subject's feet must be visible in the composition.
 8. All subjects are adults age 18 or older. Use the GIRL CONTEXT 'age' value verbatim (e.g. "age 18", "age 22", "age 27") — NEVER hardcode "20s" or any range that excludes 18-19.
 
-GIRL CONTEXT:
-- name: ${girl.name}, age ${girl.age}, archetype: ${girl.archetypeTemplate}
-- mood: ${girl.mood?.mood || 'neutral'} · bond: L${girl.bond?.bondLevel || 0}
-- body: arousal ${girl.body?.arousal || 0}, wetness ${girl.body?.wetness || 0}, bruises ${girl.body?.bruises || 0}, high ${girl.body?.high || 0}, cumLoad ${(girl.body?.cumLoad || 0).toFixed(1)}L
+GIRL CONTEXT (all numerical values shown with their full scale per [[feedback-ai-values-with-scale]]):
+- name: ${girl.name}, age ${girl.age}, archetype: ${girl.archetypeTemplate}${girl.captiveAffect ? `, captive-affect: ${girl.captiveAffect}` : ''}
+- mood: ${girl.mood?.mood || 'neutral'} · Stockholm rating: L${girl.bond?.bondLevel || 0}/9
+- body: arousal ${girl.body?.arousal || 0}/100, wetness ${girl.body?.wetness || 0}/100, bruises ${girl.body?.bruises || 0} (count), high ${girl.body?.high || 0}/100, cumLoad ${(girl.body?.cumLoad || 0).toFixed(1)}L
 - active drugs: ${(girl.body?.activeDrugs || []).map(d => d.name || d).join(', ') || 'none'}
 - outfit state: ${girl.body?.outfitState || 'intact'}
 - current outfit: ${currentOutfitEntry?.displayName || 'default'}
