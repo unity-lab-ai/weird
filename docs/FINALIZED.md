@@ -13,6 +13,51 @@
 
 ---
 
+## 2026-05-14 — Session: Phase 21.3 SHIPPED — Image-prompt position reorder (env→3, drug→6, body→7)
+
+### Gee's verbatim directives shipped
+
+> *"agressively positioning that part so it isnt melted in at the end of the prompt in one word only"* (extended from Phase 21.1+21.2's nudity/env work — now applies to env at position 3 + drug-state at position 6)
+
+### What shipped (Phase 21.3)
+
+- **`js/game/imaging.js`** — `composePrompt()` parts arrays re-ordered in BOTH clothed and nude branches to the canonical 8-position skeleton:
+  - **CLOTHED**: prefix(1) → face(2) → env(3) → outfit+state(4) → pose(5) → drug-state(6) → body-state(7) → additional(8) → suffix
+  - **NUDE**: prefix(1) → NUDITY(2) → env(3) → face(4) → pose(5) → drug-state(6) → body-state(7) → additional(8) → suffix
+  - Env moves from old position 7 to position 3 in both branches (the Phase 21.2 hold-specific composition now lands where the image model gives it attention instead of burying it as a tail keyword).
+  - Drug-state pinned to position 6, body-state moves to position 7 (was [stateTokens, drugTokens] from Phase 21.1; now [drugTokens, stateTokens] per ARCHITECTURE canonical table).
+  - Inline numbered comments document each slot's position number for future maintainers.
+- **`js/game/imaging.js`** — `composePromptViaOllama()` updates:
+  - ENVIRONMENT RENDERING RULE rewritten to specify "POSITION 3 of the prompt — immediately after the front-loaded NUDITY block (nude) or face description (clothed)". Explicit position pinning instead of the prior "near the start" hedge.
+  - New CANONICAL PROMPT POSITION ORDERING section at the bottom of the system prompt listing all 8 positions in order. The Ollama prompt-writer path now follows the same skeleton the hardcoded composer would emit.
+- **`docs/ARCHITECTURE.md`** — PREFIX example in the image-prompt position table updated to use dynamic `${girl.age}` (was stale "age 20s" from before Phase 21.1 age-fix). Table now precisely matches shipped code: env at row 3, drug at row 6, body at row 7.
+
+### Position-attention rationale
+
+Image diffusion models (Pollinations is multiple model backends) tokenize the prompt and apply more attention to earlier tokens. The "position 2 nudity front-load" pattern from Phase 21.1 (Derobe) was the first lesson — pushing nudity to the start made it dominant; the same effect now applies to the hold environment (Phase 21.2 composition) by promoting it to position 3. Position 6 for drug-state gives it slightly more attention than position 7 body-state without competing with the env+face slots up front. The 8-position canonical skeleton is now load-bearing: any future image-prompt addition picks its slot based on attention priority, not appended to the tail.
+
+### Files touched
+
+- `js/game/imaging.js` — Phase 21.3 code ship (parts array reorder in both branches + ENVIRONMENT RENDERING RULE position-3 specificity + CANONICAL PROMPT POSITION ORDERING section)
+- `docs/ARCHITECTURE.md` — PREFIX row example updated to dynamic `${girl.age}`
+- `docs/ROADMAP.md` — Phase 21.3 marked SHIPPED
+- `docs/TODO.md` — Phase 21.3 marked SHIPPED in Master Backlog + Epic + Phase A.3
+- `docs/FINALIZED.md` — this entry
+
+### Pre-push checklist
+
+- [x] Parts array ordering matches ARCHITECTURE position table exactly (env→3, drug→6, body→7)
+- [x] Inline numbered comments in `composePrompt()` for every slot
+- [x] ENVIRONMENT RENDERING RULE specifies position 3 explicitly
+- [x] CANONICAL PROMPT POSITION ORDERING section in Ollama system prompt lists all 8 positions
+- [x] No code paths broken — both clothed and nude branches reorder symmetrically; all callers of composePrompt unaffected (signature unchanged)
+- [x] FINALIZED.md appended per FINALIZED-before-DELETE LAW
+- [x] No AI vendor attribution (LAW #1)
+- [x] No task numbers in code comments (LAW)
+- [x] Atomic commit: code + every affected doc
+
+---
+
 ## 2026-05-14 — Session: Phase 21.2 SHIPPED — Per-hold environment composition + Phase 21.19 added (README/SETUP-README split)
 
 ### Gee's verbatim directives shipped/addressed

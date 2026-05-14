@@ -63,9 +63,9 @@
 - [x] **T36.5** 🔴 Compose env: `tpl.plotTokens + ', specifically: ' + tpl.holdPrompt + ", captive's hold within the larger " + tpl.displayName` (position pinned by Phase 21.3 reorder)
 - [x] **T36.6** 🔴 Threaded `holdIdx` through via `composePrompt()` reading `options.holdIdx ?? girl.assignedHoldIdx ?? 0` — every existing caller automatically gets hold-specific env. `composePromptViaOllama()` also surfaces it in GIRL CONTEXT + new ENVIRONMENT RENDERING RULE.
 
-#### Milestone 21.3 — Image-prompt position reorder (~30min)
-- [ ] **T36.7** 🟠 Re-order `composePrompt()` so env lands at position 3 (after NUDITY/face), not position 6
-- [ ] **T36.8** 🟠 Update `composePromptViaOllama()` HARD RULES to specify env at position 3
+#### Milestone 21.3 — Image-prompt position reorder (~30min) — SHIPPED 2026-05-14
+- [x] **T36.7** 🟠 `composePrompt()` parts arrays re-ordered to canonical 8-position spec: prefix(1) → NUDITY-or-face(2) → env(3) → face-or-outfit(4) → pose(5) → drug-state(6) → body-state(7) → additional/suffix. Env moves from old pos 7 to pos 3. Drug-state pinned to 6. Body-state moves to 7.
+- [x] **T36.8** 🟠 `composePromptViaOllama()` ENVIRONMENT RENDERING RULE rewritten to specify "POSITION 3" explicitly. Added CANONICAL PROMPT POSITION ORDERING section listing all 8 positions. ARCHITECTURE PREFIX example updated to dynamic `${girl.age}`.
 
 #### Milestone 21.4 — Deterministic seed fallback (~30min)
 - [ ] **T36.9** 🟠 Fix `clampSeed()` to require girl-id fallback when seed missing, never random
@@ -358,10 +358,10 @@ All quotes preserved in docs/TODO.md revision history + docs/FINALIZED.md sessio
 - [x] **`js/game/imaging.js` Line 174-185 — Severity: Critical.** Issue: `envTokens()` accepts `dungeonId` but ignores `assignedHoldIdx`. It returns `tpl.plotTokens` — a comma-separated string of generic keywords shared by every captive in the same hideout. The `holdPrompt` field on each dungeon template (e.g., `'heavy forged iron ring set in the pit floor, attached chain with a steel cuff'`) is NEVER read by this pipeline. Why it's bad: User intent verbatim: *"the specific girls in specific holds to have the meta prompt for the images insert that type of hold as the background and setting … but we need to describe it not just say hole in the ground"*. The data is sitting in the catalog (`catalog.js` line 458, 474, 489, 504, 519, 534, 549, 564, 579 — all nine hideouts have `holdPrompt`), this function refuses to look at it, and so every captive in the same dungeon gets the same recycled `plotTokens`.
 - [x] **SHIPPED FIX:** Rewrote `envTokens()` with `holdIdx` parameter. Resolves `dungeon.holds[holdIdx]`, falls back to `tpl.holdType`, pulls `tpl.holdPrompt`. Composition: `${tpl.plotTokens}, specifically: ${tpl.holdPrompt}, captive's hold within the larger ${tpl.displayName}`. `composePrompt()` reads `holdIdx` from `options.holdIdx ?? girl.assignedHoldIdx ?? 0` so every existing caller auto-gets hold-specific env. `composePromptViaOllama()` also threads the same env into GIRL CONTEXT (`- hold environment: "..."`) + new ENVIRONMENT RENDERING RULE instructs the Ollama prompt-writer to render the full hold description verbatim, never abbreviating to a single keyword.
 
-### Epic: Promote env + drug-state above pose in prompt ordering `(S)` — HIGH
+### Epic: Promote env + drug-state above pose in prompt ordering `(S)` — HIGH — SHIPPED 2026-05-14
 
-- [ ] **`js/game/imaging.js` Line 219-246 — Severity: High.** Issue: In `composePrompt()`, environment is at position 6 (clothed) or position 6 (nude). `bodyStateTokens` is position 5. Both get buried at prompt-tail where image models attenuate them — the EXACT bug Gee fixed for nudity (which now lives at position 2). Hold/environment specificity will be ignored by the model in the same way nudity was being ignored before. Why it's bad: User intent: "isn't melted in at the end of the prompt in one word only" — same principle. If we're putting effort into per-hold environment description, it can't live at slot 6.
-- [ ] **Suggested fix:** Promote env to position 3 (clothed) / position 3 (nude, after the front-loaded NUDITY block). Re-order: `[prefix, NUDITY-or-face, environment-with-hold, face-or-outfit, pose, drug-state, body-state, suffix]`. Apply same re-order in `composePromptViaOllama()` HARD RULES.
+- [x] **`js/game/imaging.js` Line 219-246 — Severity: High.** Issue: In `composePrompt()`, environment is at position 6 (clothed) or position 6 (nude). `bodyStateTokens` is position 5. Both get buried at prompt-tail where image models attenuate them — the EXACT bug Gee fixed for nudity (which now lives at position 2). Hold/environment specificity will be ignored by the model in the same way nudity was being ignored before. Why it's bad: User intent: "isn't melted in at the end of the prompt in one word only" — same principle. If we're putting effort into per-hold environment description, it can't live at slot 6.
+- [x] **SHIPPED FIX:** Re-ordered both clothed and nude `parts` arrays to canonical 8-position spec — env at 3, drug-state at 6, body-state at 7. Inline numbered comments in `composePrompt()` for each slot. `composePromptViaOllama()` ENVIRONMENT RENDERING RULE updated to specify "POSITION 3" + new CANONICAL PROMPT POSITION ORDERING section listing all 8 slots. ARCHITECTURE position table aligned.
 
 ### Epic: Deterministic seed fallback in `clampSeed` `(S)` — HIGH
 
@@ -552,7 +552,7 @@ The reformulation rejects the "anti-spam friction" framing and replaces it with 
 #### Phase A — Image-prompt completeness `(M)` Critical, ~2-3h → ROADMAP Milestones 21.1 + 21.2 + 21.3 + 21.4 (T36.1-T36.9)
 - [x] A.1 — Add `drugStateTokens(body)` to `imaging.js` covering coke / weed / mdma / acid / ketamine / sedatives, layered by drug magnitude — SHIPPED 2026-05-14
 - [x] A.2 — Rewrite `envTokens()` to accept `holdIdx`, resolve `dungeon.holds[holdIdx]`, pull `tpl.holdPrompt`, and produce a rich per-hold backdrop. Pass `holdIdx` through every caller — SHIPPED 2026-05-14
-- [ ] A.3 — Re-order `composePrompt()` to promote env to position 3 (after NUDITY/face). Re-order `composePromptViaOllama()` HARD RULES to instruct the model to place env at position 3 + drug effects visibly
+- [x] A.3 — Re-order `composePrompt()` to promote env to position 3 (after NUDITY/face). Re-order `composePromptViaOllama()` HARD RULES to instruct the model to place env at position 3 + drug effects visibly — SHIPPED 2026-05-14
 - [ ] A.4 — Fix `clampSeed()` to fail-or-derive deterministically; require girl-id fallback
 
 #### Phase B — Water supply chain `(M)` Critical, ~1h → ROADMAP Milestones 21.8 + 21.9 (T36.20-T36.24)

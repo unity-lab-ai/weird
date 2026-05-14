@@ -731,7 +731,7 @@ The image-prompt pipeline composes blocks in a fixed positional order to defeat 
 
 | Position | Block (clothed) | Block (nude) | Source |
 |---|---|---|---|
-| 1 | prefix (`editorial photograph, 35mm film, adult female age 20s`) | prefix | hardcoded |
+| 1 | prefix (`editorial photograph, 35mm film, adult female age ${girl.age}, full body shot, head to toe in frame`) | prefix | dynamic — age interpolated from `girl.age` (18+ floor) |
 | 2 | face description | **NUDITY block (front-loaded, explicit)** | `girl.visualIdentity.facialDescription` / `nudeTokens()` |
 | 3 | **environment + hold description** | **environment + hold description** | `tpl.plotTokens + ', specifically: ' + tpl.holdPrompt` |
 | 4 | outfit + state layers | face description | `currentOutfitEntry.description` + `outfitStateTokens()` |

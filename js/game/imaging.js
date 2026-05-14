@@ -247,19 +247,38 @@
 
   // --- Compose the full prompt ---
   //
-  // Two prompt orderings depending on nude state:
+  // Phase 21.3 canonical 8-position ordering — env promoted to position 3, drug-state
+  // promoted to position 6, body-state at position 7. Both clothed and nude branches use
+  // the same skeleton with one slot swap at position 2/4:
   //
-  //   CLOTHED (default):
-  //     prefix → face → outfit+state → pose → body-state → env → suffix
+  //   CLOTHED:
+  //     1 prefix
+  //     2 face
+  //     3 env (hold-specific)
+  //     4 outfit + outfit-state
+  //     5 pose
+  //     6 drug-state visible markers
+  //     7 body-state (arousal/wetness/cum/bruises)
+  //     8 additional → suffix
   //
   //   NUDE (currentOutfit is 'nude' OR outfit has nude:'full'/'accessories' OR
   //         body.outfitState === 'nude'/'removed*'):
-  //     prefix → NUDITY (front-loaded, position 2) → face → pose → body-state → env → suffix
+  //     1 prefix
+  //     2 NUDITY (front-loaded, replaces face slot — face moves to 4)
+  //     3 env (hold-specific)
+  //     4 face
+  //     5 pose
+  //     6 drug-state visible markers
+  //     7 body-state (arousal/wetness/cum/bruises)
+  //     8 additional → suffix
   //     ^^^^^^^^^^^^^^^^^ outfit block is COMPLETELY SUPPRESSED when nude ^^^^^^^^^^^^^^^^^
   //
-  // The nude-position-2 placement is per Gee 2026-05-13:
-  //   "agressively positioning that part so it isnt melted in at the end of the prompt
-  //    in one word only"
+  // Position-2 NUDITY placement is per Gee 2026-05-13: "agressively positioning that part
+  // so it isnt melted in at the end of the prompt in one word only". Position-3 env
+  // placement is per Gee 2026-05-14: "the specific girls in specific holds to have the
+  // meta prompt for the images insert that type of hold as the background and setting".
+  // Position-6 drug-state placement is per Gee 2026-05-14: "i want the drug use forced or
+  // other wise to show effects in images and ollama text responses".
   function composePrompt(girl, options = {}) {
     const { situation = 'profile', customPose, additionalTokens = '' } = options;
 
@@ -291,29 +310,29 @@
       const accessories = nudeStrength === 'accessories' ? accessoriesOnlyFor(girl) : null;
       const nudeBlock = nudeTokens(nudeStrength, accessories);
       parts = [
-        prefix,
-        nudeBlock,            // position 2 — aggressive nudity front-load, no outfit
-        faceBlock,
-        pose,
-        stateTokens,
-        drugTokens,           // drug-state body markers immediately after non-chemical body state
-        env,
-        additionalTokens,
-        suffix
+        prefix,               // 1
+        nudeBlock,            // 2 — aggressive nudity front-load (replaces face slot)
+        env,                  // 3 — hold-specific environment, promoted from old pos 7
+        faceBlock,            // 4 — face moves to 4 when nude (nude is at 2)
+        pose,                 // 5
+        drugTokens,           // 6 — drug-state visible markers
+        stateTokens,          // 7 — body-state (arousal/wetness/cum/bruises)
+        additionalTokens,     // 8
+        suffix                // 9
       ];
     } else {
       const outfitBlock = currentOutfitEntry?.description || baseOutfit;
       const outfitState = outfitStateTokens(girl.body);
       parts = [
-        prefix,
-        faceBlock,
-        outfitBlock + (outfitState ? ', ' + outfitState : ''),
-        pose,
-        stateTokens,
-        drugTokens,           // drug-state body markers immediately after non-chemical body state
-        env,
-        additionalTokens,
-        suffix
+        prefix,                                                                   // 1
+        faceBlock,                                                                // 2
+        env,                                                                      // 3 — hold-specific environment, promoted from old pos 7
+        outfitBlock + (outfitState ? ', ' + outfitState : ''),                    // 4
+        pose,                                                                     // 5
+        drugTokens,                                                               // 6 — drug-state visible markers
+        stateTokens,                                                              // 7 — body-state (arousal/wetness/cum/bruises)
+        additionalTokens,                                                         // 8
+        suffix                                                                    // 9
       ];
     }
 
@@ -472,7 +491,17 @@ ${locationId ? `LOCATION: ${window.SSDAssets.getById('location', locationId)?.di
 ${additionalTokens ? `ADDITIONAL: ${additionalTokens}` : ''}
 
 ENVIRONMENT RENDERING RULE (when 'hold environment' is set in GIRL CONTEXT above):
-The composed prompt MUST include the FULL hold-environment description verbatim — every comma-separated descriptor. Do NOT abbreviate it to a single keyword. Do NOT replace it with a generic environment word. Do NOT skip the "specifically:" sub-phrase that names the captive's exact hold within the larger location. Insert the full hold environment text near the start of the prompt (right after the face/nudity block) so the image generator does not bury it as a tail keyword. Hold environment is THE setting — render it as a full descriptive scene, not as a label.
+Place the FULL hold-environment description verbatim at POSITION 3 of the prompt — immediately after the front-loaded NUDITY block (nude) or face description (clothed). Use every comma-separated descriptor. Do NOT abbreviate to a single keyword. Do NOT replace with a generic environment word. Do NOT skip the "specifically:" sub-phrase that names the captive's exact hold within the larger location. Do NOT bury it as a tail keyword. Hold environment is THE setting — render it as a full descriptive scene, not as a label.
+
+CANONICAL PROMPT POSITION ORDERING (8 slots):
+1. PREFIX (editorial photograph, 35mm film, adult female age X, full body shot)
+2. NUDITY (nude) or FACE (clothed)
+3. ENVIRONMENT (hold-specific full description)
+4. FACE (nude — moves here after NUDITY took slot 2) or OUTFIT (clothed)
+5. POSE
+6. DRUG-STATE visible markers (per rule 6 above)
+7. BODY-STATE (arousal / wetness / cum / bruises)
+8. SUFFIX (cinematic lighting, color-graded, no text, no watermark)
 
 Write the Pollinations prompt now.`;
 

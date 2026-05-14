@@ -631,9 +631,9 @@ Unity is one girl in the roster — the goth nympho coke whore template, seeded 
 - [x] T36.5 — Composition: `${tpl.plotTokens}, specifically: ${tpl.holdPrompt}, captive's hold within the larger ${tpl.displayName}`. Fallback to `tpl.plotTokens` alone if `holdPrompt` missing (legacy/unmigrated template).
 - [x] T36.6 — `composePrompt()` now reads `holdIdx` from `options.holdIdx ?? girl.assignedHoldIdx ?? 0`. Every existing caller of `composePrompt()` and `generateFor()` automatically gets hold-specific env without per-callsite changes. `composePromptViaOllama()` also threads the same env into GIRL CONTEXT (new `- hold environment: "..."` field) + a new ENVIRONMENT RENDERING RULE instructs the Ollama prompt-writer to render the full hold description verbatim, never abbreviating to a single keyword, never burying as a tail token.
 
-### Milestone 21.3 — Image-prompt position reorder
-- [ ] T36.7 — Re-order `composePrompt()` so env lands at position 3 (after NUDITY/face), not position 6
-- [ ] T36.8 — Update `composePromptViaOllama()` HARD RULES to specify env at position 3
+### Milestone 21.3 — Image-prompt position reorder — SHIPPED 2026-05-14
+- [x] T36.7 — Re-ordered `composePrompt()` parts arrays in BOTH clothed and nude branches per the canonical 8-position spec: prefix(1) → NUDITY-or-face(2) → env(3) → face-or-outfit(4) → pose(5) → drug-state(6) → body-state(7) → additional/suffix. Env moves from old position 7 to position 3. Drug-state pinned to position 6 (was adjacent to body-state). Body-state moves to position 7. ARCHITECTURE position table is now aligned with shipped code.
+- [x] T36.8 — `composePromptViaOllama()` ENVIRONMENT RENDERING RULE rewritten to specify "POSITION 3 of the prompt" explicitly. Added a CANONICAL PROMPT POSITION ORDERING section to the Ollama system prompt listing all 8 positions so the prompt-writer follows the same skeleton the hardcoded composer would emit. ARCHITECTURE PREFIX example updated to use dynamic `${girl.age}` (was the stale "age 20s" text).
 
 ### Milestone 21.4 — Deterministic seed fallback
 - [ ] T36.9 — Fix `clampSeed()` to require girl-id fallback when seed missing, never random — preserves facial persistence
