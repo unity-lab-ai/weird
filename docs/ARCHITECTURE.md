@@ -534,13 +534,84 @@ Gee verbatim on templates: *"it basic dugeon templet or cenderblock hole in the 
   currentOutfit: "default",   // ID from wardrobe; drives the outfit block in image gen
 
   // Per-girl consumables — food / water / light / (others). Gee verbatim 2026-04-21.
-  // Ongoing costs the player funds from episode sales.
+  // Ongoing costs the player funds from episode sales. Decay rates are GATED by the hold's
+  // toilet / waterSupply / feedAutomation upgrade tiers — plumbed hold (toilet >= 2) zeroes
+  // water decay; auto-feeder (feedAutomation >= 2) draws from `feedReserve` instead of `food.stock`.
   consumables: {
-    food:  { tier: 1, stock: 14, decayPerTick: 1, unitCost: 3, effectOnMood: +0.02, effectOnBondXPRate: +0.01 },
-    water: { tier: 1, stock: 20, decayPerTick: 1, unitCost: 1, effectOnMood: +0.01, effectOnHealth:  +0.03 },
-    light: { tier: 1, hoursPerDay: 14, costPerDay: 4, effectOnMood: +0.02, effectOnBondXPRate: +0.01 },
+    food:         { tier: 1, stock: 14, decayPerTick: 1, unitCost: 3, effectOnMood: +0.02, effectOnBondXPRate: +0.01 },
+    water:        { tier: 1, stock: 20, decayPerTick: 1, unitCost: 1, effectOnMood: +0.01, effectOnHealth:  +0.03 },
+    light:        { tier: 1, hoursPerDay: 14, costPerDay: 4, effectOnMood: +0.02, effectOnBondXPRate: +0.01 },
+    feedReserve:  0   // bulk reserve drained by auto-feeder upgrade (tier >= 2)
+  },
+
+  // Captive-affect — the dimension orthogonal to archetype that drives HOW she resists captivity.
+  // Rolled at girl-gen time from a per-archetype weighted distribution. Persisted; never changes.
+  // Library/barista weight toward mute/catatonic; street/gym toward cusser/fighter;
+  // sorority toward bargainer; club toward agreeable/submissive.
+  // Injected into buildSystemPrompt() as the THIRD persona overlay (after archetype + mode).
+  captiveAffect: "mute" | "cusser" | "fighter" | "submissive" | "agreeable" | "bargainer" | "catatonic",
+
+  // Pregnancy state — null until first conception roll succeeds.
+  pregnancy: {
+    status: "none" | "pregnant" | "aborted" | "miscarried" | "birthed",
+    conceivedAt: 1715789000000 | null,
+    gestationDays: 0,                // ticks up while status === "pregnant"
+    outcomes: []                     // history: ["plan-b-early-abort", "back-alley-survived", "full-term-birthed-sold-to-market", ...]
   }
 }
+```
+
+### CaptiveAffect overlay (third persona overlay alongside archetype + mode)
+
+```js
+// CAPTIVE_AFFECTS register lives in `js/templates/ollama-templates.js`.
+// Injected into the system prompt as the third overlay paragraph.
+const CAPTIVE_AFFECTS = {
+  mute:       "MUTE — barely speaks. Max 1-3 words per turn. Mostly silent asterisk-action + nothing else. Spoken words single: 'no', 'please', 'stop'. Word count rises slowly with bond.",
+  cusser:     "CUSSER — every response laced with profanity. 'fuck you', 'fucking asshole'. Swearing persists at high bond, just rotates targets.",
+  fighter:    "FIGHTER — physical resistance default. *kicks*, *bites*, *spits*, *thrashes against the chain*. Brief defiant words. Bruises accumulate fast.",
+  submissive: "SUBMISSIVE — quiet, eyes down, body limp. Whispered voice. 'yes Master' said small (resignation, not eagerness). Bond <5 = clearly broken-down. Bond >=5 = genuinely submissive.",
+  agreeable:  "AGREEABLE — complies because fighting hurts more. Smiles thinly. Says things that don't mean what they sound like. Performance over feeling at low bond.",
+  bargainer:  "BARGAINER — constantly negotiates. 'if I do X will you Y'. Watches Master for patterns. Probes restraints. Words fast and calculated.",
+  catatonic:  "CATATONIC — barely responds. Words trail off. Body stays where positioned. Triggered by trauma stack (high bruises + bondDebt + low days-since-meal). Bond progression slow."
+};
+```
+
+### Pregnancy schema (per girl, lifecycle)
+
+```js
+{
+  // Schema on every GirlProfile, initialized to status: "none"
+  status: "none" | "pregnant" | "aborted" | "miscarried" | "birthed",
+  conceivedAt: 1715789000000 | null,
+  gestationDays: 0,                          // game-days since conception
+  outcomes: [                                // append-only history of resolution events
+    // { event: "abortion-attempt", method: "plan-b", successful: true, ts: ... }
+    // { event: "abortion-attempt", method: "back-alley", successful: false, lifespanHit: -25, ts: ... }
+    // { event: "full-term-birthed", outcome: "added-to-roster" | "sold-to-market" | "lost-to-authorities", ts: ... }
+  ]
+}
+
+// conception math, fired from delta.js on turns where cumLoad >= 1.0
+// and outfit isn't 'condom-on' and bond.bondLevel < 9:
+//   baseProb = fertilityCurveAtDay(girl.cycle.day)        // peaks day 12
+//   drugMitigation = drugProtectionFactor(girl.body.activeDrugs)   // mdma slight, plan-b heavy
+//   bondMitigation = bond.bondLevel >= 7 ? 0.2 : 0          // self-tracking at high bond
+//   p = baseProb * (1 - drugMitigation) * (1 - bondMitigation)
+
+// abortion item methods (catalog entries in js/assets/catalog.js subcategory 'medical'):
+//   condom              ($2 stack)    — preventive, equipped as accessory outfit
+//   plan-b              ($25)         — first 72hr post-conception, 90% success
+//   abortion-pill-medical ($120)      — first trimester (1-90 days), 95% success
+//   surgical-kit-back-alley ($200)    — later (90-180 days), 75% success, 25% lifespan hit
+//   obgyn-referral-clean ($600)       — later (90-180 days), 98% success, 5% lifespan hit
+//   coat-hanger-no-item               — desperate fallback, no item required, 40% success, 60% severe lifespan hit
+//   do-nothing                        — let it run to term, age the gestation tick
+
+// full-term outcome on day 280: rolled outcome
+//   added-to-roster      (next-gen captive, inherits seed lineage)
+//   sold-to-market       (premium "newborn" tag, 4-5x normal price)
+//   lost-to-authorities  (notoriety +6, social services intervention)
 ```
 
 ### BodyState (per girl)
@@ -641,8 +712,10 @@ Gee verbatim on templates: *"it basic dugeon templet or cenderblock hole in the 
     restraints: 1,          // floor rings / bed cuffs / harness rig / full bondage rig
     lights: 1,              // bare bulb / warm lamp / dimmable / mood LEDs / theatrical
     toys: 0,                // empty / basic / varied / deluxe / institution-grade
-    food: 1,                // slop / basic meals / varied / gourmet
-    toilet: 0,              // can (0) | bucket (1) | plumbing (2) — Gee verbatim tiers
+    food: 1,                // slop / basic meals / varied / gourmet (food QUALITY)
+    feedAutomation: 0,      // manual (0) | auto-bowl timer (1) | auto-feeder dispenser (2) | IV-line continuous (3) — tier >= 2 draws from `feedReserve`, no manual refill needed
+    toilet: 0,              // can (0) | bucket (1) | plumbing (2) — Gee verbatim tiers — plumbing eliminates water-supply requirement
+    waterSupply: 0,         // manual bottle (0) | wall jug w/ straw (1) | plumbed faucet (2) | recirculating IV (3) — tier >= 2 zeroes water decay
     bedding: 0,             // bare floor / mat / mattress / real bed / canopy
     entertainment: 0,       // none / radio / tv / screen / library
     decor: 0,               // bare / minimal / themed / luxury / fetish-themed
@@ -651,6 +724,37 @@ Gee verbatim on templates: *"it basic dugeon templet or cenderblock hole in the 
   ambience: "cold stone, harsh bulb, chain rattle"
 }
 ```
+
+### Image-prompt position table (canonical ordering)
+
+The image-prompt pipeline composes blocks in a fixed positional order to defeat tail-attenuation in image models. Position 2 is reserved for the highest-priority instruction (front-loaded nudity when nude); position 3 carries the hideout/hold environment so it never melts into a tail keyword.
+
+| Position | Block (clothed) | Block (nude) | Source |
+|---|---|---|---|
+| 1 | prefix (`editorial photograph, 35mm film, adult female age 20s`) | prefix | hardcoded |
+| 2 | face description | **NUDITY block (front-loaded, explicit)** | `girl.visualIdentity.facialDescription` / `nudeTokens()` |
+| 3 | **environment + hold description** | **environment + hold description** | `tpl.plotTokens + ', specifically: ' + tpl.holdPrompt` |
+| 4 | outfit + state layers | face description | `currentOutfitEntry.description` + `outfitStateTokens()` |
+| 5 | pose | pose | `POSE_LIBRARY[situation]` |
+| 6 | **drug-state visible markers** | **drug-state visible markers** | `drugStateTokens(body)` |
+| 7 | body-state tokens (arousal/wetness/cum/bruises) | body-state tokens | `bodyStateTokens(body)` |
+| 8 | suffix (`shallow DoF, cinematic, color-graded, no text, no watermark`) | suffix | hardcoded |
+
+`drugStateTokens(body)` emits per-substance visible markers — coke: `dilated pupils, jaw clenched, slight red rim on nostrils, twitchy fingers`; weed: `red glassy eyes, half-lidded relaxed face, slack lips`; mdma: `dilated pupils with wet shine, sheen of sweat at temples, jaw working`; acid: `unfocused thousand-yard stare, slightly parted lips`; ketamine: `glassy distant gaze, slack posture, mouth softly open`; sedatives: `drooped eyelids, slack body, soft-open mouth`. Intensities scale per-drug magnitude (live from `body.activeDrugs[].mag`).
+
+### Speech-first first-person response rule (Ollama)
+
+Every model response leads with the SPOKEN line (the part TTS will read aloud after asterisk-stripping) and trails with an `*asterisk action*` shorter than the speech. Minimum 8 words in the spoken portion. The `BASE_SLUT` prompt enforces this with re-ordered exemplars:
+
+```
+GOOD: "Please — Master, no, I can't, my wrists, the chain —" *she pulls at the cuff*
+GOOD: "Yes Master. Yes. Hurts. Don't stop." *eyes screwed shut, breathing hard*
+BAD:  *she looks at you with wet eyes and lips parted, body trembling* "Yes Master."
+```
+
+When `body.activeDrugs` is non-empty, the model is instructed to inject the drug's signal into every line (slurred consonants under sedatives, rapid-fire under coke, drifty under weed, emotional flooding under mdma, sensory leak under acid, swearing-up under alcohol). Drug names never spoken — the rhythm IS the signal.
+
+A defensive `room.js` "lonely yes Master" detector fires a NotifyToast if the post-asterisk-stripped speech is ≤3 words — surfaces TTS regressions to the user instead of silently mumbling.
 
 ### PlayerEconomy
 ```js
@@ -845,7 +949,16 @@ Item categories in the catalog (examples — full list fleshed out in `server/it
 ## Patterns
 
 ### Per-girl persona injection pattern
-Each girl has her own persona assembled from: (a) shared slut-base scaffolding (common vocabulary, nymphomania, explicit vocabulary, no-refusal stance), (b) per-girl overlay (name, age, appearance, archetype, backstory, kinks, speech pattern, hometown, job, drugs-of-choice, voice ID). Unity's overlay is unity-persona.md + unity-coder.md; other girls' overlays live in `server/girls/<name>.mjs` as structured persona objects compiled into system prompts. Mode overlay (e.g., /hurtme) is applied on top per-turn. The system prompt fed to Ollama is always `base + current-girl overlay + active mode overlay`.
+Each girl has her own persona assembled from FOUR overlays composed in order:
+
+1. **Shared slut-base scaffolding** (`BASE_SLUT`) — captor/captive dynamic, bond-level affect rules, captive frame, speech-first rule, chemical-state-effects rule, delta-block contract.
+2. **Archetype overlay** — pre-capture identity (library / club / street / sorority / gym / barista / unity). Describes who she WAS before capture.
+3. **Captive-affect overlay** (`CAPTIVE_AFFECTS[girl.captiveAffect]`) — RESPONSE-TO-CAPTIVITY shape (mute / cusser / fighter / submissive / agreeable / bargainer / catatonic). Describes HOW she resists. Rolled at girl-gen from a per-archetype weighted distribution and persisted as `girl.captiveAffect`.
+4. **Mode overlay** — `sexy` (default) / `hurtme` (violence-forward, no sex) / `sexy-with-damage` (return-from-hurtme, body carries the damage).
+
+Archetype + captive-affect compose orthogonally — a `library` archetype can have any of the 7 affects, producing very different captive behaviors (mute library girl = silent watchful student; cusser library girl = swears with academic precision; bargainer library girl = negotiates by quoting Foucault). Mode is applied last as a per-turn override.
+
+The system prompt fed to Ollama is `base + archetype + captive-affect + mode + scene`.
 
 ### State-in-prompt pattern
 Every turn passes the full current body state as plaintext context to Ollama. The model SEES her arousal / wetness / bruise count / high level / which drugs are in her system and reacts accordingly. State is not applied by matching strings — the model reasons from state as part of the prompt.
@@ -863,6 +976,27 @@ Memory starts simple: a chronological JSONL log of turns. Retrieval: tag-filter 
 
 ### Hunting pattern
 The user goes *"huntinG"* (Gee verbatim) by picking a location from the outside world map. The `hunting.mjs` engine rolls a spawn table for that location — mix of regulars, rare encounters, and template-generated unique girls. User picks one, chooses approach type (talk / charm / bribe / attempt-capture-with-tool-from-inventory), and the outcome resolves against the girl's stats + public/private context + current player inventory + suspicion state. Harder locations spawn more vibrant / higher-rarity girls. Capture success moves the girl from "in the wild" to "captive in your dungeon".
+
+### Capture-spam mitigation pattern (Gee verbatim 2026-05-14: *"the capture girls part needs worked out better currntly i jsut spam items until their caught"*)
+Repeated tool-use attempts at the same target compound cost so spamming items is self-defeating:
+
+- **Per-attempt suspicion bump (geometric scaling)** — each attempt at the same location-in-window adds suspicion; 3rd attempt triggers a cops-risk roll regardless of capture success.
+- **Per-attempt stamina drain** — capture attempts cost a player stamina pool that regens per-tick. Spamming bottoms the pool and gates further attempts.
+- **Per-attempt girl-flee escalation** — 1st attempt = caught off guard, 2nd = backing away (success probability halved), 3rd = sprinting / screaming for witnesses (forced critical-fail with witness spawn).
+- **Per-tool location cooldown** — used the rohypnol vial → 30 in-game minutes before another sedation attempt at this location.
+- **Witness pool roll** — each attempt rolls a witness count against the location's `publicness` factor; witnesses > 0 → critical-fail spawn.
+- **Single-use item consumption** — every sedation attempt consumes the item, success or fail. Pipe / blunt items survive but suspicion-bump applies.
+
+Successful captures trigger the 4-beat capture transition sequence (subdue → transport → arrival → first conscious moment) factored by tool × archetype × source location × destination hideout.
+
+### Hideout-specific environment composition pattern (image renders)
+Every dungeon template in `js/assets/catalog.js` carries `plotTokens` (template aesthetic) AND `holdPrompt` (per-hold specific description). The image-prompt composer reads BOTH at position 3 of the prompt (immediately after face/nudity) so every captive in every hold renders her own specific hold as the background. Example compositions:
+
+- Hole-in-the-desert + hold #1 → `"buried desert pit, plywood-reinforced walls, rope ladder, iron floor ring, chain, remote, dusty, specifically: heavy forged iron ring set in the pit floor, attached chain with a steel cuff, captive's hold within the larger Hole in the Desert"`
+- Basement-hidden-room + hold #3 → `"ordinary suburban basement with concealed false-wall door, water heater, boxes, hidden threshold, bolted bed frames, cuff rails, specifically: steel bed frame bolted through the concrete floor with cuff rails at all four corners, captive's hold within the larger Hidden Basement Room"`
+- Sewer-tunnel-locked + hold #5 → `"sealed sewer tunnel, brick arch, steel bulkhead, alcoves with forged rings and chains, standing water, iron rungs, sickly lamp, specifically: brick alcove with a heavy forged iron ring anchored into the masonry, chain with cuff, captive's hold within the larger Locked Sewer Tunnel"`
+
+Hold-specific composition propagates through every image situation — profile, room scene, selfie, milestone memorial, capture aftermath. Same girl seen in two different holds renders as the same face + body in two visibly different backgrounds.
 
 ### Economy-gated progression pattern
 The game gates content behind money + tools. Cheap tools fail against high-difficulty captures. The player earns money from jobs/income, spends it at the shop on better tools, and climbs the tool tier tree to take on harder locations with more vibrant girls. Dungeon upgrades also require money and earn their own progression.

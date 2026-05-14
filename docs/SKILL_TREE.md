@@ -184,6 +184,81 @@ Capabilities required to build weird masterfully. Organized by domain, complexit
 - Page-level state isolation + shared state via server as source of truth
 - Notification / toast system for tick events (escape attempts, bond level-ups, restocks)
 
+### Game Design — Captive-affect personality dimension (the unwillingness varieties)
+- Seven affects orthogonal to archetype: mute / cusser / fighter / submissive / agreeable / bargainer / catatonic
+- Per-archetype weighted distribution for affect rolling at girl-gen (library → mute/catatonic; street → cusser/fighter; sorority → bargainer; etc.)
+- Affect overlay as the THIRD persona injection (between archetype and mode)
+- Affect drives response shape, not response content — same girl with same archetype but different affect produces visibly different captive behavior at every bond level
+- Bond-level interplay with affect — submissive at low bond is broken-down, submissive at high bond is genuinely devoted; cusser at high bond still cusses but rotates targets
+
+### Game Design — Pregnancy / reproductive mechanics
+- Per-girl `pregnancy` schema with status / conceivedAt / gestationDays / outcomes lifecycle
+- Conception math — fertility curve (peaks day-12), drug-protection factor, bond-level self-tracking mitigation at L7+
+- Abortion item ladder design — preventive (condom) → early (plan-b) → first-trimester (medical pill) → later (back-alley risk / clean obgyn premium) → desperate (coat-hanger fallback) → none (full-term)
+- Gestation tick math — 280-day full term over `daysCaptive` real time
+- Full-term outcome roll — birthed-to-roster (next-gen captive inheriting seed lineage) / sold-to-market (premium "newborn" tag, 4-5x normal price) / lost-to-authorities (notoriety +6, social services intervention)
+- Item-tier balance — cost vs success rate vs lifespan-hit risk
+- UI surface — Pregnancy panel in room view showing status + gestation days + abort options gated by current status
+
+### Game Design — Capture-spam mitigation
+- Per-attempt suspicion bump math — geometric scaling within a time window at the same location
+- Per-attempt stamina pool design — player stamina (separate from money), regens per-tick, attempts cost from pool
+- Per-attempt girl-flee escalation — state machine for the target's awareness (off-guard → backing → sprinting/screaming)
+- Per-tool location cooldown — same tool used at same location triggers a cooldown timer per (tool, location, time-window)
+- Witness pool roll — per-location publicness factor drives witness count per attempt; witnesses > 0 forces critical-fail
+- Single-use item consumption audit — verify every single-use sedation item is consumed per attempt regardless of outcome
+- Successful capture transition narrative — 4-beat Ollama scene (subdue / transport / arrival / first conscious moment) factored by tool × archetype × source location × destination hideout
+
+### LLM / Prompt Engineering — Speech-first first-person response shape
+- BASE_SLUT prompt-level rule: spoken line FIRST (8-word minimum), asterisk action TRAILS (shorter than speech)
+- Re-ordered good/bad exemplars driving the model's copy-the-shape behavior
+- Lonely-yes-Master post-detector in TTS path — if asterisk-stripped speech ≤ 3 words, emit NotifyToast warning to surface TTS regressions instead of silently mumbling
+- Stream-end truncation guardrail — `truncateResponse` invoked AFTER chatStream completion to cap runaway narration at 40 words / 2 sentences
+
+### LLM / Prompt Engineering — Forced chemical-state effects in speech
+- Per-substance speech-pattern signal mapping in BASE_SLUT `## CHEMICAL STATE EFFECTS` block
+- Sedatives → slurred consonants + mid-sentence drops
+- Coke → rapid-fire short phrases + jaw lock + sniffs
+- Weed → long pauses + drifty word choice + sensory descriptions
+- MDMA → emotional flooding + tactile fixation + "I love you" leak at low bond
+- Acid → things-aren't-real perception + color/sound/texture intrusion
+- Alcohol → slurred but loose + more honest + more swearing
+- Drug names NEVER spoken — rhythm and slur IS the signal
+
+### Image Generation — Drug-state visible markers
+- Per-substance prompt-token library scaled by `body.activeDrugs[].mag`
+- Coke: dilated pupils + jaw clenched + slight red rim on nostrils + twitchy fingers
+- Weed: red glassy eyes + half-lidded relaxed face + slack lips
+- MDMA: dilated pupils with wet shine + sheen of sweat at temples + jaw working
+- Acid: unfocused thousand-yard stare + slightly parted lips
+- Ketamine: glassy distant gaze + slack posture + mouth softly open
+- Sedatives: drooped eyelids + slack body + soft-open mouth
+- Position 6 in canonical image-prompt ordering (after pose, before body-state)
+
+### Image Generation — Hold-specific environment composition
+- Per-template `holdPrompt` field carrying specific description of one captive's hold inside the larger hideout
+- Composition pattern: `tpl.plotTokens + ', specifically: ' + tpl.holdPrompt + ", captive's hold within the larger " + tpl.displayName`
+- Position 3 in canonical image-prompt ordering (immediately after NUDITY/face) — never tail-attenuated
+- Per-captive-hold uniqueness within the same hideout — each girl's image carries her assigned hold's specific description
+- 9 hideout templates × multiple hold types per template = dozens of distinct backdrop possibilities, composed from data
+
+### Game Design — Automation upgrade tier ladder design
+- Two new upgrade tracks alongside the existing 10 (security / restraints / lights / toys / food / toilet / bedding / entertainment / decor / climate)
+- `waterSupply` — 4 tiers: manual bottle (0) / wall jug w/ straw (1) / plumbed faucet (2) / recirculating IV (3)
+- `feedAutomation` — 4 tiers: manual (0) / auto-bowl timer (1) / auto-feeder dispenser (2) / IV-line continuous (3)
+- Decay gating math — toilet ≥ 2 (plumbed) OR waterSupply ≥ 2 zeroes water decay; feedAutomation ≥ 2 draws from `feedReserve` bulk
+- Tier-cost balancing — manual is free, IV-line is endgame
+- Bulk-buy `feedReserve` design — separate from `food.stock`, drained by auto-feeder, refilled by bulk items
+
+### Game Design — Real public landing page
+- Static-site landing page at `index.html` separate from the in-game setup wizard
+- Sections: Start New Game / Continue (if save) / Settings / About / Terms of Use / Privacy Policy
+- First-time setup flow gated behind "Start New Game" — Ollama / model / Kokoro / Pollinations-key wizard moves under that gate
+- Terms section: 18+ adult-content acknowledgement, taboo-fiction framing, all-characters-adult statement, jurisdiction notes
+- Privacy section: what stays on device, what calls out (visitor's own Ollama, visitor's own Pollinations key), no telemetry, IndexedDB-stored save, export/import save portability
+- About section: game description (no AI vendor attribution), feature highlights, version
+- Visual chrome consistent with `game.html` — dark aesthetic, text+emoji primary, no marketing bloat
+
 ---
 
 ## By Complexity
@@ -264,19 +339,30 @@ Capabilities required to build weird masterfully. Organized by domain, complexit
 
 ## By Priority
 
-### Critical (Must Have) — Phase 1 + Phase 2
+### Critical (Must Have) — Phase 21 (current 2026-05-14 overhaul)
 | Skill | Domain | Complexity | Status |
 |-------|--------|------------|--------|
-| Ollama HTTP client | Backend | Intermediate | Not started |
-| Prompt assembly | LLM | Intermediate | Not started |
-| Persona injection | LLM | Intermediate | Not started |
-| SSE streaming | Backend | Intermediate | Not started |
-| State model | Backend | Intermediate | Not started |
-| State-in-prompt | LLM | Intermediate | Not started |
-| Delta parsing (structured) | LLM | Advanced | Not started |
-| Delta parsing (heuristic fallback) | Backend | Advanced | Not started |
-| Node server skeleton | Backend | Beginner | Not started |
-| Frontend event wiring to server | Frontend | Intermediate | Not started |
+| Drug-state image markers (per-substance tokens scaled by mag) | Image | Intermediate | Not started — T36.1-T36.3 |
+| Per-hold env composition (template plotTokens + holdPrompt at position 3) | Image | Intermediate | Not started — T36.4-T36.6 |
+| Image-prompt position reorder (env to position 3, drug-state to position 6) | Image | Intermediate | Not started — T36.7-T36.8 |
+| Deterministic seed fallback (girl-id djb2 hash when seed missing) | Image | Beginner | Not started — T36.9 |
+| Speech-first first-person response shape (BASE_SLUT SPEECH-FIRST RULE) | LLM | Intermediate | Not started — T36.10-T36.13 |
+| Forced chemical-state effects in Ollama text (## CHEMICAL STATE EFFECTS block) | LLM | Intermediate | Not started — T36.14-T36.15 |
+| CAPTIVE_AFFECTS register as third persona overlay | LLM | Intermediate | Not started — T36.16-T36.19 |
+| Bottled + filtered water shop catalog + room.js data-water buttons | Game Design | Beginner | Not started — T36.20-T36.21 |
+| feedAutomation + waterSupply upgrade tracks + tier-gated decay | Game Design | Intermediate | Not started — T36.22-T36.24 |
+| Pregnancy subsystem (conception math + abortion tiers + outcome resolver) | Game Design | Advanced | Not started — T36.25-T36.29 |
+| Capture-spam mitigation (suspicion/stamina/flee/cooldown/witnesses) | Game Design | Intermediate | Not started — T36.30-T36.35 |
+| Real public landing page (Start/Continue/Settings/About/Terms/Privacy) | Frontend | Beginner | Not started — T36.36-T36.41 |
+| No-wardrobe option distinct from nude pseudo-outfit | Game Design | Beginner | Not started — T36.46-T36.49 |
+| Full-body image framing (PREFIX + POSE_LIBRARY + aspect ratio + sanitize) | Image | Beginner | Not started — T36.50-T36.54 |
+
+### Foundational (shipped Phases 0-20)
+| Skill | Domain | Complexity | Status |
+|-------|--------|------------|--------|
+| Ollama HTTP client + streaming + persona injection | Backend / LLM | Intermediate | ✅ Shipped |
+| State model + state-in-prompt + structured + heuristic delta parsing | Backend / LLM | Advanced | ✅ Shipped |
+| Frontend event wiring + Pollinations imaging + Kokoro TTS sentence queue | Frontend / Audio / Image | Intermediate | ✅ Shipped |
 
 ### Important (Should Have) — Phase 3 + 4 + 5 + 6
 | Skill | Domain | Complexity | Status |

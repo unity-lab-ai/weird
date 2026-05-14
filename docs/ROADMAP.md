@@ -616,6 +616,96 @@ Unity is one girl in the roster — the goth nympho coke whore template, seeded 
 
 ---
 
+## Phase 21 — Major Systems Overhaul (2026-05-14) (P1)
+
+> Driven by `/super-review` 2026-05-14 + Gee's verbatim directives on the same date. Tightens the half-shipped surfaces (drug-state in images, hold-specific environment, speech-first TTS) and lands genuine missing verticals (CAPTIVE_AFFECTS personality dimension, water + feed automation tiers, pregnancy subsystem, capture-spam mitigation, real public landing page).
+
+### Milestone 21.1 — Drug-state visible in image prompts
+- [ ] T36.1 — `drugStateTokens(body)` in `js/game/imaging.js` covering coke / weed / mdma / acid / ketamine / sedatives, scaled by drug magnitude
+- [ ] T36.2 — Inject drug-state tokens at prompt position 6 (after pose) in `composePrompt()`
+- [ ] T36.3 — Mirror in `composePromptViaOllama()` HARD RULES so the Ollama-as-prompt-writer path also visualizes drug effects
+
+### Milestone 21.2 — Per-hold environment composition
+- [ ] T36.4 — Rewrite `envTokens()` in `imaging.js` to accept `holdIdx`, resolve `dungeon.holds[holdIdx]`, pull `tpl.holdPrompt` keyed off `hold.holdType`
+- [ ] T36.5 — Compose env at prompt position 3: `tpl.plotTokens + ', specifically: ' + tpl.holdPrompt + ", captive's hold within the larger " + tpl.displayName`
+- [ ] T36.6 — Pass `assignedHoldIdx` from every caller — `room.js`, `roomScene()`, `generateFor()`, selfie path, milestone memorial path
+
+### Milestone 21.3 — Image-prompt position reorder
+- [ ] T36.7 — Re-order `composePrompt()` so env lands at position 3 (after NUDITY/face), not position 6
+- [ ] T36.8 — Update `composePromptViaOllama()` HARD RULES to specify env at position 3
+
+### Milestone 21.4 — Deterministic seed fallback
+- [ ] T36.9 — Fix `clampSeed()` to require girl-id fallback when seed missing, never random — preserves facial persistence
+
+### Milestone 21.5 — Speech-first first-person response shape
+- [ ] T36.10 — Add SPEECH-FIRST RULE to `BASE_SLUT` in `js/templates/ollama-templates.js` with re-ordered exemplars (speech first, asterisk action trails, 8-word minimum spoken)
+- [ ] T36.11 — Delete redundant `DELTA_SUFFIX` from `buildSystemPrompt()` (BASE_SLUT already carries the delta contract)
+- [ ] T36.12 — Wire `truncateResponse` to fire on stream-end in `chatStream()` (currently dead code)
+- [ ] T36.13 — Add lonely-yes-Master detector to `room.js` TTS path — if speakable ≤ 3 words, emit NotifyToast warning
+
+### Milestone 21.6 — Forced chemical-state effects in Ollama text
+- [ ] T36.14 — Add `## CHEMICAL STATE EFFECTS` block to `BASE_SLUT` mapping each drug to speech-pattern signal (slur / rapid-fire / drift / flooding / sensory leak / swearing-up)
+- [ ] T36.15 — Drug names NEVER mentioned in speech — rhythm IS the signal
+
+### Milestone 21.7 — CAPTIVE_AFFECTS register
+- [ ] T36.16 — Add `CAPTIVE_AFFECTS` register to `ollama-templates.js` (mute / cusser / fighter / submissive / agreeable / bargainer / catatonic)
+- [ ] T36.17 — Inject as third persona overlay in `buildSystemPrompt()` (after archetype, before mode)
+- [ ] T36.18 — Roll `girl.captiveAffect` at girl-gen in `js/game/girl-gen.js` from per-archetype weighted distribution (library/barista → mute/catatonic; street/gym → cusser/fighter; sorority → bargainer; club → agreeable/submissive)
+- [ ] T36.19 — Persist `captiveAffect` on every girl, surface in room UI
+
+### Milestone 21.8 — Bottled water + filtered water in shop
+- [ ] T36.20 — Add `bottled-water` ($8/24pk) + `filtered-water` ($18/5gal) to `ITEMS` array in `js/assets/catalog.js`
+- [ ] T36.21 — Add `data-water` buttons in `js/ui/room.js` mirroring food buttons
+
+### Milestone 21.9 — Automation upgrade tracks
+- [ ] T36.22 — Add `feedAutomation` (manual → auto-bowl → auto-feeder → IV-line) + `waterSupply` (manual bottle → wall jug → plumbed → recirculating IV) to `UPGRADE_TRACKS` in `js/game/dungeon-ops.js`
+- [ ] T36.23 — Rewrite `decayConsumables()` in `js/game/tick.js` to gate decay by hold's toilet ≥ 2 (water) / waterSupply ≥ 2 (water) / feedAutomation ≥ 2 (food draws from `feedReserve`)
+- [ ] T36.24 — Add `feedReserve` schema field on girl.consumables, drained by auto-feeder
+
+### Milestone 21.10 — Pregnancy subsystem
+- [ ] T36.25 — New file `js/game/pregnancy.js` with `Pregnancy` schema + `attemptConception(girlId, opts)` + `applyAbortion(girlId, methodId)` + outcome resolver
+- [ ] T36.26 — Add catalog items: `condom` ($2 stack), `plan-b` ($25), `abortion-pill-medical` ($120), `surgical-kit-back-alley` ($200), `obgyn-referral-clean` ($600)
+- [ ] T36.27 — Pregnancy panel in `room.js` showing status + gestation days + abort options
+- [ ] T36.28 — Hook `delta.js` to fire `attemptConception()` when `cumLoad >= 1.0` and no condom outfit equipped and `bond.bondLevel < 9`
+- [ ] T36.29 — Full-term outcome resolver: birthed → roster / sold-to-market / lost-to-authorities
+
+### Milestone 21.11 — Capture-spam mitigation
+- [ ] T36.30 — Per-attempt suspicion bump (geometric scaling at same-location-in-window) in `js/game/hunt.js`
+- [ ] T36.31 — Per-attempt stamina drain (player stamina pool, regenerates per-tick)
+- [ ] T36.32 — Per-attempt girl-flee escalation (1st off-guard → 2nd backing → 3rd sprinting/screaming)
+- [ ] T36.33 — Per-tool location cooldown
+- [ ] T36.34 — Witness pool roll on every attempt
+- [ ] T36.35 — Verify/enforce single-use sedation item consumption per attempt
+
+### Milestone 21.12 — Real public landing page
+- [ ] T36.36 — Replace setup-wizard-as-landing with a real public landing page at `index.html`: Start New Game button, Continue Game button (if save exists), Settings, About, Terms of Use, Privacy Policy sections
+- [ ] T36.37 — Settings panel routes from landing for Ollama / model / Kokoro / Pollinations key configuration (current setup wizard becomes the "first-time setup" flow gated behind New Game)
+- [ ] T36.38 — About section — game description (no AI vendor attribution per LAW), feature highlights, version
+- [ ] T36.39 — Terms of Use section — adult-content terms, 18+ acknowledgement, taboo-fiction framing, all-characters-adult statement, jurisdiction notes
+- [ ] T36.40 — Privacy Policy section — what stays on device (everything), what calls out (visitor's own Ollama, visitor's own Pollinations key), no telemetry, IndexedDB note, export/import saves
+- [ ] T36.41 — Visual chrome consistent with game.html — dark aesthetic, text+emoji primary, no marketing bloat
+
+### Milestone 21.13 — Cleanup carry-overs (super-review tail)
+- [ ] T36.42 — Delete `js/game/lifespan.js:81` no-op self-assignment
+- [ ] T36.43 — Add `<<INTENTIONAL EMPTY>>` marker comment on NUDE_PSEUDO description in `js/game/wardrobe.js`
+- [ ] T36.44 — Tighten `extractDelta` closing-tag tolerance after `truncateResponse` enforces clean endings
+- [ ] T36.45 — Migrate SHIPPED entries (Derobe + Playwright screenshots + 2026-05-14 doc-vision-alignment + this overhaul as it ships) to `docs/FINALIZED.md` per LAW
+
+### Milestone 21.14 — No-wardrobe option (Gee verbatim 2026-05-14: *"need a no wardrobe option too, add to task list"*)
+- [ ] T36.46 — Add `NO_WARDROBE_PSEUDO` (id `none` or `unwardrobed`) built-in entry to `js/game/wardrobe.js`, distinct from `NUDE_PSEUDO` — represents wardrobe slot empty / completely stripped of every garment + every accessory + every jewelry piece + every collar + every restraint. `equip()` allows as built-in without buying.
+- [ ] T36.47 — Wire "🚫 No wardrobe / Strip everything" button in `js/ui/room.js` Actions row + featured action in `js/ui/wardrobe-view.js`. Click triggers `wardrobe.equip(girlId, 'none')` and force-regenerates image.
+- [ ] T36.48 — Update `imaging.js` `composePrompt()` + `composePromptViaOllama()` HARD RULES to handle the no-wardrobe state. Position-2 block: "completely stripped, no garments of any kind, no accessories of any kind, no jewelry, no collar, no restraints, no anything on her body, raw nakedness, fully exposed". Distinct from NUDE_PSEUDO's framing — explicitly bans accessories too.
+- [ ] T36.49 — Girl-gen update — every new girl spawns with `default` + `nude` + `none` in her wardrobe.
+
+### Milestone 21.15 — Full-body image framing (Gee verbatim 2026-05-14: *"and we need the images to do more fullbody style not mugshots and portrate images"*)
+- [ ] T36.50 — Update `imaging.js` PREFIX block — add explicit full-body framing tokens at the very start of every image prompt: `"full body shot, head to toe in frame, no portrait cropping, no mugshot framing, complete figure visible from hair to feet, wide framing"`.
+- [ ] T36.51 — Audit + rewrite every entry in `POSE_LIBRARY` (`imaging.js` lines 134-171). Each pose description gets prefixed/suffixed with explicit full-body framing language. Selfies in particular need `"full-body composition showing entire body from head to feet"` injected.
+- [ ] T36.52 — Switch default Pollinations aspect ratio for character images to portrait tall (1024 × 1792). Environment renders stay landscape (1792 × 1024). Set per-call in `buildUrl()`.
+- [ ] T36.53 — Update `composePromptViaOllama()` HARD RULES — add a rule that the Ollama-as-prompt-writer MUST instruct the image generator to produce full-body framing, never portrait or mugshot.
+- [ ] T36.54 — Add safety net in `sanitizePrompt()` (`imaging.js` lines 290-301) — strip `portrait`, `mugshot`, `headshot`, `bust shot`, `close-up of face` and inject `full body shot` if any leak through.
+
+---
+
 ## Dependency Graph
 
 ```
@@ -680,11 +770,39 @@ Phase 19 (Pollinations template-style imaging)
    │      Phase 17 (bond milestone memorials)
    ▼
 Phase 20 (Polish, balancing, export/import)
+   │
+   ▼
+Phase 21 (Major Systems Overhaul — 2026-05-14)
+   │    ↑ Milestones 21.1-21.6 enhance Phase 19 imaging + Phase 4 voice prompts
+   │    ↑ Milestone 21.7 enhances Phase 9 women templates (CAPTIVE_AFFECTS overlay)
+   │    ↑ Milestones 21.8-21.9 enhance Phase 15 dungeon upgrades (water/feed automation)
+   │    ↑ Milestone 21.10 new vertical (pregnancy) — depends on Phase 8 multi-girl + Phase 5 bond
+   │    ↑ Milestone 21.11 enhances Phase 13 capture mechanic (spam mitigation)
+   │    ↑ Milestone 21.12 replaces Phase 10 setup-wizard-as-landing with real public landing
+   │    ↑ Milestone 21.13 cleanup tail
+   │    ↑ Milestone 21.14 wardrobe addition (no-wardrobe option)
+   │    ↑ Milestone 21.15 full-body image framing (Phase 19 enhancement)
+   ▼
+(Ongoing — game lives here, future overhauls land as Phase 22+)
 ```
 
-### Critical Path
+### Critical Path (current — 2026-05-14)
 
-Phase 0 → Phase 1 → Phase 2 → everything else branches.
+Phases 0-20 all shipped. **Current critical path = Phase 21:**
+
+1. Phase 21.5 (Speech-first TTS fix, ~1h) — unblocks Kokoro getting only "yes Master"
+2. Phase 21.15 (Full-body image framing, ~1h) — fixes mugshot/portrait default before other image work rides on top
+3. Phase 21.8 + 21.9 (Water + automation tracks, ~1.5h) — unblocks water-decay-with-no-buy-path
+4. Phase 21.1 + 21.2 + 21.3 (Drug-state + per-hold env + position reorder in image prompts, ~2-3h)
+5. Phase 21.4 (Deterministic seed fallback, ~30min)
+6. Phase 21.6 + 21.7 (Chemical-state effects in text + CAPTIVE_AFFECTS register, ~2-3h)
+7. Phase 21.10 (Pregnancy subsystem, ~3-4h)
+8. Phase 21.11 (Capture-spam mitigation, ~2-3h) — depends on existing Tool × Woman × Location scene-template + Full capture transition epics from pre-2026-05-14 backlog
+9. Phase 21.14 (No-wardrobe option, ~30min)
+10. Phase 21.12 (Real public landing page, ~2h)
+11. Phase 21.13 (Cleanup + FINALIZED migration, ~30min)
+
+Total critical path: ~17-21 hours of focused implementation.
 
 Phase 4 (Voice) — TTS locked as Kokoro 2026-04-21, no more blockers.
 
@@ -697,7 +815,7 @@ Phase 4 (Voice) — TTS locked as Kokoro 2026-04-21, no more blockers.
 | Ollama model refuses persona content despite system prompt | High | Medium | Use a known abliterated / dolphin variant. Document model choice. Fall back to Pollinations text models if Ollama is configured with a non-uncensored model. |
 | Model does not reliably emit structured state deltas | Medium | High | Heuristic parser fallback (verb-matching). Iterate prompt until model complies most of the time. |
 | Kokoro voice-clone output quality for the custom Unity voice is weaker than the 28 built-ins | Low-Medium | Medium | Kokoro's 28 built-in voices are production-quality; clone only after a reasonable built-in has been road-tested as default. Fall back to built-in if clone underperforms. |
-| Massive scope (20 phases, 100+ tasks) stalls before Phase 8 multi-girl work begins | High | Medium | Ship Phases 1–7 to a masterful one-girl finish first (Unity only). Resist the urge to start Phase 8+ before the vertical slice is rock-solid. Scope-control is the discipline — docs-before-push LAW + TODO-before-work GATE are the tools. |
+| Phase 21 spans 9 distinct verticals (image prompts, captive affect, water/feed automation, pregnancy, capture mitigation, landing page, no-wardrobe option, full-body framing, cleanup); context-switching cost could stall mid-overhaul | Medium | Medium | Pick ONE milestone, ship it to completion (code + docs + commit), then pivot. Resist parallel partial work. Phase 21 milestones sequenced fastest-win first — 21.5 (TTS) is ~1h. Total active backlog now 79 tasks (T36.1-T36.54 + DOC.1-8 + MIG.1-2 + CMT.1 + PRE.1-14). |
 | Economy/capture/escape/bond math all interact — tuning one breaks another | Medium | High | Phase 20 balancing is the dedicated pass. Early phases ship with placeholder numbers; never treat numbers as final until balancing. |
 | Template generator produces boring / duplicate / incoherent girls | Medium | Medium | Template design is an authoring discipline. Roll many, read the outputs, iterate. Each template gets a diversity check before it ships. |
 | Notoriety/suspicion systems make the outside world feel punishing rather than fun | Low-Medium | Medium | Balancing pass (T26.5). Punishment for reckless hunts should sting but not brick progress. |
@@ -746,6 +864,18 @@ Phase 4 (Voice) — TTS locked as Kokoro 2026-04-21, no more blockers.
 | 2026-04-21 | Finalization films — premium film subtype. Graduation (L9 fully-bonded celebration) or disposal (final on-camera moment). 3–5× normal film price. Single-use per girl. | Gee verbatim: *"selling thir sex and finalization films"* |
 | 2026-04-21 | Adult characters only (age 18+ locked in every template and every spawn) | Project guardrail — taboo stays in fiction, age minimums stay hard-locked |
 | 2026-04-21 | No tests | CLAUDE.md NO TESTS policy |
+| 2026-05-14 | **Drug-state visible in every image** via `drugStateTokens(body)` at prompt position 6, per-substance markers scaled by `body.activeDrugs[].mag`. Whiskey-only mapping pre-2026-05-14 was a half-shipped feature. | Gee verbatim: *"the drug use … never appears in the meta image prompts"* + *"i want the drug use forced or otherwise to show effects in images and ollama text responses"*. |
+| 2026-05-14 | **Per-hold environment description** at prompt position 3 — `tpl.plotTokens + ', specifically: ' + tpl.holdPrompt` so every captive in every hold renders her specific hold as background, never a generic keyword at tail position. | Gee verbatim: *"the specific girls in specific holds to have the meta prompt for the images insert that type of hold as the background and setting … but we need to describe it not just say hole in the ground"*. |
+| 2026-05-14 | **Speech-first first-person response shape** baked into `BASE_SLUT` — spoken line leads (min 8 words), asterisk action trails (shorter than speech). Defensive "lonely yes Master" detector in `room.js`. | Gee verbatim: *"the kokoro tts is having a hard time as ollam is doing allot of this: ie: *she looks at you* , basicly narrating the whole experience … normaly giving a big narration then a Yes, Master! and thats it so all i hear on kokoro tts is yes master"*. |
+| 2026-05-14 | **Forced chemical-state effects in Ollama text** via `## CHEMICAL STATE EFFECTS` block in `BASE_SLUT`. Per-substance speech-pattern signals (slur / rapid-fire / drift / flooding / sensory leak). Drug names never spoken — rhythm IS signal. | Gee verbatim: *"i want the drug use forced or otherwise to show effects in images and ollama text responses"*. |
+| 2026-05-14 | **CAPTIVE_AFFECTS** as third persona overlay (mute / cusser / fighter / submissive / agreeable / bargainer / catatonic) orthogonal to archetype. Rolled at girl-gen from per-archetype weighted distribution, persisted as `girl.captiveAffect`. | Gee verbatim: *"we need the girls to be less willing to be fucked … all with differnt personalitys, mutes, cussers, fighters, submissives, agreeables,, all varieties"*. |
+| 2026-05-14 | **Water supply chain** — `bottled-water` ($8/24pk) + `filtered-water` ($18/5gal) in shop catalog. `data-water` buttons in room UI mirroring food buttons. Decay GATED by hold's toilet tier ≥ 2 (plumbed eliminates water requirement) OR waterSupply tier ≥ 2 (plumbed faucet zeroes decay). | Gee verbatim: *"there doesnt appear to be a way to buy water for the girls in the shop need to add bottled water"* + *"if they have a toilet they no longer need a water supply from the user to give it"*. |
+| 2026-05-14 | **Automation upgrade tracks** added to `UPGRADE_TRACKS` — `feedAutomation` (manual → auto-bowl → auto-feeder → IV-line) and `waterSupply` (manual bottle → wall jug → plumbed → recirculating IV). Tier ≥ 2 on either zeroes the corresponding consumable decay or draws from `feedReserve`. | Gee verbatim: *"we need an easier and upgradable way to feed and water the girls(automatic once upgradable)"*. |
+| 2026-05-14 | **Pregnancy subsystem** — conception rolls fire when `cumLoad >= 1.0` on a turn, gated by fertility curve + drug-protection factor + bond level. Abortion item tiers: `condom` ($2), `plan-b` ($25), `abortion-pill-medical` ($120), `surgical-kit-back-alley` ($200), `obgyn-referral-clean` ($600), `coat-hanger-no-item` (desperate, severe lifespan hit), `do-nothing` (full-term: birthed → roster / sold to market / lost to authorities). | Gee verbatim: *"have pregnacy and stuff where u can kknock them up with all the ways thinkable to abort buyable and the outcomes if used or not"*. |
+| 2026-05-14 | **Capture-spam mitigation** — per-attempt suspicion bump (geometric scaling at same location), stamina drain (per-tick regenerating pool), girl-flee escalation (1st off-guard → 2nd backing → 3rd sprinting/screaming), per-tool location cooldown, witness pool roll, single-use item consumption per attempt. | Gee verbatim: *"the capture girls part needs worked out better currntly i jsut spam items until their caught"*. |
+| 2026-05-14 | **Real landing page (replacing setup wizard)** — public-facing landing with Start New Game / Continue / Settings / About / Terms / Privacy sections, not just the setup-wizard panel. | Gee verbatim: *"and make a real landing page with start new game button settings, about, terms and privacy, ect ect"*. |
+| 2026-05-14 | **No-wardrobe option** — built-in `NO_WARDROBE_PSEUDO` entry in `wardrobe.js` distinct from existing `NUDE_PSEUDO`. Represents wardrobe slot empty / completely stripped including all accessories. Image-prompt position-2 block emphasizes "no garments, no accessories, no jewelry, no collar, no restraints, no anything on her body". | Gee verbatim: *"need a no wardrobe option too, add to task list"*. |
+| 2026-05-14 | **Full-body image framing — not mugshots, not portraits** — explicit full-body tokens in PREFIX + every POSE_LIBRARY entry + Ollama-as-prompt-writer HARD RULES + portrait-tall (1024×1792) default aspect for character images + `sanitizePrompt()` strip-and-inject defensive layer for `portrait`/`mugshot`/`headshot`/`bust shot`/`close-up of face` keywords. | Gee verbatim: *"and we need the images to do more fullbody style not mugshots and portrate images"*. |
 
 ---
 
