@@ -260,9 +260,17 @@
   // future mixed-type capacity expansions) → tpl.holdType (template default).
   function envTokens({ situation, dungeonId, holdIdx, locationId }) {
     if (situation?.startsWith('hunt-encounter')) return '';   // pose already includes env
-    if (situation === 'profile') return 'plain clean neutral backdrop';
     if (situation === 'capture') return 'dim dusk, getting into a vehicle, ambient';
     if (situation === 'film-cover') return 'stylized poster backdrop, editorial';
+
+    // BUG.10 fix (2026-05-14) — captive in a dungeon ALWAYS renders inside her assigned
+    // hold, regardless of situation. The previous behavior was to return "plain clean
+    // neutral backdrop" for situation === 'profile', which sent Ollama zero hold context
+    // and let the prompt-writer hallucinate settings from the captive's tokens (e.g.
+    // Unity's leather + rope-ladder + goth aesthetic pattern-matched to carnival in
+    // image-gen training data). Hold env wins whenever dungeonId is present; neutral
+    // backdrop only applies to non-captive / non-assigned profile previews (slave-market
+    // NPC listings, hunt thumbs before capture, wishlist previews).
     if (dungeonId) {
       const dungeon = window.SSDGame.state.getDungeon(dungeonId);
       const tpl = dungeon && window.SSDAssets.getById('dungeon', dungeon.templateId);
@@ -281,6 +289,9 @@
         return plot;
       }
     }
+
+    // No dungeon assignment — situation-appropriate neutral defaults.
+    if (situation === 'profile') return 'plain clean neutral backdrop';
     return 'ambient mood-appropriate backdrop';
   }
 
@@ -573,6 +584,7 @@ ${nudeStrength ? rulesNude : rulesClothed}
    When pregnancy.status is 'none' / 'aborted' / 'miscarried' / 'birthed' / 'lost', do NOT render any pregnancy markers. Adult-floor invariant (age 18+) already enforced by girl-gen — every pregnant captive is necessarily an adult.
 7. FRAME THE SUBJECT HEAD TO TOE — full body shot. NEVER use portrait, mugshot, headshot, bust, or waist-up framing. Every prompt MUST explicitly include "full body shot, head to toe in frame, complete figure visible" or equivalent language. The subject's feet must be visible in the composition.
 8. All subjects are adults age 18 or older. Use the GIRL CONTEXT 'age' value verbatim (e.g. "age 18", "age 22", "age 27") — NEVER hardcode "20s" or any range that excludes 18-19.
+9. HOLD ENVIRONMENT IS THE SETTING — when GIRL CONTEXT lists a 'hold environment' value, that is the EXACT setting where the scene takes place. Place its full comma-separated description verbatim at POSITION 3 of the prompt — immediately after the front-loaded NUDITY block (nude) or face description (clothed). NEVER invent a different location. NEVER use the captive's archetype, backstory, outfit, or pose tokens to infer a different setting (no carnival, no circus, no nightclub, no street, no studio, no beach, no forest unless the hold environment SAYS forest). NEVER abbreviate the hold environment to a single keyword. NEVER bury it as a tail keyword. Use every comma-separated descriptor including the "specifically:" sub-phrase that names the captive's exact hold within the larger location. If a USER STAGING DIRECTIVE provides a setting override, the user wins; otherwise the hold environment is non-negotiable.
 
 GIRL CONTEXT (all numerical values shown with their full scale per [[feedback-ai-values-with-scale]]):
 - name: ${girl.name}, age ${girl.age}, archetype: ${girl.archetypeTemplate}${girl.captiveAffect ? `, captive-affect: ${girl.captiveAffect}` : ''}
@@ -589,9 +601,6 @@ POSE: ${customPose || POSE_LIBRARY[situation] || 'standing front-facing neutral 
 ${locationId ? `LOCATION: ${window.SSDAssets.getById('location', locationId)?.displayName || locationId}` : ''}
 ${additionalTokens ? `ADDITIONAL: ${additionalTokens}` : ''}
 ${userStaging ? `\nUSER STAGING DIRECTIVE (NEW.1 2026-05-14 — user's verbatim scene/pose request — render this faithfully while keeping every HARD RULE above intact, especially adult-floor + full-body framing + nudity/pregnancy/drug markers):\n"${userStaging.replace(/"/g, '\\"').slice(0, 800)}"` : ''}
-
-ENVIRONMENT RENDERING RULE (when 'hold environment' is set in GIRL CONTEXT above):
-Place the FULL hold-environment description verbatim at POSITION 3 of the prompt — immediately after the front-loaded NUDITY block (nude) or face description (clothed). Use every comma-separated descriptor. Do NOT abbreviate to a single keyword. Do NOT replace with a generic environment word. Do NOT skip the "specifically:" sub-phrase that names the captive's exact hold within the larger location. Do NOT bury it as a tail keyword. Hold environment is THE setting — render it as a full descriptive scene, not as a label.
 
 CANONICAL PROMPT POSITION ORDERING (8 slots):
 1. PREFIX (editorial photograph, 35mm film, adult female age X, full body shot)

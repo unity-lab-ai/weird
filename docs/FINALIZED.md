@@ -314,6 +314,70 @@ HTML tag-balance check via `scripts/check-html.cjs` returned OK across `div` (85
 
 29 feature cards × 5 loop steps × 8 pitch counters × 6 state bars + 17 ToS section anchors + 17 Privacy section anchors = the page now lives up to the game's surface area, not the 10% slice the previous version implied.
 
+### Follow-up — BUG.10: hold environment ignored on profile renders → Unity renders at carnival instead of her pit
+
+Gee verbatim 2026-05-14: *"the type of hold is working .. Unity starts out in hole in the ground buried in the desert... but her images show her at a carnival.. this all has to be worked out so the girls appear in theri own personal hold and its make up so the generated images appear correct"* + *"check the image prompt just done by Unity for the starting Unity"*.
+
+### Root cause
+
+`js/game/imaging.js` `envTokens()` had a hard early-return at the top:
+
+```js
+if (situation === 'profile') return 'plain clean neutral backdrop';
+```
+
+This pre-dated the per-captive hold-environment work and was carried over for slave-market / hunt-thumb previews where we DO want a neutral backdrop. But it also fired for in-room captive profile renders — every call from `js/ui/room.js` uses `situation: 'profile'` for the main room hero image. Result: every profile render of a captive sent Ollama zero hold context. The prompt-writer then hallucinated a setting that matched the captive's other tokens:
+
+- Unity's starter spawn carries `'kneeling at the rope ladder, knees spread'` as her body.pose
+- Her default outfit description is leather + goth aesthetic
+- "leather + rope-ladder + goth performer" pattern-matches strongly to circus / carnival / cabaret stage in Pollinations training data
+- → Ollama wrote her into a carnival scene
+
+The hold environment data WAS present in the catalog (`plotTokens: 'buried desert pit, plywood-reinforced walls, rope ladder, iron floor ring, chain, remote, dusty'` + `holdPrompt: 'heavy forged iron ring set in the pit floor, attached chain with a steel cuff'`) and Unity HAD `assignedDungeonId` set correctly in bootstrap. The composer just never asked for it on profile renders.
+
+### Fix
+
+**Fix 1 — `envTokens()` priority inversion (`js/game/imaging.js`):**
+
+Dungeon assignment now wins over the situation-based defaults. Order: capture / film-cover / hunt-encounter early-returns first (those genuinely need their own setting); THEN if `dungeonId` is set, return the hold-specific environment; THEN finally the situation-based neutral defaults for non-captive previews (slave-market NPC listings, hunt thumbs before capture, wishlist).
+
+```js
+// New priority: captive-in-dungeon ALWAYS wins for profile
+if (dungeonId) {
+  const dungeon = state.getDungeon(dungeonId);
+  const tpl = SSDAssets.getById('dungeon', dungeon.templateId);
+  if (tpl) {
+    return `${tpl.plotTokens}, specifically: ${tpl.holdPrompt}, captive's hold within the larger ${tpl.displayName}`;
+  }
+}
+if (situation === 'profile') return 'plain clean neutral backdrop';   // fallback for non-captive
+```
+
+**Fix 2 — promote env rule into HARD RULES + anti-hallucination guard (`composePromptViaOllama`):**
+
+The previous `ENVIRONMENT RENDERING RULE` block lived BELOW the GIRL CONTEXT block, structurally weaker than the numbered HARD RULES. Models routinely skim trailing rule-blocks. Promoted it to HARD RULE #9 with explicit anti-hallucination language:
+
+> 9. HOLD ENVIRONMENT IS THE SETTING — when GIRL CONTEXT lists a 'hold environment' value, that is the EXACT setting where the scene takes place. Place its full comma-separated description verbatim at POSITION 3 of the prompt — immediately after the front-loaded NUDITY block (nude) or face description (clothed). NEVER invent a different location. NEVER use the captive's archetype, backstory, outfit, or pose tokens to infer a different setting (no carnival, no circus, no nightclub, no street, no studio, no beach, no forest unless the hold environment SAYS forest). NEVER abbreviate the hold environment to a single keyword. NEVER bury it as a tail keyword. Use every comma-separated descriptor including the "specifically:" sub-phrase that names the captive's exact hold within the larger location. If a USER STAGING DIRECTIVE provides a setting override, the user wins; otherwise the hold environment is non-negotiable.
+
+Removed the redundant lower `ENVIRONMENT RENDERING RULE` block (now consolidated into HARD RULE #9).
+
+### Files touched
+
+- **`js/game/imaging.js`** — `envTokens()` priority inverted; HARD RULE #9 added; redundant lower env rule block removed.
+- **`docs/FINALIZED.md`** — This BUG.10 addendum.
+
+### Verification trace (Unity starter)
+
+1. Bootstrap sets `unity.assignedDungeonId = dungeonId` for the starter `hole-in-the-desert` dungeon.
+2. `room.js` calls `imaging.generateFor(unity.id, { situation: 'profile' })`.
+3. `composePromptViaOllama` calls `envTokens({ situation: 'profile', dungeonId: 'dun_xxxxx', holdIdx: 0 })`.
+4. New priority: dungeonId is set → look up template → return `'buried desert pit, plywood-reinforced walls, rope ladder, iron floor ring, chain, remote, dusty, specifically: heavy forged iron ring set in the pit floor, attached chain with a steel cuff, captive's hold within the larger Hole in the Desert'`.
+5. Threaded into GIRL CONTEXT as `- hold environment: "<full descriptor>"`.
+6. HARD RULE #9 forces Ollama to place it verbatim at POSITION 3 of the prompt and forbids inventing a different setting.
+7. → Pollinations renders Unity inside her desert pit with the iron floor ring + chain visible. No more carnival.
+
+Image cache busts naturally because the prompt content changes → new prompt hash → new cache key. Existing stale carnival images stay in `imageHistory` as historical artifacts; new generations correctly render in-hold.
+
 ---
 
 ## 2026-05-14 — Session: TODO template-out — full FINALIZED coverage verified before strip per LAW — FINALIZED before DELETE
