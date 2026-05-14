@@ -206,8 +206,29 @@
             <a class="btn-small" href="#dispose?girl=${girl.id}" data-tooltip="End the relationship. Bury / lose-at-sea / incinerate / release / final film / trade-away. Each method has different notoriety + premium-content tradeoffs.">⚱️ Dispose / trade</a>
             <button id="list-sale" class="btn-small" data-tooltip="List her on the slave market. Buyers tick in over time. Price scales with Stockholm rating + training.">⛓️ List on slave market</button>
             <a class="btn-small" href="#timeline?girl=${girl.id}" data-tooltip="Her full history — every turn, every drug, every milestone.">📖 Timeline</a>
+            <a class="btn-small" href="#gallery?girl=${girl.id}" data-tooltip="Every past image of her — view, download, open fullscreen.">🖼️ Gallery</a>
           </div>
           <div id="selfie-slot"></div>
+
+          ${(() => {
+            // NEW.1 (2026-05-14) — Gee verbatim: "we also need a custom image prompt input
+            // spot to pose the girls how the user wants so they input their own scens and
+            // descriptions that ollama uses to generate a image prompt". User types
+            // free-form scene description; Ollama composes a full prompt with all the
+            // existing guardrails (8-position canonical ordering, adult-floor, full-body
+            // framing, nudity / pregnancy / drug markers); Pollinations fires.
+            return `<div class="panel" style="margin-top:8px">
+              <h3>🎨 Custom pose / scene</h3>
+              <p class="small muted">Describe the scene + pose you want. Ollama composes a valid image prompt with all guardrails — you stage her how you want.</p>
+              <textarea id="custom-pose-in" rows="3" placeholder="e.g. 'kneeling on the bed, looking up at the camera with submissive eyes, biting her lower lip, hands clasped between her thighs, soft warm bedroom lighting'"></textarea>
+              <div class="btn-row" style="margin-top:6px">
+                <button id="custom-pose-fire" class="btn-small btn-primary" data-tooltip="Send your description to Ollama → composed prompt → Pollinations generation. Image appears below + saves to gallery.">🎨 Generate custom pose</button>
+                <button id="custom-pose-clear" class="btn-small" data-tooltip="Clear the input box.">Clear</button>
+                <span class="small muted" id="custom-pose-status"></span>
+              </div>
+              <div id="custom-pose-slot"></div>
+            </div>`;
+          })()}
         </section>
 
         <section class="panel">
@@ -728,6 +749,57 @@
           } else {
             alert(`voice error: ${result.error || 'no transcript'}`);
           }
+        }
+      };
+    }
+
+    // NEW.1 (2026-05-14) — Custom pose handler. User text → Ollama-as-prompt-writer →
+    // Pollinations. Stashed in image history automatically via the generateFor pipeline.
+    const customClearBtn = el.querySelector('#custom-pose-clear');
+    if (customClearBtn) {
+      customClearBtn.onclick = () => {
+        const ta = el.querySelector('#custom-pose-in');
+        if (ta) ta.value = '';
+      };
+    }
+    const customFireBtn = el.querySelector('#custom-pose-fire');
+    if (customFireBtn) {
+      customFireBtn.onclick = async () => {
+        const ta = el.querySelector('#custom-pose-in');
+        const text = (ta?.value || '').trim();
+        const status = el.querySelector('#custom-pose-status');
+        const slot = el.querySelector('#custom-pose-slot');
+        if (!text) { if (status) status.textContent = 'type a description first'; return; }
+        if (!window.SSDGame.imaging?.isAvailable()) {
+          if (status) status.textContent = 'Pollinations not configured — paste a pk_ key in Settings';
+          return;
+        }
+        customFireBtn.disabled = true;
+        if (status) status.textContent = '⏳ Ollama composing prompt + Pollinations generating…';
+        if (slot) slot.innerHTML = `<div class="panel"><p class="small muted">Generating custom pose…</p></div>`;
+        try {
+          const result = await window.SSDGame.imaging.generateFor(girl.id, {
+            situation: 'custom-pose',
+            userStaging: text,
+            forceRegenerate: true
+          });
+          if (result?.url) {
+            if (slot) slot.innerHTML = `
+              <div class="panel">
+                <img src="${result.url}" alt="${girl.name} custom pose" class="gen-img" onerror="this.outerHTML='<a href=\\'${result.url}\\' target=\\'_blank\\' class=\\'img-link-fallback\\'>🔗 ${girl.name}</a>'" />
+                <p class="small muted">${girl.name} · custom pose: "${text.slice(0, 80)}${text.length > 80 ? '…' : ''}"</p>
+                <p class="small"><a href="${result.url}" target="_blank" rel="noopener">🔗 open in tab</a> · <a href="#gallery?girl=${girl.id}">🖼️ view gallery</a></p>
+              </div>`;
+            if (status) status.textContent = '✓ done — saved to gallery';
+          } else {
+            if (slot) slot.innerHTML = `<div class="panel danger"><p>Custom pose failed: ${result?.error || 'unknown'}</p></div>`;
+            if (status) status.textContent = 'failed';
+          }
+        } catch (err) {
+          if (slot) slot.innerHTML = `<div class="panel danger"><p>Error: ${err.message}</p></div>`;
+          if (status) status.textContent = `error: ${err.message}`;
+        } finally {
+          customFireBtn.disabled = false;
         }
       };
     }

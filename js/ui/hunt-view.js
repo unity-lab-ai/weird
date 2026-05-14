@@ -50,8 +50,8 @@
               <div class="stat-row small"><span>Pain tolerance</span><b>${g.stats.painTolerance}</b></div>
               <div class="stat-row small"><span>Acquire odds</span><b class="${bestOdds && bestOdds > 0.5 ? 'gold' : (bestOdds && bestOdds > 0.3 ? '' : 'danger')}">${oddsLabel}</b></div>
               <div class="btn-row">
-                <button data-approach="${g.id}" class="btn-small btn-primary">Acquire →</button>
-                <button data-walk="${g.id}" class="btn-small">Walk away</button>
+                <button data-approach="${g.id}" class="btn-small btn-primary" data-tooltip="Open the capture-loadout view. Pick a tool per stage, fire the 4-stage attempt.">Acquire →</button>
+                <button data-walk="${g.id}" class="btn-small" data-tooltip="Skip her. No cost, no notoriety.">Walk away</button>
               </div>
             </div>`;
           }).join('')}
@@ -157,12 +157,12 @@
         return `<option value="${id}"${isSelected ? ' selected' : ''}>${item.emoji} ${item.displayName} — stage stat ${stat} (have ${inv[id]})</option>`;
       }).join('');
       return `
-        <div class="capture-stage-row" data-stage="${stageKey}">
+        <div class="capture-stage-row" data-stage="${stageKey}" data-tooltip="${label}: ${desc}. Stage clears at progress ≥ ${cap.STAGE_CLEAR_THRESHOLD}%. Pick a tool whose stage stat beats her resistance.">
           <div class="capture-stage-head"><b>${label}</b> <span class="muted small">— ${desc}</span></div>
           <div class="capture-stage-body">
-            <select class="inline-select capture-tool-select" data-stage-key="${stageKey}">${optionsHtml}</select>
+            <select class="inline-select capture-tool-select" data-stage-key="${stageKey}" data-tooltip="Pick the tool to use for this stage. Single-use tools (rohypnol/chloroform/ether/ketamine/tranquilizer/duct-tape/rope/zip-ties) consume on attempt. Multi-use (pipe/handcuffs/shackles/harness) survive.">${optionsHtml}</select>
           </div>
-          <div class="capture-stage-foot small muted">${girl.name}'s ${stageKey} resistance: <b>${resistance}</b></div>
+          <div class="capture-stage-foot small muted" data-tooltip="Her per-stage resistance from her archetype. Beat this number with toolStageBonus×2 + playerSkill - locationDifficulty - witnessPenalty + RNG.">${girl.name}'s ${stageKey} resistance: <b>${resistance}</b></div>
         </div>
       `;
     }
@@ -203,8 +203,8 @@
       <div class="panel">
         <h2>Talk first</h2>
         <div class="btn-col">
-          <button data-action="talk" class="btn-small">💬 Open with a line (low commitment)</button>
-          <button data-action="walk" class="btn-small">🚪 Walk away</button>
+          <button data-action="talk" class="btn-small" data-tooltip="Ollama-narrated first-encounter scene from her POV. Low commitment — informs your read on her archetype before you decide to take her.">💬 Open with a line (low commitment)</button>
+          <button data-action="walk" class="btn-small" data-tooltip="Leave the encounter. No cost, no notoriety, no inventory loss.">🚪 Walk away</button>
         </div>
       </div>
 
@@ -215,7 +215,7 @@
           ${cap.STAGES.map(renderStageLoadoutRow).join('')}
         </div>
         <div class="btn-row">
-          <button data-action="begin-attempt" class="btn-primary btn-danger">⚡ Begin 4-stage capture attempt</button>
+          <button data-action="begin-attempt" class="btn-primary btn-danger" data-tooltip="Fire the 4-stage attempt sequence. Single-use tools consume per-stage. Witness roll fires once at attempt start. Failure = wariness+1 on girl + suspicion bump + notoriety bump if witnessed.">⚡ Begin 4-stage capture attempt</button>
         </div>
       </div>
 

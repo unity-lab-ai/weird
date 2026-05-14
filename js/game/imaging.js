@@ -500,7 +500,7 @@
   // Given a girl + situation, asks Ollama to compose the Pollinations prompt from scene context.
   // The generated prompt is LOCKED to the girl's facial + default outfit descriptors for persistence.
   async function composePromptViaOllama(girl, options = {}) {
-    const { situation = 'profile', customPose, additionalTokens = '', locationId } = options;
+    const { situation = 'profile', customPose, additionalTokens = '', locationId, userStaging } = options;
     const vi = girl.visualIdentity || {};
     const currentOutfitEntry = (girl.wardrobe || []).find(w => w.id === girl.currentOutfit);
     const outfitDesc = currentOutfitEntry?.description || vi.defaultOutfitDescription || '';
@@ -572,6 +572,7 @@ SITUATION: ${situation}
 POSE: ${customPose || POSE_LIBRARY[situation] || 'standing front-facing neutral full-body'}
 ${locationId ? `LOCATION: ${window.SSDAssets.getById('location', locationId)?.displayName || locationId}` : ''}
 ${additionalTokens ? `ADDITIONAL: ${additionalTokens}` : ''}
+${userStaging ? `\nUSER STAGING DIRECTIVE (NEW.1 2026-05-14 — user's verbatim scene/pose request — render this faithfully while keeping every HARD RULE above intact, especially adult-floor + full-body framing + nudity/pregnancy/drug markers):\n"${userStaging.replace(/"/g, '\\"').slice(0, 800)}"` : ''}
 
 ENVIRONMENT RENDERING RULE (when 'hold environment' is set in GIRL CONTEXT above):
 Place the FULL hold-environment description verbatim at POSITION 3 of the prompt — immediately after the front-loaded NUDITY block (nude) or face description (clothed). Use every comma-separated descriptor. Do NOT abbreviate to a single keyword. Do NOT replace with a generic environment word. Do NOT skip the "specifically:" sub-phrase that names the captive's exact hold within the larger location. Do NOT bury it as a tail keyword. Hold environment is THE setting — render it as a full descriptive scene, not as a label.
@@ -708,7 +709,24 @@ Write the Pollinations prompt now.`;
       if (existing >= 0) additional[existing] = entry;
       else additional.push(entry);
 
-      const patch = { visualIdentity: { ...girlNow.visualIdentity, additionalImages: additional } };
+      // NEW.2 fix (2026-05-14) — gallery history. Every generation appends a new entry to
+      // imageHistory with full URL + prompt + situation + timestamp. Capped at last 100 per
+      // girl to keep state size bounded. The `additionalImages` map-by-situation behavior
+      // above stays for latest-by-situation lookup; this history is the gallery source.
+      const history = [...(girlNow.visualIdentity.imageHistory || [])];
+      history.push({
+        id: 'img_' + hash + '_' + Date.now().toString(36),
+        ts: Date.now(),
+        situation: options.situation || 'profile',
+        pose: options.customPose || options.situation || 'profile',
+        userStaging: options.userStaging || null,
+        url,
+        cacheKey,
+        promptHash: hash
+      });
+      const trimmedHistory = history.slice(-100);
+
+      const patch = { visualIdentity: { ...girlNow.visualIdentity, additionalImages: additional, imageHistory: trimmedHistory } };
       if ((options.situation || 'profile') === 'profile') {
         patch.visualIdentity.profileImagePath = cacheKey;
         patch.visualIdentity.profileImageGeneratedAt = Date.now();

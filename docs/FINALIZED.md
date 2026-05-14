@@ -13,6 +13,76 @@
 
 ---
 
+## 2026-05-14 — Session: NEW.1 custom image-prompt input + NEW.2 image history gallery + hunt-view tooltips + dropped unneeded deferred items
+
+Gee verbatim 2026-05-14: *"NOTHING IS DEFFERED JUST MAKE SURE WE ACTUALLY NEED IT"*. Audited every previously-deferred item against actual gameplay need — dropped the unneeded ones entirely (CO.1 / CO.2 / CO.3-full-spawn / CO.5 / CO.7-remaining-surfaces); shipped the needed ones (NEW.1 + NEW.2 + hunt-view tooltips).
+
+### NEW.1 — Custom image-prompt input box
+
+Gee verbatim 2026-05-14: *"we also need a custom image prompt input spot to pose the girls how the user wants so they input their own scens and descriptions that ollama uses to generate a image prompt pose em how ever the user wants to stage them, add to todo"*.
+
+- **`js/game/imaging.js`** — `composePromptViaOllama` extended with `userStaging` option. When set, appends a USER STAGING DIRECTIVE block to the Ollama system prompt that surfaces the user's verbatim scene/pose request while explicitly preserving every HARD RULE (adult-floor + full-body framing + nudity + pregnancy + drug markers). Text capped at 800 chars; quotes escaped.
+- **`js/ui/room.js`** — new "🎨 Custom pose / scene" panel below the selfie slot. Textarea + 🎨 Generate / Clear buttons + inline status. Click → `generateFor(girl.id, { situation: 'custom-pose', userStaging: text, forceRegenerate: true })` → Pollinations fires through the same pipeline as every other image (8-position canonical ordering, all guardrails, IDB cache, gallery history append). Result rendered inline + link to view in gallery.
+- Custom prompts persist in `visualIdentity.imageHistory` with `userStaging` field stored alongside, so the gallery + Ollama context can reference past custom scenes.
+
+### NEW.2 — Image history gallery (view + download + fullscreen)
+
+Gee verbatim 2026-05-14: *"and we need a image history of some kind where all past imaGES CAN BE VIEWED AND DOWNLAODED AND OPENED UP IN BIGGER VIEW FULLSCREEN IF WANTED"*.
+
+- **`js/game/imaging.js`** — every `generateFor` call now appends a new entry to `girl.visualIdentity.imageHistory[]` with `{ id, ts, situation, pose, userStaging, url, cacheKey, promptHash }`. Capped at last 100 per girl (bounded state size). The existing map-by-situation `additionalImages` array kept for latest-by-situation lookup; this new history is the gallery source.
+- **NEW** `js/ui/gallery-view.js` — registered at route `#gallery?girl=${id}`. Renders responsive thumbnail grid (newest first, 180px cells), each clickable to open a fullscreen lightbox overlay. Lightbox features:
+  - Large image (max 95vw × 80vh, object-fit contain)
+  - Meta panel showing situation + timestamp + (if custom) the user's staging text
+  - 💾 Download button with `<a download>` + auto-named filename `${girl.name}-${situation}-${id}.${ext}`
+  - 🔗 Open in new tab fallback
+  - ✕ Close button + click-outside-to-close
+  - ‹ / › prev/next navigation buttons + ←/→ keyboard nav + Esc to close
+- **`css/game.css`** — `.gallery-grid` responsive grid + `.gallery-thumb` styled with hover lift + `.gallery-lightbox` fullscreen overlay with semi-transparent backdrop + `.gallery-close` / `.gallery-nav` floating control buttons + `.gallery-actions` action row.
+- **`js/ui/room.js`** — 🖼️ Gallery link added to room actions row next to Timeline.
+- **`game.html`** — `gallery-view.js` script tag wired after timeline-view.
+
+### Hunt-view tooltips (CO.7 partial — the only remaining surface that needed them)
+
+`js/ui/hunt-view.js` — capture-stage UI now tooltipped:
+- Stage rows explain stage purpose + 60% clear threshold + the resolution math
+- Tool selects explain single-use vs multi-use consumption
+- Resistance footer explains the math against `toolStageBonus×2 + playerSkill - locationDifficulty - witnessPenalty + RNG`
+- Begin-attempt button explains witness roll + failure consequences (wariness, suspicion, notoriety)
+- Talk-first / walk-away / acquire / walk buttons on encounter cards tooltipped
+
+Other UI surfaces (settings / achievements / timeline / escape-recovery / upgrade / newgame) deemed not-needed per Gee audit — they're read-only display panels, not action-heavy. Engine auto-binds, future contributors can add attrs trivially.
+
+### Items DROPPED per Gee's audit-actual-need directive
+
+| ID | Verdict |
+|---|---|
+| ~~CO.1~~ embedding memory retrieval | DROPPED — last-N chronological + last-5 johns is sufficient for game pacing. |
+| ~~CO.2~~ custom Kokoro voice-clone | DROPPED — 16 stock voices + per-girl override covers all need. |
+| ~~CO.3 full auto-spawn~~ multi-girl birthed-to-roster | DROPPED full-spawn path; nursery counter accounting is in place. Adult-character invariant LAW makes structural auto-spawn impossible. |
+| ~~CO.5~~ per-button machine-readable cost preview | DROPPED — existing tooltips already convey costs in human terms; `previewCost(actionId)` helper exists for any future polish pass. |
+| ~~CO.7 remaining surfaces~~ tooltip audit | DROPPED for read-only surfaces; hunt-view portion (the only action-heavy remaining) shipped. |
+
+### Files touched (5 code + 1 css + 1 html + 2 docs)
+
+- `js/game/imaging.js` — userStaging option in composePromptViaOllama + imageHistory append in generateFor
+- **NEW** `js/ui/gallery-view.js` — full gallery view (160+ lines)
+- `js/ui/room.js` — Custom pose panel + handlers + Gallery link in actions row
+- `js/ui/hunt-view.js` — capture-stage UI tooltips
+- `css/game.css` — `.gallery-grid` + `.gallery-thumb` + `.gallery-lightbox` + nav buttons
+- `game.html` — gallery-view.js script tag
+- `docs/TODO.md` — rewritten to clean state: NEW.1 + NEW.2 + hunt-view marked SHIPPED; CO.1/CO.2/CO.3-full/CO.5/CO.7-remaining marked DROPPED with audit rationale per Gee directive
+- `docs/FINALIZED.md` — this entry
+
+### Syntax verification
+
+`node --check` on imaging.js / gallery-view.js / room.js / hunt-view.js — all clean.
+
+### Backlog state after this commit
+
+**Active backlog: 0 tasks.** Nothing deferred. Every item either shipped (with file:line proof) or audited as unneeded and dropped with rationale.
+
+---
+
 ## 2026-05-14 — Session: SR.1-SR.15 super-review batch fix + CO.4 condom-on outfit + CO.8 repeat-client tracking + CO.3 nursery-count + SR.8/CO.6 heal routing
 
 Gee verbatim 2026-05-14: *"fix whats left"* (after `/super-review` produced SR.1-SR.15) + mid-batch additions captured to TODO.
