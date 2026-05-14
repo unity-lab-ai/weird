@@ -96,11 +96,21 @@ SERVER_CMD=""
 SERVER_LABEL=""
 
 if command -v python3 >/dev/null 2>&1; then
-  SERVER_CMD="python3 -m http.server 8080"
-  SERVER_LABEL="Python 3 http.server"
+  if [ -f "$PROJECT_DIR/scripts/serve.py" ]; then
+    SERVER_CMD="python3 scripts/serve.py 8080"
+    SERVER_LABEL="Python 3 no-cache server"
+  else
+    SERVER_CMD="python3 -m http.server 8080"
+    SERVER_LABEL="Python 3 http.server"
+  fi
 elif command -v python >/dev/null 2>&1; then
-  SERVER_CMD="python -m http.server 8080"
-  SERVER_LABEL="Python http.server"
+  if [ -f "$PROJECT_DIR/scripts/serve.py" ]; then
+    SERVER_CMD="python scripts/serve.py 8080"
+    SERVER_LABEL="Python no-cache server"
+  else
+    SERVER_CMD="python -m http.server 8080"
+    SERVER_LABEL="Python http.server"
+  fi
 elif command -v npx >/dev/null 2>&1; then
   SERVER_CMD="npx --yes http-server . -p 8080 -c-1 --cors"
   SERVER_LABEL="Node npx http-server"

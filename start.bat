@@ -72,15 +72,25 @@ set "SERVER_LABEL="
 
 where python >nul 2>&1
 if not errorlevel 1 (
-    set "SERVER_CMD=python -m http.server 8080"
-    set "SERVER_LABEL=Python http.server"
+    if exist "%PROJECT_DIR%\scripts\serve.py" (
+        set "SERVER_CMD=python scripts\serve.py 8080"
+        set "SERVER_LABEL=Python no-cache server"
+    ) else (
+        set "SERVER_CMD=python -m http.server 8080"
+        set "SERVER_LABEL=Python http.server"
+    )
     goto :have_server
 )
 
 where py >nul 2>&1
 if not errorlevel 1 (
-    set "SERVER_CMD=py -m http.server 8080"
-    set "SERVER_LABEL=Python launcher"
+    if exist "%PROJECT_DIR%\scripts\serve.py" (
+        set "SERVER_CMD=py scripts\serve.py 8080"
+        set "SERVER_LABEL=Python launcher (no-cache server)"
+    ) else (
+        set "SERVER_CMD=py -m http.server 8080"
+        set "SERVER_LABEL=Python launcher"
+    )
     goto :have_server
 )
 

@@ -71,12 +71,24 @@
         <h2>Pollinations (optional images)</h2>
         ${(() => {
           const k = cfg.POLLINATIONS.apiKey || '';
-          const status = k ? `✓ saved (${k.slice(0,3)}…${k.slice(-4)})`
-                           : 'none — using anonymous endpoint';
-          return `<p class="small">Key: <b>${status}</b></p>`;
+          if (!k) {
+            return `<p class="small">Key: <b>none — using anonymous endpoint (rate-limited)</b></p>`;
+          }
+          const lsHas = !!localStorage.getItem('ssd_pollinations_key');
+          const src = lsHas ? 'from Settings' : 'from .env / env.local.js';
+          const masked = k.slice(0, 4) + '•'.repeat(8) + k.slice(-4);
+          return `
+            <div style="background:#1a2a1a;border:1px solid #2f5d3a;border-left:4px solid #53d68a;border-radius:6px;padding:10px 12px;margin:6px 0 12px;">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <span style="font-size:1.05rem;color:#53d68a;font-weight:600;">✓ KEY LOADED</span>
+                <code style="background:#0e1a0e;padding:3px 8px;border-radius:3px;color:#9fefb5;">${masked}</code>
+                <span class="small muted">(${src})</span>
+              </div>
+            </div>
+          `;
         })()}
-        <label class="field"><span>API key</span>
-          <input type="password" id="s-polly" placeholder="${cfg.POLLINATIONS.apiKey ? 'paste new key to change' : 'sk_... or pk_...'}" />
+        <label class="field"><span>${cfg.POLLINATIONS.apiKey ? 'Replace key' : 'API key'}</span>
+          <input type="password" id="s-polly" ${cfg.POLLINATIONS.apiKey ? `value="${'•'.repeat(Math.min(cfg.POLLINATIONS.apiKey.length, 48))}" data-masked="1"` : `placeholder="sk_... or pk_..."`} />
         </label>
       </div>
 
@@ -144,9 +156,18 @@
     }
     el.querySelector('#s-voice').onchange = e => { localStorage.setItem('ssd_kokoro_voice', e.target.value); location.reload(); };
     el.querySelector('#s-speed').onchange = e => { localStorage.setItem('ssd_kokoro_speed', e.target.value); location.reload(); };
-    el.querySelector('#s-polly').onchange = e => {
-      if (e.target.value.trim()) {
-        localStorage.setItem('ssd_pollinations_key', e.target.value.trim());
+    const pollyInput = el.querySelector('#s-polly');
+    // Wipe the dot-mask on first focus/keypress so the user can paste a clean replacement.
+    if (pollyInput && pollyInput.dataset.masked === '1') {
+      const wipeMask = () => { pollyInput.value = ''; delete pollyInput.dataset.masked; pollyInput.removeEventListener('focus', wipeMask); pollyInput.removeEventListener('input', wipeMask); };
+      pollyInput.addEventListener('focus', wipeMask);
+      pollyInput.addEventListener('input', wipeMask);
+    }
+    pollyInput.onchange = e => {
+      const v = e.target.value.trim();
+      // Don't save the dot-mask itself if the user clicked away without editing.
+      if (v && !/^•+$/.test(v)) {
+        localStorage.setItem('ssd_pollinations_key', v);
         location.reload();
       }
     };

@@ -135,6 +135,49 @@ Project: C:\Users\gfour\Desktop\weird
 
 All three steps progress without errors; pause-on-exit means no more silent window-vanish.
 
+### Follow-up after second test — BUG.4 + BUG.5
+
+Gee verbatim 2026-05-14: *"the key is still not propigating in the field"* + *"wait is it dsaved?"* + *"it needs to be more propminate dispalyed if a key is used ie filled out *'s for the key"*.
+
+Root cause was browser-caching `js/ui/landing.js` from before the BUG.1 fix landed — `python -m http.server` sends no `Cache-Control` headers so the browser aggressively cached the old `renderPollinationsSetup()` function. The key WAS loaded (`s.pollinations.present === true`), but the cached old code was reading `localStorage.getItem('ssd_pollinations_key')` (empty) instead of `cfg.POLLINATIONS.apiKey`. Visible symptom: `Current key: … ✓ saved` (ellipsis with empty prefix/suffix) and "Clear" button labeled with the old text.
+
+**BUG.4 — prominent key-loaded display + masked input:**
+
+- `js/ui/landing.js` `renderPollinationsSetup()` — when a key is loaded, renders a green-bordered notification block: `✓ KEY LOADED` label + `sk_V••••••••ACcp` masked code chip + source badge (`from .env / env.local.js` vs `from Settings panel`). Far more visually obvious than the previous one-line "current key: …" hint.
+- Input field is now pre-populated with `•` characters (matched to the actual key length, capped at 48 dots) so the password field visibly reads as "filled in" instead of blank. `data-masked="1"` attribute tags the masked state.
+- Focus/input event handlers wipe the dot-mask on first interaction so the user can paste a replacement cleanly. Save handler explicitly rejects values that are pure dot-mask (regex `/^•+$/`) so accidental save-without-edit doesn't wipe the env-supplied key.
+- Save button changes label to `Replace key` when one is already present (vs `Save` when blank).
+- `js/ui/in-game-settings.js` — same prominent-block + masked-input + focus-wipe pattern mirrored.
+
+**BUG.5 — no-cache dev server (`scripts/serve.py`):**
+
+The whole BUG.4 fix is invisible without a hard-refresh because `python -m http.server` doesn't set cache headers. Future JS edits would face the same problem. Fix the root.
+
+- `scripts/serve.py` (NEW, 53 lines) — Thin wrapper around `http.server.ThreadingHTTPServer` with `SimpleHTTPRequestHandler` subclass that overrides `end_headers()` to inject `Cache-Control: no-store, no-cache, must-revalidate, max-age=0` + `Pragma: no-cache` + `Expires: 0` on every response. Serves from project-root (parent of `scripts/`). Accepts optional port arg (defaults to 8080). Compact one-line access log on stderr.
+- `start.bat` — Python detection now prefers `python scripts\serve.py 8080` if the file exists, falls back to `python -m http.server 8080` if not. Same logic for the `py` launcher path.
+- `start.sh` — Mirrored Python detection. Both `python3` and `python` paths prefer the no-cache wrapper when present.
+
+### Files touched (BUG.4 + BUG.5)
+
+- **`js/ui/landing.js`** — `renderPollinationsSetup()` rewritten with prominent green-block display, masked input, focus-wipe wiring, dot-mask-guarded save.
+- **`js/ui/in-game-settings.js`** — Same display + input pattern in the in-game Settings panel; added focus-wipe wiring on `#s-polly`.
+- **`scripts/serve.py`** (NEW, 53 lines) — No-cache HTTP server wrapper.
+- **`start.bat`** — Python server-detection blocks prefer `scripts\serve.py` when present.
+- **`start.sh`** — Same Python detection update.
+- **`docs/FINALIZED.md`** — This BUG.4 + BUG.5 addendum.
+
+### Net effect after this batch
+
+1. User pastes Pollinations key into `.env` (BUG.1 mechanism)
+2. Double-clicks `start.bat` — auto-syncs to `js/env.local.js` then starts `scripts/serve.py` with no-cache headers (BUG.1 + BUG.5)
+3. Browser loads the page fresh every time — no Ctrl+Shift+R needed (BUG.5)
+4. Landing-page Pollinations panel shows green `✓ KEY LOADED` block with masked `sk_V••••••••ACcp` + `(from .env / env.local.js)` source badge (BUG.4)
+5. Password input field is pre-populated with `••••••••...` dots so it reads as "filled in" not blank (BUG.4)
+6. Same display + input pattern works in the in-game Settings panel (BUG.4)
+7. Future JS edits land in the browser immediately on refresh — no stale-cache surprises (BUG.5)
+
+LAW #1 audited — `scripts/serve.py` header comment carries only project name, no AI-vendor attribution. All new code commits clean.
+
 ---
 
 ## 2026-05-14 — Session: TODO template-out — full FINALIZED coverage verified before strip per LAW — FINALIZED before DELETE

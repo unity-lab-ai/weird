@@ -203,26 +203,53 @@
     // Effective key resolved by config — respects precedence: localStorage > __DEV_ENV (env.local.js from .env) > default.
     const effectiveKey = (window.SSDConfig && window.SSDConfig.POLLINATIONS && window.SSDConfig.POLLINATIONS.apiKey) || '';
     const lsKey = localStorage.getItem('ssd_pollinations_key') || '';
-    const sourceBadge = (effectiveKey && !lsKey)
-      ? ` <span class="small muted">(from .env / env.local.js)</span>`
+    const sourceLabel = (effectiveKey && !lsKey)
+      ? 'from .env / env.local.js'
       : (effectiveKey && lsKey)
-        ? ` <span class="small muted">(from Settings panel)</span>`
+        ? 'from Settings panel'
         : '';
+    // Mask the key as a string of dots matching its length — gives the input the visual
+    // "this is filled in" affordance without leaking the real key into the DOM. Capped at
+    // 48 dots so a long key doesn't overflow the input visually.
+    const maskedDots = hasKey ? '•'.repeat(Math.min(effectiveKey.length, 48)) : '';
+    const prefix = effectiveKey.slice(0, 4);
+    const suffix = effectiveKey.slice(-4);
+
     $('#polly-setup').innerHTML = `
       <h3>4. Pollinations API key (optional — for images)</h3>
       <p class="small">Used for whole-body profile images + on-demand selfies. Skip it — the game plays fully as text+emoji.</p>
-      ${hasKey ? `<p class="small">Current key: <code>${effectiveKey.slice(0, 4)}…${effectiveKey.slice(-4)}</code> ✓ saved${sourceBadge}</p>` : ''}
+      ${hasKey ? `
+        <div style="background:#1a2a1a;border:1px solid #2f5d3a;border-left:4px solid #53d68a;border-radius:6px;padding:10px 12px;margin:10px 0;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:1.15rem;color:#53d68a;font-weight:600;">✓ KEY LOADED</span>
+            <code style="background:#0e1a0e;padding:3px 8px;border-radius:3px;color:#9fefb5;font-size:0.95rem;">${prefix}${'•'.repeat(8)}${suffix}</code>
+            <span class="small muted">(${sourceLabel})</span>
+          </div>
+          <p class="small muted" style="margin:6px 0 0;">Image generation is wired up — selfies will hit Pollinations directly. To change keys, paste a new one below.</p>
+        </div>
+      ` : `
+        <p class="small">No key set — image generation will fall back to the legacy free endpoint (rate-limited, may 403).</p>
+      `}
       <div class="polly-row">
-        <input type="password" id="polly-key" placeholder="${hasKey ? 'Paste new key to change' : 'sk_... or pk_...'}" class="text-input" />
-        <button class="btn-small" id="polly-save">Save</button>
+        <input type="password" id="polly-key" class="text-input"
+          ${hasKey ? `value="${maskedDots}" data-masked="1"` : `placeholder="sk_... or pk_..."`} />
+        <button class="btn-small" id="polly-save">${hasKey ? 'Replace key' : 'Save'}</button>
         ${lsKey ? `<button class="btn-small btn-danger" id="polly-clear">Clear localStorage key</button>` : ''}
       </div>
     `;
+    // Wipe the dot-mask on first focus/keypress so the user can paste a new key cleanly.
+    const keyInput = $('#polly-key');
+    if (keyInput && keyInput.dataset.masked === '1') {
+      const wipeMask = () => { keyInput.value = ''; delete keyInput.dataset.masked; keyInput.removeEventListener('focus', wipeMask); keyInput.removeEventListener('input', wipeMask); };
+      keyInput.addEventListener('focus', wipeMask);
+      keyInput.addEventListener('input', wipeMask);
+    }
     $('#polly-save').onclick = () => {
-      const v = $('#polly-key').value.trim();
-      if (v) {
+      const v = keyInput.value.trim();
+      // Guard: if the user clicked Save without editing, the value is still the dot-mask. Don't save it.
+      if (v && v !== maskedDots && !/^•+$/.test(v)) {
         localStorage.setItem('ssd_pollinations_key', v);
-        $('#polly-key').value = '';
+        keyInput.value = '';
         refresh();
       }
     };
