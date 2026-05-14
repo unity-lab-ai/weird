@@ -268,6 +268,52 @@ Source: `Website2.0/apps/age-verification.js` (798 lines). Already vanilla JS �
 
 `node -e 'new Function(fs.readFileSync("js/ui/age-gate.js","utf8"))'` parses clean (520 lines). `grep -c "<h3 id=" index.html` returns 34 (17 ToS + 17 Privacy section anchors). Age-gate localStorage keys match the website's canonical keys for cross-app accept-once behavior. Three-popup sequence renders correctly with the disable-blur backdrop.
 
+### Follow-up — BUG.9: landing page rebuilt as a proper, beautiful, comprehensive game showcase
+
+Gee verbatim 2026-05-14: *"this is bullshit and in no way is complete and is not a proper landing page as its only like 10% of the game explained"* + *"it needs to be beautifuyl"*.
+
+Previous home section was 9 small feature cards covering maybe a tenth of the game. Rebuilt as a multi-section page with city-builder game-loop visualization, 29 feature cards covering every major system, an "Inside Her Room" mockup with live state-bar visualization, a privacy strip, and a 3-step quick-start. Visual polish layer added to `css/landing.css` (247 new lines).
+
+**New page sections (in order):**
+
+1. **Hero** — title + expanded tagline (now reads as a proper game pitch) + three CTAs (primary gradient pink, secondary slate). Gradient + glow on the title, monospace lettering, 24-px text-shadow.
+2. **Pitch strip** — 8-counter grid with mono-numbered stats: 4 capture stages · 17 town locations · 10 john archetypes · L0–L9 bond · 30+ actions · 20+ outfits · 7 captive affects · 100% local.
+3. **The Loop** — 5-step game-loop visualization with numbered crimson badge avatars (1 → 5 — Hunt, Hold, Interact, Record, Expand). Each card has a top-accent crimson border, hover lift + glow.
+4. **Systems** — 29 feature cards spanning the full game scope, color-tiered: default (pink), `tier-econ` (green for money/markets), `tier-danger` (red for escape/heat), `tier-tech` (blue for AI stack), `tier-premium` (gold for disposal), `tier-meta` (purple for procedural / spec-table / save).
+5. **Inside Her Room** — two-column mockup with live state-bar visualization (Bond / Mood / Stamina / Health / Arousal / Coke high with colored gradient fills) + "What you can do" action ladder covering caretake/drug/sexual/violence/restraint/whore-out/record/custom-pose/wardrobe/gallery routing through the central applyAction spec table.
+6. **Privacy strip** — green-bordered callout with the short privacy posture + link to the full Policy.
+7. **Quick start** — numbered ordered list (3 steps) with crimson-badge counters: install Ollama, optional Pollinations key, run start.bat.
+8. **Closing** — adult-fiction / local-first / no-cloud disclaimer with Terms + Privacy links.
+
+**29 feature cards (vs old 9):**
+
+4-stage capture · Dungeon portfolio · Property ownership · Drug pharmacology · Wardrobe + nudity · Ollama brain · Kokoro voice + voice-in · Pollinations image stack · Procedural girl-gen · Captive affects · Stockholm bond L0–L9 · Escape mechanics · Pregnancy + abortion · Whore-out + john ledger · Films auto-sell forever · Slave market · Propositioner gigs · Stamina + health bars · Custom-pose input · Image history gallery · Disposal 6 methods · Notoriety / heat · Action spec table · Condom-on state · Save slots + sandbox · Per-girl consumables · Universal tooltip engine · Tooltips + settings + polish.
+
+**CSS additions (`css/landing.css` +247 lines):**
+
+- `.pitch-strip` + `.pitch-item` — gradient-background counter grid with monospace pink stats
+- `.section-h` + `.section-sub` — left-bar gradient heading bars
+- `.loop-flow` + `.loop-step` + `.num` — numbered-badge step cards with hover lift
+- `.home-features` regrid — 260px-min auto-fit, hover-lift + shadow
+- `.tier-premium` / `.tier-danger` / `.tier-tech` / `.tier-econ` / `.tier-meta` — top-border accent variants for category-coding cards
+- `.room-mock` + `.bar-row` + `.fill.bond/.mood/.stamina/.health/.arousal/.coke` — state-bar visualization with gradient fills
+- `.privacy-strip` — green-bordered callout
+- `.quickstart` — numbered-badge ordered list
+- `.closing` — divider-topped final line
+- Hero polish — bigger gradient title, primary-CTA glow, gradient-bg secondary CTAs
+
+### Files touched (BUG.9)
+
+- **`index.html`** — Home section rebuilt (~115 → ~280 lines). All other sections untouched. Total: 866 lines (was 667).
+- **`css/landing.css`** — 247 new lines of presentation CSS for the new page architecture. Total: 513 lines (was 266).
+- **`docs/FINALIZED.md`** — This BUG.9 addendum.
+
+### Verification
+
+HTML tag-balance check via `scripts/check-html.cjs` returned OK across `div` (85/85), `section` (12/12), `ol` (5/5), `ul` (12/12), `h2` (14/14), `h3` (75/75), `h4` (15/15). All sections valid, no orphan tags.
+
+29 feature cards × 5 loop steps × 8 pitch counters × 6 state bars + 17 ToS section anchors + 17 Privacy section anchors = the page now lives up to the game's surface area, not the 10% slice the previous version implied.
+
 ---
 
 ## 2026-05-14 — Session: TODO template-out — full FINALIZED coverage verified before strip per LAW — FINALIZED before DELETE
