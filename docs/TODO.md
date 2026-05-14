@@ -58,10 +58,10 @@
 - [x] **T36.3** 🟠 Mirror in `composePromptViaOllama()` HARD RULES
 - [x] **Bonus** — Age in PREFIX dynamic from `girl.age` (was hardcoded "20s"). HARD RULE 8 updated to "18 or older". Closes Gee 2026-05-14: *"remember girls can be 18 not just 20s"*.
 
-#### Milestone 21.2 — Per-hold environment composition (~1h)
-- [ ] **T36.4** 🔴 Rewrite `envTokens()` to accept `holdIdx` + pull `tpl.holdPrompt` keyed off `hold.holdType`
-- [ ] **T36.5** 🔴 Compose env at prompt position 3: `tpl.plotTokens + ', specifically: ' + tpl.holdPrompt + ", captive's hold within the larger " + tpl.displayName`
-- [ ] **T36.6** 🔴 Pass `assignedHoldIdx` from every caller (room.js, roomScene, generateFor, selfie, milestone memorial)
+#### Milestone 21.2 — Per-hold environment composition (~1h) — SHIPPED 2026-05-14
+- [x] **T36.4** 🔴 Rewrite `envTokens()` to accept `holdIdx` + pull `tpl.holdPrompt` keyed off `hold.holdType`
+- [x] **T36.5** 🔴 Compose env: `tpl.plotTokens + ', specifically: ' + tpl.holdPrompt + ", captive's hold within the larger " + tpl.displayName` (position pinned by Phase 21.3 reorder)
+- [x] **T36.6** 🔴 Threaded `holdIdx` through via `composePrompt()` reading `options.holdIdx ?? girl.assignedHoldIdx ?? 0` — every existing caller automatically gets hold-specific env. `composePromptViaOllama()` also surfaces it in GIRL CONTEXT + new ENVIRONMENT RENDERING RULE.
 
 #### Milestone 21.3 — Image-prompt position reorder (~30min)
 - [ ] **T36.7** 🟠 Re-order `composePrompt()` so env lands at position 3 (after NUDITY/face), not position 6
@@ -116,6 +116,14 @@
 - [ ] **T36.47** 🟠 Wire "🚫 No wardrobe / Strip everything" button in `room.js` Actions row alongside the 🍑 Derobe button + featured action in `wardrobe-view.js`. Click triggers `wardrobe.equip(girlId, 'none')` and force-regenerates the image.
 - [ ] **T36.48** 🟠 Update `imaging.js` `composePrompt()` + `composePromptViaOllama()` HARD RULES to handle the no-wardrobe state — front-loaded position 2 block emphasizing "completely stripped, no garments of any kind, no accessories of any kind, no jewelry, no collar, no restraints, no anything on her body, raw nakedness, fully exposed" — distinct from NUDE_PSEUDO's "FULLY NUDE adult woman" framing in that it explicitly bans accessories too.
 - [ ] **T36.49** 🟡 Girl-gen update — every new girl spawns with `default` + `nude` + `none` in her wardrobe so all three options are usable immediately, no buy required.
+
+#### Milestone 21.19 — README split: gameplay-wiki README + technical SETUP-README (~3-4h, Gee verbatim 2026-05-14: *"we need to also remake the readem into just a gameplay and game playout and design with the images... so that the readme is gamepaly only like wiki with everything thats in the game in the readme, then make a setupreadme that has all the code , setup, and technical information for the game layout in both amazingly and beautifully with some ascii write ups for explinations and beauty, add this to the todo"*)
+- [ ] **T36.76** 🟠 Audit existing README, split gameplay vs technical content, migrate accordingly, verify GitHub Pages still uses README.md as repo browse landing
+- [ ] **T36.77** 🟠 Rewrite README.md as gameplay wiki only — every game system documented inline (archetypes, locations, tools, dungeons w/ hold descriptions, room-upgrade tracks, drug system, bond, escape, films, propositioner, slave market, disposal, pregnancy, whore-out, capture progress-bar, stamina/health, tooltips) + embedded playwright screenshots
+- [ ] **T36.78** 🟠 Create new SETUP-README.md with all technical material (prerequisites, install Ollama + Kokoro + Pollinations key, GitHub Pages deploy, save/load IDB, factory-reset, troubleshooting)
+- [ ] **T36.79** 🟡 ASCII writeups for SETUP-README — module dependency graph, state-model ER, bootstrap flow, tick engine, imaging pipeline, voice pipeline, Ollama prompt-assembly stack
+- [ ] **T36.80** 🟡 ASCII writeups for README gameplay wiki — game loop, dungeon portfolio, hunt-capture-bond cycle, content-market money flow, room layout sketch
+- [ ] **T36.81** 🟡 Cross-references both ways at top of each file. ToCs. LAW #1 audit pass (no AI vendor attribution).
 
 #### Milestone 21.16 — Whore-out passive-income + john ledger + memory recall (~4-5h, Gee verbatim 2026-05-14: *"also want a whore out option that allows girls to generate passive income and tracks all the johns and what they did to where the girls can talk about their johns and stuff idk figure it out"*)
 - [ ] **T36.55** 🟠 Schema + module skeleton — `whoreOut` + `johnLedger` + `JohnEncounter` shapes on GirlProfile; new module `js/game/whore-out.js`
@@ -177,11 +185,11 @@
 - **DOC close-out:** 8 tasks (~20 min)
 - **FINALIZED migration:** 2 tasks (~10 min)
 - **Atomic commit:** 1 task (~2 min)
-- **Phase 21 implementation:** 74 tasks (T36.1-T36.74) across 18 milestones (~26-33h estimated)
+- **Phase 21 implementation:** 81 tasks (T36.1-T36.81) across 19 milestones (~30-37h estimated)
 - **Pre-2026-05-14 open epics:** 14 tasks (PRE.1-PRE.14) (~6-10h estimated)
 - **Deferred:** 2 items (not active backlog)
 
-**GRAND TOTAL ACTIVE BACKLOG: 99 tasks. Estimated ~33-45 hours of focused implementation.** (Phase 21 grew with 3 new milestones added 2026-05-14 mid-session: 21.16 whore-out + 21.17 stamina/health + 21.18 universal tooltips.)
+**GRAND TOTAL ACTIVE BACKLOG: 106 tasks. Estimated ~36-47 hours of focused implementation.** (Phase 21 grew with 4 new milestones added 2026-05-14 mid-session: 21.16 whore-out + 21.17 stamina/health + 21.18 universal tooltips + 21.19 README/SETUP-README split. Plus T36.75 pregnancy image-trait extension on 21.10.)
 
 ---
 
@@ -345,10 +353,10 @@ All quotes preserved in docs/TODO.md revision history + docs/FINALIZED.md sessio
 - [x] **`js/game/imaging.js` Line 62-78 — Severity: Critical.** Issue: `bodyStateTokens()` maps arousal/wetness/cumLoad/bruises/high to visible prompt tokens but only one drug (whiskey) gets a token. Coke, weed, mdma, acid, ketamine — silently dropped on the floor despite living in `body.activeDrugs`. Why it's bad: Directly violates user intent ("the drug use … never appears in the meta image prompts"). The data exists in state, the prompt builder ignores it, the persona archetypes reference being-high constantly — the visual layer is then 90% lying about what's on screen. This is a half-shipped feature claimed done.
 - [x] **SHIPPED FIX:** Added `drugStateTokens(body)` in `js/game/imaging.js` covering coke / weed / mdma / acid / whiskey/alcohol / ketamine — each with per-substance visible markers (dilated pupils + jaw clench + nostril red for coke; reddened glassy eyes + slack jaw for weed; dewy glow + dilated pupils for mdma; blown pupils + unfocused gaze for acid; flushed cheeks + glassy eyes for whiskey; dissociated stare + slack jaw for ketamine). Intensity scales with `body.high` via subtle/visible/pronounced/extreme intensifier. Existing `bodyStateTokens` simplified — pupil markers moved out (now sourced per-drug); whiskey base flush retained as redundancy guard. Wired into `composePrompt()` parts arrays in both clothed and nude branches adjacent to body-state tokens. Added HARD RULE 6 in `composePromptViaOllama()` with per-substance marker tables so the Ollama-as-prompt-writer path renders drug effects too. Bonus: dynamic `${girl.age}` in PREFIX (was hardcoded "20s") + HARD RULE 8 updated to "18 or older" per Gee reminder.
 
-### Epic: Per-hold environment description in image prompts `(M)` — CRITICAL
+### Epic: Per-hold environment description in image prompts `(M)` — CRITICAL — SHIPPED 2026-05-14
 
-- [ ] **`js/game/imaging.js` Line 174-185 — Severity: Critical.** Issue: `envTokens()` accepts `dungeonId` but ignores `assignedHoldIdx`. It returns `tpl.plotTokens` — a comma-separated string of generic keywords shared by every captive in the same hideout. The `holdPrompt` field on each dungeon template (e.g., `'heavy forged iron ring set in the pit floor, attached chain with a steel cuff'`) is NEVER read by this pipeline. Why it's bad: User intent verbatim: *"the specific girls in specific holds to have the meta prompt for the images insert that type of hold as the background and setting … but we need to describe it not just say hole in the ground"*. The data is sitting in the catalog (`catalog.js` line 458, 474, 489, 504, 519, 534, 549, 564, 579 — all nine hideouts have `holdPrompt`), this function refuses to look at it, and so every captive in the same dungeon gets the same recycled `plotTokens`.
-- [ ] **Suggested fix:** Change signature to `envTokens({ situation, dungeonId, holdIdx, locationId })`. Resolve the hold via `dungeon.holds[holdIdx]`, pull `tpl.holdPrompt` keyed off `hold.holdType`, and compose: `tpl.plotTokens + ', specifically: ' + holdPrompt + ', captive's hold within the larger ' + tpl.displayName`. Pass `assignedHoldIdx` from `composePrompt()` callers (room.js + roomScene + selfie + everywhere).
+- [x] **`js/game/imaging.js` Line 174-185 — Severity: Critical.** Issue: `envTokens()` accepts `dungeonId` but ignores `assignedHoldIdx`. It returns `tpl.plotTokens` — a comma-separated string of generic keywords shared by every captive in the same hideout. The `holdPrompt` field on each dungeon template (e.g., `'heavy forged iron ring set in the pit floor, attached chain with a steel cuff'`) is NEVER read by this pipeline. Why it's bad: User intent verbatim: *"the specific girls in specific holds to have the meta prompt for the images insert that type of hold as the background and setting … but we need to describe it not just say hole in the ground"*. The data is sitting in the catalog (`catalog.js` line 458, 474, 489, 504, 519, 534, 549, 564, 579 — all nine hideouts have `holdPrompt`), this function refuses to look at it, and so every captive in the same dungeon gets the same recycled `plotTokens`.
+- [x] **SHIPPED FIX:** Rewrote `envTokens()` with `holdIdx` parameter. Resolves `dungeon.holds[holdIdx]`, falls back to `tpl.holdType`, pulls `tpl.holdPrompt`. Composition: `${tpl.plotTokens}, specifically: ${tpl.holdPrompt}, captive's hold within the larger ${tpl.displayName}`. `composePrompt()` reads `holdIdx` from `options.holdIdx ?? girl.assignedHoldIdx ?? 0` so every existing caller auto-gets hold-specific env. `composePromptViaOllama()` also threads the same env into GIRL CONTEXT (`- hold environment: "..."`) + new ENVIRONMENT RENDERING RULE instructs the Ollama prompt-writer to render the full hold description verbatim, never abbreviating to a single keyword.
 
 ### Epic: Promote env + drug-state above pose in prompt ordering `(S)` — HIGH
 
@@ -364,7 +372,7 @@ All quotes preserved in docs/TODO.md revision history + docs/FINALIZED.md sessio
 
 - [x] **`js/game/imaging.js` Line 306-353 — Severity: High** (drug half). Issue: `composePromptViaOllama()` hands Ollama the body state including `active drugs: ...` on line 344 but the HARD RULES never tell the model to render those drug effects visibly. Same goes for hold-specific tokens — not in the rules block. So the Ollama-as-prompt-writer path has the same drug-blindness and hold-blindness as the hardcoded path. Why it's bad: User intent: drug use must show effects in BOTH image and text. The data is in context but the model isn't instructed to USE it.
 - [x] **DRUG HALF SHIPPED 2026-05-14:** HARD RULE 6 added: "DRUG VISIBLE EFFECTS — when active drugs are listed in GIRL CONTEXT above, the prompt MUST visibly render the drug's external effects on her face, eyes, posture, and skin." With per-substance marker tables for coke / weed / mdma / acid / whiskey/alcohol / ketamine. Explicit fallback: "If drugs are 'none' in GIRL CONTEXT, do NOT render any drug effects — keep her eyes/posture sober."
-- [ ] **ENV HALF STILL PENDING → Phase 21.2 (T36.4-T36.6).** Hold/environment description rule for prompt position 3 ships with Phase 21.2 milestone.
+- [x] **ENV HALF SHIPPED 2026-05-14 via Phase 21.2.** `composePromptViaOllama()` now surfaces `- hold environment: "..."` in GIRL CONTEXT block + new ENVIRONMENT RENDERING RULE forces full descriptive text rendering (no abbreviation, no tail-token bury, "specifically:" sub-phrase preserved verbatim).
 
 ### Epic: BASE_SLUT speech-first rule — fix Kokoro TTS gets only "Yes Master" `(M)` — CRITICAL
 
@@ -543,7 +551,7 @@ The reformulation rejects the "anti-spam friction" framing and replaces it with 
 
 #### Phase A — Image-prompt completeness `(M)` Critical, ~2-3h → ROADMAP Milestones 21.1 + 21.2 + 21.3 + 21.4 (T36.1-T36.9)
 - [x] A.1 — Add `drugStateTokens(body)` to `imaging.js` covering coke / weed / mdma / acid / ketamine / sedatives, layered by drug magnitude — SHIPPED 2026-05-14
-- [ ] A.2 — Rewrite `envTokens()` to accept `holdIdx`, resolve `dungeon.holds[holdIdx]`, pull `tpl.holdPrompt`, and produce a rich per-hold backdrop. Pass `holdIdx` through every caller
+- [x] A.2 — Rewrite `envTokens()` to accept `holdIdx`, resolve `dungeon.holds[holdIdx]`, pull `tpl.holdPrompt`, and produce a rich per-hold backdrop. Pass `holdIdx` through every caller — SHIPPED 2026-05-14
 - [ ] A.3 — Re-order `composePrompt()` to promote env to position 3 (after NUDITY/face). Re-order `composePromptViaOllama()` HARD RULES to instruct the model to place env at position 3 + drug effects visibly
 - [ ] A.4 — Fix `clampSeed()` to fail-or-derive deterministically; require girl-id fallback
 
@@ -594,6 +602,20 @@ The reformulation rejects the "anti-spam friction" framing and replaces it with 
 ### Vision of the cleaned version (target end-state)
 
 After Phases A-G ship the game produces images where the captive's chemical state (coke jaw, weed eyes, sedative slack) is VISIBLE in every selfie, where the specific girl-in-specific-hold renders show the buried desert pit's iron floor ring OR the cinderblock cell's bolted bed frame OR the sewer alcove's forged ring as the actual backdrop — NOT a stale comma-keyword list at prompt position 6. Captives resist with their assigned affect: the mute one won't say "Yes Master", she'll just *flinch* and stay silent; the cusser will tell Master to fuck off through gritted teeth at L0 and tell him to fuck her harder while still cussing at L8; the fighter will land bites and bruises will accumulate twice as fast. The TTS pipeline will hear full first-person spoken sentences because the model has been retrained at prompt-level to lead with speech and trail with action. Captives will die of dehydration in <30 ticks if their cell has bucket-only toilet and the player forgets the water flat — UNTIL the player drops $300 on a plumbing kit or $200 on a wall jug-with-straw, at which point that hold goes maintenance-free. Pregnancy becomes a real lever: conception risk by bond level + drug profile, three abortion tiers with cost/risk/notoriety tradeoffs, full-term birthing as a route to either a new captive (next-gen roster), market sale (premium tag), or notoriety hit if authorities are alerted. Capture stops being item-spam — every attempt costs, suspicion compounds, the girl flees harder each round, success or fail narrates uniquely from a Tool × Woman × Location × Hideout scene composition. All four AI surfaces — Ollama text, image prompt, image generation, TTS speech — use the SAME canonical state shape (`body.activeDrugs`, `assignedHoldIdx`, `pregnancy.status`, `captiveAffect`), so adding a new drug or a new hideout type or a new affect propagates everywhere automatically. **That is production-grade. What we have now is a demo that hides its seams behind defensive regexes and decorative buttons that don't refill anything.**
+
+### Gee's directive (verbatim 2026-05-14) — README split: gameplay-wiki README + technical SETUP-README:
+
+> *"we need to also remake the readem into just a gameplay and game playout and design with the images... so that the readme is gamepaly only like wiki with everything thats in the game in the readme, then make a setupreadme that has all the code , setup, and technical information for the game layout in both amazingly and beautifully with some ascii write ups for explinations and beauty, add this to the todo"*
+
+### Epic: README split — gameplay-wiki + technical SETUP-README `(M)` — HIGH (Phase 21.19)
+
+Splits the current single README into two purpose-driven documents.
+
+- [ ] **`README.md` becomes gameplay wiki only** — for players, NOT for setup. Every game system documented inline with embedded playwright screenshots as visual reference. Sections: game premise + gameplay loop, all 7 archetypes (or however many ship), all 13 locations (Town map), all capture tools, all 9 dungeon templates with `holdPrompt` descriptions, all 12 room-upgrade tracks (security/restraints/lights/toys/food/feedAutomation/toilet/waterSupply/bedding/entertainment/decor/climate) with tier names + costs, drug system + pharmacokinetic curves, bond 0-9 progression + milestone descriptions, escape mechanic + containment math, films + content-market pricing, propositioner inbox, slave market buyer types, disposal methods + consequences, pregnancy + abortion options, whore-out passive income, capture progress-bar mechanic, stamina + health system, universal tooltips system.
+- [ ] **`SETUP-README.md` new file — all technical material** — for devs/setup, NOT for gameplay. Sections: prerequisites (Node, Ollama, Kokoro, optional Pollinations), install Ollama + uncensored model pull, install Kokoro weights, get Pollinations `pk_` key, run the game locally, GitHub Pages deploy guide, save/load IndexedDB, export/import saves, factory-reset, troubleshooting (Ollama HTTP 400 self-heal, Pollinations 403 fallback, Kokoro autoplay-blocked, model corruption hard repair).
+- [ ] **ASCII writeups for SETUP-README** — module dependency graph (`bootstrap → state → tick → drugs / lifespan / market / propositioner / slaveMarket / balancing / achievements / escapeRecovery → router → UI views`), state-model ER (Player → Roster[Girl] → Dungeons → Holds; Girl → VisualIdentity / Body / Mood / Bond / Escape / Pregnancy / WhoreOut), bootstrap flow, tick engine timeline, imaging pipeline (`composePrompt → buildUrl → queuedFetch → cache.put`), voice pipeline (mic → Pollinations transcribe → Ollama → Kokoro → audio), Ollama prompt-assembly stack (BASE_SLUT + archetype + captive-affect + mode + scene).
+- [ ] **ASCII writeups for gameplay README** — game loop (Hunt → Capture → Hold → Interact → Record → Sell → Upgrade), dungeon portfolio tier ladder (basic → cinderblock → … → mountain compound), hunt-capture-bond cycle, content-market money flow, room layout sketch (hold + upgrades).
+- [ ] **Cross-references both ways at top of each file** + ToC + LAW #1 audit pass (NO AI vendor attribution).
 
 ### Gee's directive (verbatim 2026-05-14) — Whore-out passive income + john ledger:
 

@@ -13,6 +13,48 @@
 
 ---
 
+## 2026-05-14 — Session: Phase 21.2 SHIPPED — Per-hold environment composition + Phase 21.19 added (README/SETUP-README split)
+
+### Gee's verbatim directives shipped/addressed
+
+> *"the specific gilrs in specific holds to have the meta prompt for the images insert that type of hold as the background and setting of the images... ie hole in the ground, but we need to describe it not just say hole in the ground(as that wont genrerate the appropriate scene with the specific girl wearing the specific wardroobe all dynamic"* (SHIPPED via Phase 21.2)
+
+> *"we need to also remake the readem into just a gameplay and game playout and design with the images... so that the readme is gamepaly only like wiki with everything thats in the game in the readme, then make a setupreadme that has all the code , setup, and technical information for the game layout in both amazingly and beautifully with some ascii write ups for explinations and beauty, add this to the todo"* (DOCS LOCK — Phase 21.19 added to backlog)
+
+### What shipped (Phase 21.2)
+
+- **`js/game/imaging.js`** — rewrote `envTokens()` to accept `holdIdx`. Resolution order: `dungeon.holds[holdIdx]` → `hold.holdType || tpl.holdType` → `tpl.holdPrompt`. Composition string: `${tpl.plotTokens}, specifically: ${tpl.holdPrompt}, captive's hold within the larger ${tpl.displayName}`. Fallback to `tpl.plotTokens` alone when `holdPrompt` missing (legacy/unmigrated template). Comment block documents the future mixed-holdType expansion path (when capacity upgrades add holds of a different type, lookup will resolve via per-holdType map; signature is already correct for that).
+- **`js/game/imaging.js`** — `composePrompt()` now threads `holdIdx` via `options.holdIdx ?? girl.assignedHoldIdx ?? 0`. Every existing caller of `composePrompt()` and `generateFor()` automatically gets hold-specific env without per-callsite changes.
+- **`js/game/imaging.js`** — `composePromptViaOllama()` also threads the hold env into the GIRL CONTEXT block as `- hold environment: "..."` so the Ollama-as-prompt-writer path sees the same composed environment the hardcoded composer would emit. Added an ENVIRONMENT RENDERING RULE at the bottom of the system prompt: *"The composed prompt MUST include the FULL hold-environment description verbatim … Do NOT abbreviate it to a single keyword … Do NOT skip the 'specifically:' sub-phrase that names the captive's exact hold within the larger location."* Insert position: near the start of the prompt (Phase 21.3 will pin to exact position 3).
+- **Coverage** — all 9 dungeon templates in `js/assets/catalog.js` have `holdPrompt` declared (verified at catalog audit time): floor-ring-chain pit, wall-eyebolt container, bolted-bed basement, steel-barred subway, alcove-ring sewer, bunker-bay-cuff bunker, cribbed-alcove mine, outbuilding-cell mountain compound, cell-integrated-bedframe underground complex. Every captive in every hold of every dungeon now renders her own specific hold as the visible background string.
+
+### What added to backlog (Phase 21.19, docs-only)
+
+**Phase 21.19 — README split: gameplay-wiki + technical SETUP-README** — 6 sub-tasks T36.76-T36.81. README.md becomes gameplay wiki only (every game system + playwright screenshots inline, NO technical setup). New SETUP-README.md holds all technical info (install/setup/deploy/troubleshooting) with ASCII writeups for module dependency / state-model ER / pipeline diagrams. Cross-references both ways. LAW #1 audit pass on both files. Added to ROADMAP Milestone 21.19 + Decision Log + Dependency Graph; TODO Master Backlog + Epic block. ~3-4h estimated.
+
+**Phase 21 backlog now totals 81 tasks across 19 milestones** (was 74/18 at commit `f305a4a`). Grand active backlog: 106 tasks (was 99). Estimated work: ~36-47 hours (was ~33-45).
+
+### Files touched
+
+- `js/game/imaging.js` — Phase 21.2 code ship (envTokens rewrite + composePrompt holdIdx threading + composePromptViaOllama env-in-context + ENVIRONMENT RENDERING RULE)
+- `docs/ROADMAP.md` — Phase 21.2 marked SHIPPED, Phase 21.19 milestone added + Decision Log entry + Dependency Graph entry, Phase 21.2 Decision Log entry added retroactively
+- `docs/TODO.md` — Phase 21.2 marked SHIPPED in Master Backlog + Epic + Phase A.2 + Ollama env-half; Phase 21.19 added to Master Backlog + Epic; backlog totals updated
+- `docs/FINALIZED.md` — this entry
+
+### Pre-push checklist
+
+- [x] Hold composition string verified against all 9 dungeon templates in catalog.js (every template has `holdPrompt` + `plotTokens` + `displayName`)
+- [x] `composePrompt()` `holdIdx` resolution falls back safely when `girl.assignedHoldIdx` is missing (defaults to 0)
+- [x] Hunt-encounter situations still early-return from `envTokens()` (pre-capture girls don't have `assignedHoldIdx` — and we never reach the dungeon-lookup branch in their flow)
+- [x] `composePromptViaOllama()` only injects the hold-env CONTEXT line when `holdEnvText` is non-empty (no empty fields polluting the prompt)
+- [x] ENVIRONMENT RENDERING RULE only fires when 'hold environment' is set in GIRL CONTEXT (explicit conditional in the rule body)
+- [x] FINALIZED.md appended per FINALIZED-before-DELETE LAW
+- [x] No AI vendor attribution in any shipping file (LAW #1)
+- [x] No task numbers or user name in code comments (LAW — task numbers only in workflow docs)
+- [x] Atomic commit: code + every affected doc
+
+---
+
 ## 2026-05-14 — Session: Phase 21.1 SHIPPED — Drug-state visible in image prompts + Phase 21.11 reformulated
 
 ### Gee's verbatim directives shipped/addressed

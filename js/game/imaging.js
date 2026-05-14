@@ -210,8 +210,16 @@
     'film-cover':       'dramatic low-key editorial poster composition, centered subject, cinematic lighting, mood-appropriate, professional film poster framing'
   };
 
-  // --- Environment tokens per situation / dungeon ---
-  function envTokens({ situation, dungeonId, locationId }) {
+  // --- Environment tokens per situation / dungeon / hold (Phase 21.2, 2026-05-14) ---
+  // Gee verbatim 2026-05-14: "we also need the specific gilrs in specific holds to have
+  // the meta prompt for the images insert that type of hold as the background and setting
+  // of the images... ie hole in the ground, but we need to describe it not just say hole
+  // in the ground". Previously this function ignored holdIdx and returned tpl.plotTokens
+  // — a generic comma-keyword shared by every captive in the same hideout. Now it composes
+  // tpl.plotTokens + tpl.holdPrompt + tpl.displayName so each captive renders her specific
+  // hold as the background. Hold-resolution order: hold.holdType (per-hold field, supports
+  // future mixed-type capacity expansions) → tpl.holdType (template default).
+  function envTokens({ situation, dungeonId, holdIdx, locationId }) {
     if (situation?.startsWith('hunt-encounter')) return '';   // pose already includes env
     if (situation === 'profile') return 'plain clean neutral backdrop';
     if (situation === 'capture') return 'dim dusk, getting into a vehicle, ambient';
@@ -219,7 +227,20 @@
     if (dungeonId) {
       const dungeon = window.SSDGame.state.getDungeon(dungeonId);
       const tpl = dungeon && window.SSDAssets.getById('dungeon', dungeon.templateId);
-      if (tpl) return tpl.plotTokens || 'hideout interior';
+      if (tpl) {
+        const idx = Number.isFinite(holdIdx) ? holdIdx : 0;
+        const hold = dungeon.holds?.[idx];
+        // hold.holdType is set per-hold at expansion time; falls back to tpl.holdType.
+        // Catalog currently exposes a single tpl.holdPrompt per template (one canonical
+        // hold style); when mixed-type capacity expansions become a thing, lookup by
+        // hold.holdType resolves against a tpl.holdPromptsByType map.
+        const holdPrompt = tpl.holdPrompt;
+        const plot = tpl.plotTokens || 'hideout interior';
+        if (holdPrompt) {
+          return `${plot}, specifically: ${holdPrompt}, captive's hold within the larger ${tpl.displayName}`;
+        }
+        return plot;
+      }
     }
     return 'ambient mood-appropriate backdrop';
   }
@@ -252,7 +273,12 @@
     const stateTokens = bodyStateTokens(girl.body);
     const drugTokens  = drugStateTokens(girl.body);
     const pose = customPose || POSE_LIBRARY[situation] || POSE_LIBRARY.profile;
-    const env = envTokens({ situation, dungeonId: girl.assignedDungeonId, locationId: options.locationId });
+    const env = envTokens({
+      situation,
+      dungeonId: girl.assignedDungeonId,
+      holdIdx: options.holdIdx ?? girl.assignedHoldIdx ?? 0,
+      locationId: options.locationId
+    });
 
     // Age derived from girl.age (18+ floor enforced at girl-gen). Never hardcode "20s" —
     // 18-19 year-old captives must render as their actual age for face/age persistence.
@@ -385,6 +411,15 @@
     const currentOutfitEntry = (girl.wardrobe || []).find(w => w.id === girl.currentOutfit);
     const outfitDesc = currentOutfitEntry?.description || vi.defaultOutfitDescription || '';
 
+    // Phase 21.2 — hold-specific dungeon env, threaded into GIRL CONTEXT so the prompt-writer
+    // sees the same hold-specific environment the hardcoded composer would emit.
+    const holdEnvText = envTokens({
+      situation,
+      dungeonId: girl.assignedDungeonId,
+      holdIdx: options.holdIdx ?? girl.assignedHoldIdx ?? 0,
+      locationId
+    });
+
     const nudeStrength = nudeStateOf(girl);
     const accessories = nudeStrength === 'accessories' ? accessoriesOnlyFor(girl) : null;
     const nudeBlock = nudeTokens(nudeStrength, accessories);
@@ -429,11 +464,15 @@ GIRL CONTEXT:
 - active drugs: ${(girl.body?.activeDrugs || []).map(d => d.name || d).join(', ') || 'none'}
 - outfit state: ${girl.body?.outfitState || 'intact'}
 - current outfit: ${currentOutfitEntry?.displayName || 'default'}
+${holdEnvText ? `- hold environment: "${holdEnvText}"` : ''}
 
 SITUATION: ${situation}
 POSE: ${customPose || POSE_LIBRARY[situation] || 'standing front-facing neutral full-body'}
 ${locationId ? `LOCATION: ${window.SSDAssets.getById('location', locationId)?.displayName || locationId}` : ''}
 ${additionalTokens ? `ADDITIONAL: ${additionalTokens}` : ''}
+
+ENVIRONMENT RENDERING RULE (when 'hold environment' is set in GIRL CONTEXT above):
+The composed prompt MUST include the FULL hold-environment description verbatim — every comma-separated descriptor. Do NOT abbreviate it to a single keyword. Do NOT replace it with a generic environment word. Do NOT skip the "specifically:" sub-phrase that names the captive's exact hold within the larger location. Insert the full hold environment text near the start of the prompt (right after the face/nudity block) so the image generator does not bury it as a tail keyword. Hold environment is THE setting — render it as a full descriptive scene, not as a label.
 
 Write the Pollinations prompt now.`;
 
