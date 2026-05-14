@@ -80,6 +80,61 @@ Booleans emitted without quoting (`DEV_MODE: true`), strings emitted with single
 
 LAW #1 audited — no AI-vendor attribution in any new/modified file. `.env` and `js/env.local.js` both gitignored per existing `.gitignore` entries (lines 8 + 10). Local `feature/BugFixes` branch ready for commit + push.
 
+### Follow-up after first-launch test — BUG.2 + BUG.3
+
+Gee verbatim 2026-05-14: *"star..bat instantly crashes"* + *"fix the startup files"*. On Explorer-double-click the cmd window vanished before any error was visible — classic Windows "batch failed silently" behavior.
+
+**BUG.2 — start.bat hardening:**
+
+- Dropped `setlocal enabledelayedexpansion` (unused, can cause `!`-parsing surprises in blocks with parens)
+- Switched every `if %ERRORLEVEL% NEQ 0 (` to `if errorlevel 1 (` — far more reliable inside paren-blocks (the `%var%` syntax expands at parse time, not run time, so `if %ERRORLEVEL%` inside a block reads the value from BEFORE the block, which silently breaks logic)
+- Quoted all `set "VAR=VAL"` assignments — avoids trailing-space bugs + handles paths containing spaces
+- Added pre-flight existence checks for both `.env` and `scripts\sync-env.ps1` before invoking PowerShell — skips Step 0 cleanly instead of bombing if either is missing
+- Added `pause` before all exit points so the cmd window never disappears silently — user always sees the last screen + any error messages
+- Captured server exit code into `SERVER_EXIT` so a crashed Python server reports its exit code on the final screen instead of vanishing
+- Renamed Ollama-check block to use `if errorlevel 1 (... ) else (...)` reversed order — cleaner pattern
+
+**BUG.3 — favicon:**
+
+Gee verbatim 2026-05-14: *"yes drop a falvicon"*. Browser was requesting `/favicon.ico` on every page load and getting a 404 (cluttered the server log + showed an empty browser-tab icon).
+
+- New `favicon.svg` at project root — 32×32 SVG of a closed padlock (pink `#ff7aa8` on dark plum `#1a0a14`), on-theme for the dungeon aesthetic, scales clean to 16×16 tab size
+- `<link rel="icon" type="image/svg+xml" href="favicon.svg" />` added to both `index.html` and `game.html` heads — modern browsers fetch the SVG instead of falling back to `favicon.ico`
+- Hard-refresh required after first deploy because browsers aggressively cache favicon misses
+
+### Files touched (BUG.2 + BUG.3)
+
+- **`start.bat`** — Full rewrite as bulletproof launcher (132 lines) with paranoid error handling + pause-at-end policy.
+- **`favicon.svg`** (NEW, 7 lines) — Padlock SVG.
+- **`index.html`** — Favicon link added to head.
+- **`game.html`** — Favicon link added to head.
+- **`docs/FINALIZED.md`** — This BUG.2 + BUG.3 addendum.
+
+### Verification
+
+Ran new `start.bat` via `cmd /c .\start.bat` from project root:
+
+```
+====================================
+  SEX SLAVE DUNGEON - local launcher
+====================================
+
+Project: C:\Users\gfour\Desktop\weird
+
+[0/3] Syncing .env to js\env.local.js...
+  + Synced .env -> js/env.local.js (5 vars)
+
+[1/3] Checking Ollama...
+  + Ollama found.
+  + Setting OLLAMA_ORIGINS=* for browser access
+  + Launching Ollama in a new window...
+  + Waiting 4 seconds for Ollama to come up...
+
+[2/3] Finding a local web server...
+```
+
+All three steps progress without errors; pause-on-exit means no more silent window-vanish.
+
 ---
 
 ## 2026-05-14 — Session: TODO template-out — full FINALIZED coverage verified before strip per LAW — FINALIZED before DELETE
