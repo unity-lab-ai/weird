@@ -236,6 +236,109 @@
     };
   }
 
+  // --- Simple single-tool capture path ---
+  //
+  // Pick one item, click, roll vs a flat per-tool success chance. 50% for cheapest
+  // tools, scaling up to 100% guaranteed for the heaviest sedatives. No per-stage
+  // dropdowns, no resistance math, no witness penalty stack — just one die roll.
+  //
+  // Tools NOT in this table can't be used to capture. The shop sells everything
+  // here under "Hunting tools".
+  const SIMPLE_CAPTURE_CHANCE = Object.freeze({
+    'duct-tape':    0.50,
+    'zip-ties':     0.55,
+    'rope':         0.55,
+    'pipe':         0.60,
+    'handcuffs':    0.70,
+    'shackles':     0.75,
+    'harness':      0.80,
+    'rohypnol':     0.85,
+    'chloroform':   0.90,
+    'tranquilizer': 0.95,
+    'ether':        0.95,
+    'ketamine':     1.00
+  });
+
+  function getSimpleCaptureChance(toolId) {
+    return SIMPLE_CAPTURE_CHANCE[toolId] || 0;
+  }
+
+  function eligibleSimpleTools() {
+    const inv = window.DMTHGame.state.current?.inventory || {};
+    return Object.entries(SIMPLE_CAPTURE_CHANCE)
+      .filter(([id]) => (inv[id] || 0) > 0)
+      .map(([id, chance]) => ({ id, chance, owned: inv[id] }))
+      .sort((a, b) => a.chance - b.chance);
+  }
+
+  // --- Wrangle escalation ---
+  //
+  // Each failed tool attempt during an encounter bumps the escalation tier. The girl's
+  // struggle escalates and subsequent tool chances are multiplied down. At tier 4 (the
+  // ESCAPE tier), she breaks free and the encounter ends. The player gets ~4 attempts
+  // before she's gone — earlier with cheap tools.
+  //
+  //   tier 0 (calm)        — no penalty, first contact
+  //   tier 1 (suspicious)  — chance × 0.85 after 1 miss
+  //   tier 2 (fighting)    — chance × 0.70 after 2 misses
+  //   tier 3 (screaming)   — chance × 0.55 after 3 misses
+  //   tier 4 (running)     — encounter ends, she escapes
+  const ESCALATION_MULTIPLIERS = [1.00, 0.85, 0.70, 0.55];
+  const ESCALATION_LABELS = ['calm', 'suspicious', 'fighting', 'screaming', 'running'];
+  const ESCAPE_TIER = 4;
+  const ESCALATION_NARRATION = [
+    null,
+    "she shoves you off, eyes wide, looking around for help",
+    "she's swinging — fists flying, scrambling backward, knocking shit over",
+    "she's screaming for help, kicking free, trying to crawl away",
+    "she breaks free and bolts — gone before you can grab her again"
+  ];
+
+  function escalationLabel(tier) { return ESCALATION_LABELS[Math.min(tier, ESCAPE_TIER)]; }
+  function escalationMultiplier(tier) { return ESCALATION_MULTIPLIERS[tier] || 0; }
+  function escalationNarration(tier) { return ESCALATION_NARRATION[Math.min(tier, ESCAPE_TIER)]; }
+
+  // Roll a single-tool capture. On success, escort the girl to the active dungeon's
+  // first open hold via hunt.js. On failure, bump location suspicion AND the encounter's
+  // escalation tier. The caller (UI) decides what to do with the new tier — typically
+  // re-render the picker with adjusted odds, or end the encounter if tier >= ESCAPE_TIER.
+  function simpleAttempt({ girl, toolId, locationId, escalationTier = 0 }) {
+    if (escalationTier >= ESCAPE_TIER) {
+      return { outcome: 'escaped', escalationTier, reason: 'already-escaped' };
+    }
+    const base = SIMPLE_CAPTURE_CHANCE[toolId];
+    if (!base) return { outcome: 'fail', reason: 'tool-not-capture-grade', escalationTier };
+    const inv = window.DMTHGame.state.current.inventory;
+    if (!inv[toolId] || inv[toolId] < 1) return { outcome: 'fail', reason: 'no-tool', escalationTier };
+
+    window.DMTHGame.state.consumeItem(toolId, 1);
+
+    const mul = ESCALATION_MULTIPLIERS[escalationTier] || 0;
+    const chance = Math.max(0.05, base * mul);
+
+    const roll = Math.random();
+    if (roll < chance) {
+      try {
+        const escort = window.DMTHGame.hunt.escortToHold(girl);
+        return { outcome: 'success', toolId, baseChance: base, chance, roll, escort, escalationTier };
+      } catch (err) {
+        return { outcome: 'success-no-room', toolId, baseChance: base, chance, roll, error: err.message, escalationTier };
+      }
+    }
+
+    // Miss — bump suspicion + bump escalation tier.
+    const s = window.DMTHGame.state.current;
+    const sus = s.wallet.suspicionByLocation[locationId] || 0;
+    s.wallet.suspicionByLocation[locationId] = sus + 1;
+    const newTier = escalationTier + 1;
+    if (newTier >= ESCAPE_TIER) {
+      // She gets away — bigger notoriety hit since she'll talk
+      window.DMTHGame.state.addNotoriety(2);
+      return { outcome: 'escaped', toolId, baseChance: base, chance, roll, suspicionDelta: 1, escalationTier: newTier, notorietyDelta: 2 };
+    }
+    return { outcome: 'miss', toolId, baseChance: base, chance, roll, suspicionDelta: 1, escalationTier: newTier };
+  }
+
   // Compose a human-readable summary of one stage outcome — used by UI for inline feedback.
   function summarizeStage(stageResult) {
     if (!stageResult) return '(no result)';
@@ -263,6 +366,16 @@
     rollWitness,
     resolveStage,
     runAttempt,
-    summarizeStage
+    summarizeStage,
+    SIMPLE_CAPTURE_CHANCE,
+    ESCALATION_MULTIPLIERS,
+    ESCALATION_LABELS,
+    ESCAPE_TIER,
+    getSimpleCaptureChance,
+    eligibleSimpleTools,
+    simpleAttempt,
+    escalationLabel,
+    escalationMultiplier,
+    escalationNarration
   });
 })();
