@@ -1,13 +1,13 @@
-// SEX SLAVE DUNGEON — wardrobe page. Buy outfits, equip/unequip per girl.
+// DUNGEON MASTER: THE HUNT — wardrobe page. Buy outfits, equip/unequip per girl.
 
 (function () {
   'use strict';
 
   function render(el, params) {
     const girlId = params.girl;
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) { el.innerHTML = `<p>no such girl · <a href="#roster">Roster</a></p>`; return; }
-    const money = window.SSDGame.state.current.wallet.money;
+    const money = window.DMTHGame.state.current.wallet.money;
     const owned = new Set((girl.wardrobe || []).map(w => w.id));
 
     const isNude = girl.currentOutfit === 'nude';
@@ -50,7 +50,7 @@
       <div class="panel">
         <h2>Buy for her</h2>
         <div class="girl-grid">
-          ${window.SSDGame.wardrobe.catalog().map(o => {
+          ${window.DMTHGame.wardrobe.catalog().map(o => {
             const isOwned = owned.has(o.id);
             const cardTip = (o.description || '').replace(/"/g, '&quot;');
             return `<div class="model-card" data-tooltip="${cardTip}">
@@ -76,13 +76,13 @@
 
     el.querySelectorAll('[data-buy]').forEach(b => {
       b.onclick = () => {
-        try { window.SSDGame.wardrobe.buyForGirl(girl.id, b.dataset.buy); window.SSDRouter.handle(); }
+        try { window.DMTHGame.wardrobe.buyForGirl(girl.id, b.dataset.buy); window.DMTHRouter.handle(); }
         catch (e) { alert(e.message); }
       };
     });
     el.querySelectorAll('[data-equip]').forEach(b => {
       b.onclick = () => {
-        try { window.SSDGame.wardrobe.equip(girl.id, b.dataset.equip); window.SSDRouter.handle(); }
+        try { window.DMTHGame.wardrobe.equip(girl.id, b.dataset.equip); window.DMTHRouter.handle(); }
         catch (e) { alert(e.message); }
       };
     });
@@ -91,11 +91,11 @@
       derobeBtn.onclick = () => {
         try {
           if (girl.currentOutfit === 'nude') {
-            window.SSDGame.wardrobe.equip(girl.id, 'default');
+            window.DMTHGame.wardrobe.equip(girl.id, 'default');
           } else {
-            window.SSDGame.wardrobe.derobe(girl.id);
+            window.DMTHGame.wardrobe.derobe(girl.id);
           }
-          window.SSDRouter.handle();
+          window.DMTHRouter.handle();
         } catch (e) { alert(e.message); }
       };
     }
@@ -104,15 +104,15 @@
       stripAllBtn.onclick = () => {
         try {
           if (girl.currentOutfit === 'none') {
-            window.SSDGame.wardrobe.equip(girl.id, 'default');
+            window.DMTHGame.wardrobe.equip(girl.id, 'default');
           } else {
-            window.SSDGame.wardrobe.stripEverything(girl.id);
+            window.DMTHGame.wardrobe.stripEverything(girl.id);
           }
-          window.SSDRouter.handle();
+          window.DMTHRouter.handle();
         } catch (e) { alert(e.message); }
       };
     }
   }
 
-  window.SSDRouter.register('wardrobe', render);
+  window.DMTHRouter.register('wardrobe', render);
 })();

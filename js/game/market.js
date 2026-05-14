@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — content market auto-sell + sell-negatives premium.
+// DUNGEON MASTER: THE HUNT — content market auto-sell + sell-negatives premium.
 //
 // Films auto-sell on tick — no manual "sales pass" button. Films are never consumed:
 // they're permanent infinite-copy assets. The only way to remove one is "sell negatives",
@@ -41,7 +41,7 @@
   const SELL_NEGATIVES_MULT = 3.5;
 
   function runSaleTick() {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     if (!s) return { earnings: 0, perFilm: [] };
     const listed = s.films.filter(f => f.status === 'listed');
     if (!listed.length) return { earnings: 0, perFilm: [] };
@@ -57,12 +57,12 @@
       const base = film.basePrice || film.currentListPrice || 0;
       const tickEarnings = Math.round(base * TICK_RATE_BASE * archMult * tagMult * demandMult * rng);
       if (tickEarnings <= 0) continue;
-      window.SSDGame.state.updateFilm(film.id, {
+      window.DMTHGame.state.updateFilm(film.id, {
         passiveEarnings: (film.passiveEarnings || 0) + tickEarnings,
         lastTickEarnings: tickEarnings,
         lastTickAt: Date.now()
       });
-      window.SSDGame.state.addMoney(tickEarnings, `film-passive: ${film.id}`);
+      window.DMTHGame.state.addMoney(tickEarnings, `film-passive: ${film.id}`);
       perFilm.push({ filmId: film.id, tickEarnings });
       totalEarnings += tickEarnings;
     }
@@ -70,7 +70,7 @@
     // Tiny notoriety creep — content circulating in the wild generates background heat.
     if (totalEarnings > 0) {
       const notorietyTick = Math.max(1, Math.round(perFilm.length * 0.3));
-      window.SSDGame.state.addNotoriety(notorietyTick);
+      window.DMTHGame.state.addNotoriety(notorietyTick);
     }
 
     // Demand drift — too many tracks for sale softens the market; quieter markets recover.
@@ -81,7 +81,7 @@
   }
 
   function sellNegatives(filmId) {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     const film = s.films.find(f => f.id === filmId);
     if (!film) throw new Error('no such film');
     if (film.status === 'destroyed') throw new Error('negatives already sold for this film');
@@ -90,14 +90,14 @@
     const demandMult = DEMAND.overallBase;
     const base = film.basePrice || film.currentListPrice || 0;
     const premiumPayout = Math.round(base * SELL_NEGATIVES_MULT * archMult * tagMult * demandMult);
-    window.SSDGame.state.updateFilm(filmId, {
+    window.DMTHGame.state.updateFilm(filmId, {
       status: 'destroyed',
       destroyedAt: Date.now(),
       negativesSalePrice: premiumPayout
     });
-    window.SSDGame.state.addMoney(premiumPayout, `negatives-sale: ${filmId}`);
+    window.DMTHGame.state.addMoney(premiumPayout, `negatives-sale: ${filmId}`);
     // Destroying the master is the BIG-money play — bigger notoriety hit than passive sales.
-    window.SSDGame.state.addNotoriety(2);
+    window.DMTHGame.state.addNotoriety(2);
     return { ok: true, premiumPayout, filmId };
   }
 
@@ -120,16 +120,16 @@
   }
 
   function getArchetypeOfFilm(film) {
-    const g = window.SSDGame.state.getGirl(film.girlId);
+    const g = window.DMTHGame.state.getGirl(film.girlId);
     return g?.archetypeTemplate || 'library';
   }
 
-  function unlist(filmId) { window.SSDGame.state.updateFilm(filmId, { listedForSale: false, status: 'archived' }); }
-  function relist(filmId) { window.SSDGame.state.updateFilm(filmId, { listedForSale: true,  status: 'listed' }); }
+  function unlist(filmId) { window.DMTHGame.state.updateFilm(filmId, { listedForSale: false, status: 'archived' }); }
+  function relist(filmId) { window.DMTHGame.state.updateFilm(filmId, { listedForSale: true,  status: 'listed' }); }
   function getDemand() { return { ...DEMAND }; }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.market = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.market = Object.freeze({
     runSaleTick, sellNegatives, estimatePerTick, estimateNegativesPayout,
     unlist, relist, getDemand,
     TICK_RATE_BASE, SELL_NEGATIVES_MULT

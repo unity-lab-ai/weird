@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — one-hand mouse UX with full captor-dynamic action set.
+// DUNGEON MASTER: THE HUNT — one-hand mouse UX with full captor-dynamic action set.
 // Tabbed by category: FORCE / POSITIONS / ORAL / ANAL / PAIN / PUNISHMENT / DEGRADE /
 // BONDAGE / DRUGS / COMMANDS. Actions are bond-gated — some get softer labels at high
 // bond, most stay raw at every level.
@@ -243,21 +243,21 @@
         // mutations (stamina+, health+, mood+, bondXP+, bondDebt-, etc.). Love actions
         // use this to rebuild her meters; the spec already carries satisfaction in its
         // own field so applyAction will bump player satisfaction itself.
-        if (action.applyId && girl?.id && window.SSDGame?.actionEffects?.applyAction) {
-          try { window.SSDGame.actionEffects.applyAction(girl.id, action.applyId); } catch {}
-        } else if (action.sat && window.SSDGame?.state?.addSatisfaction) {
+        if (action.applyId && girl?.id && window.DMTHGame?.actionEffects?.applyAction) {
+          try { window.DMTHGame.actionEffects.applyAction(girl.id, action.applyId); } catch {}
+        } else if (action.sat && window.DMTHGame?.state?.addSatisfaction) {
           // No applyId — bump satisfaction directly. Every act sexualizes; mercy
           // actions intentionally have sat=0 so they're skipped.
-          window.SSDGame.state.addSatisfaction(action.sat, `qa:${currentTab}:${action.label}`);
+          window.DMTHGame.state.addSatisfaction(action.sat, `qa:${currentTab}:${action.label}`);
         }
         // Bondage actions mark girl.body.activeBondage so the next image render
         // front-loads the bondage tokens. Sticky until cleared by another bondage /
         // derobe / strip action or the chat moves on.
-        if (currentTab === 'bondage' && girl?.id && window.SSDGame?.state?.updateGirl) {
-          const refreshed = window.SSDGame.state.getGirl(girl.id);
+        if (currentTab === 'bondage' && girl?.id && window.DMTHGame?.state?.updateGirl) {
+          const refreshed = window.DMTHGame.state.getGirl(girl.id);
           if (refreshed) {
             const body = { ...(refreshed.body || {}), activeBondage: action.label };
-            window.SSDGame.state.updateGirl(girl.id, { body });
+            window.DMTHGame.state.updateGirl(girl.id, { body });
           }
         }
         onSelect(action.text);
@@ -269,5 +269,5 @@
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
 
-  window.SSDQuickActions = Object.freeze({ render, TABS });
+  window.DMTHQuickActions = Object.freeze({ render, TABS });
 })();

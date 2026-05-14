@@ -109,7 +109,8 @@ After commit lands:
 
 | Date | Session focus | Commit |
 |---|---|---|
-| 2026-05-14 | BUG.22-25 batch — chat text selection survives state.onChange (selection guard + incremental append + CSS user-select), system-prompt rule-bullet regurgitation scrub, third-person Master-action asterisk narration scrub + SPEECH-FIRST RULE rewrite (universal across all girls), Unity day-1 death fix (Ollama-hallucinated health delta stripped, vitals sole-source-of-truth to action-effects) | (this commit) |
+| 2026-05-14 | Full rebrand — "SEX SLAVE DUNGEON" → "DUNGEON MASTER: THE HUNT" across every player-visible string + programmatic identifier. 22 `SSD*` globals → `DMTH*`, 11 `ssd_*` localStorage keys → `dmth_*`, IDB name `sex_slave_dungeon` → `dungeon_master_the_hunt`. FINALIZED archive untouched per LAW. | (this commit) |
+| 2026-05-14 | BUG.22-25 batch — chat text selection survives state.onChange (selection guard + incremental append + CSS user-select), system-prompt rule-bullet regurgitation scrub, third-person Master-action asterisk narration scrub + SPEECH-FIRST RULE rewrite (universal across all girls), Unity day-1 death fix (Ollama-hallucinated health delta stripped, vitals sole-source-of-truth to action-effects) | `566c989` |
 | 2026-05-14 | BUG.1 — `start.bat` / `start.sh` auto-sync `.env` → `js/env.local.js` so Pollinations key flows to browser; landing-page Settings shows effective key with source badge | `6421b84` |
 | 2026-05-14 | TODO template-out — verified full FINALIZED coverage before strip | `36e2787` |
 | 2026-05-14 | POST-REVIEW.1-7 batch fix (action-effects routing + custom-pose persistence + Ollama fallback + gallery blob + condom state overlay) | `6421b84` |

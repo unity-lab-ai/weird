@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SEX SLAVE DUNGEON</title>
+  <title>DUNGEON MASTER: THE HUNT</title>
   <meta name="description" content="Persistent city-builder — dungeon harem evil taboo — hunt your prey. Runs locally on your machine via Ollama + Kokoro. No data leaves your box." />
   <meta name="robots" content="noindex,nofollow" />
 
@@ -63,7 +63,7 @@
   <header class="hero">
     <div class="version" id="game-version">v0.0.1</div>
     <button id="open-settings-btn" title="Settings">⚙️ Settings</button>
-    <h1 id="game-title">SEX SLAVE DUNGEON</h1>
+    <h1 id="game-title">DUNGEON MASTER: THE HUNT</h1>
     <p class="tag" id="game-tagline">persistent city-builder — dungeon harem evil taboo — hunt your prey</p>
   </header>
 
@@ -81,7 +81,7 @@
     <!-- ============= HOME SECTION ============= -->
     <section class="landing-section" id="home-section" data-section="home">
       <div class="home-hero">
-        <h1>🔗 SEX SLAVE DUNGEON</h1>
+        <h1>🔗 DUNGEON MASTER: THE HUNT</h1>
         <p class="tag">A persistent city-builder dungeon harem evil-taboo simulator. You're the villain — the dungeon operator, the predator, the collector. Hunt prey across the outside world with purchased tools. Bring them back. Bond them. Sell them. Record them. Own everything. There is no win state — the game is the ever-growing collection and the ever-upgrading dungeon.</p>
         <div class="home-cta-row">
           <button class="home-cta-primary" id="cta-start-new-game">🎬 Start New Game</button>
@@ -390,7 +390,7 @@
       <section class="card" aria-label="About">
         <h2>ℹ️ How this works</h2>
         <p class="small">
-          Everything in <strong>SEX SLAVE DUNGEON</strong> runs <strong>on your machine</strong>.
+          Everything in <strong>DUNGEON MASTER: THE HUNT</strong> runs <strong>on your machine</strong>.
           The static site you're looking at is served from GitHub Pages — zero backend.
           <strong>Ollama</strong> runs your local LLM (the girls' minds).
           <strong>Kokoro</strong> runs in your browser for voice (models cached in your browser storage).
@@ -405,9 +405,9 @@
 
     <!-- ============= ABOUT SECTION ============= -->
     <section class="landing-section policy-content" id="about-section" data-section="about">
-      <h2>ℹ️ About SEX SLAVE DUNGEON</h2>
+      <h2>ℹ️ About DUNGEON MASTER: THE HUNT</h2>
       <p>
-        SEX SLAVE DUNGEON is a persistent text-and-emoji city-builder game with the structural skeleton
+        DUNGEON MASTER: THE HUNT is a persistent text-and-emoji city-builder game with the structural skeleton
         of a dungeon-harem evil-taboo simulator. You play the villain — the dungeon operator, the predator,
         the collector. Gameplay is loop-based, construction-focused, persistent across sessions, growth-oriented.
         There is no win state — the game is the ever-growing collection and the ever-upgrading dungeon.
@@ -801,7 +801,7 @@
   </aside>
 
   <footer>
-    <span>SEX SLAVE DUNGEON — everything local, no telemetry, no tracking, your box your rules.</span>
+    <span>DUNGEON MASTER: THE HUNT — everything local, no telemetry, no tracking, your box your rules.</span>
   </footer>
 
   <!-- UI controllers load last -->
@@ -835,7 +835,7 @@
       const settingsBtn = document.getElementById('cta-open-settings');
       const saveStatus = document.getElementById('save-status');
       try {
-        const saved = window.SSDStorage && await window.SSDStorage.save.get('main');
+        const saved = window.DMTHStorage && await window.DMTHStorage.save.get('main');
         if (saved && saved.createdAt) {
           continueBtn.disabled = false;
           continueBtn.textContent = `⏵ Continue (${new Date(saved.createdAt).toLocaleDateString()})`;

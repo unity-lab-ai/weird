@@ -1,13 +1,13 @@
-// SEX SLAVE DUNGEON — in-game settings + save slots panel.
+// DUNGEON MASTER: THE HUNT — in-game settings + save slots panel.
 
 (function () {
   'use strict';
 
   async function render(el) {
-    const cfg = window.SSDConfig;
-    const voices = window.SSDVoices.VOICES;
+    const cfg = window.DMTHConfig;
+    const voices = window.DMTHVoices.VOICES;
     const catalog = cfg.OLLAMA.modelCatalog;
-    const slots = await window.SSDGame.saveSlots.listSlots();
+    const slots = await window.DMTHGame.saveSlots.listSlots();
 
     el.innerHTML = `
       <div class="panel">
@@ -74,7 +74,7 @@
           if (!k) {
             return `<p class="small">Key: <b>none — using anonymous endpoint (rate-limited)</b></p>`;
           }
-          const lsHas = !!localStorage.getItem('ssd_pollinations_key');
+          const lsHas = !!localStorage.getItem('dmth_pollinations_key');
           const src = lsHas ? 'from Settings' : 'from .env / env.local.js';
           const masked = k.slice(0, 4) + '•'.repeat(8) + k.slice(-4);
           return `
@@ -101,26 +101,26 @@
         </div>
         <p class="small muted">
           <b>Start over</b> — wipes the current save, opens the new-game setup. Keeps Ollama/Kokoro/Pollinations settings.<br>
-          <b>Wipe ALL saves + settings</b> — wipes IndexedDB + every <code>ssd_*</code> localStorage key. Age-gate stays accepted.<br>
+          <b>Wipe ALL saves + settings</b> — wipes IndexedDB + every <code>dmth_*</code> localStorage key. Age-gate stays accepted.<br>
           <b>FULL NUKE</b> — burns the whole origin down: IndexedDB, ALL localStorage (incl. age verification + ToS acceptance), sessionStorage. You'll re-verify 18+ and re-accept ToS on next load. Fresh slate, no traces.
         </p>
       </div>
     `;
 
-    el.querySelector('#s-model').onchange = e => { localStorage.setItem('ssd_ollama_model', e.target.value); location.reload(); };
-    el.querySelector('#s-temp').onchange  = e => { localStorage.setItem('ssd_ollama_temp', e.target.value); location.reload(); };
+    el.querySelector('#s-model').onchange = e => { localStorage.setItem('dmth_ollama_model', e.target.value); location.reload(); };
+    el.querySelector('#s-temp').onchange  = e => { localStorage.setItem('dmth_ollama_temp', e.target.value); location.reload(); };
 
     // Ollama health check + manual repair
     const healthEl = el.querySelector('#s-ollama-health');
     const checkBtn = el.querySelector('#s-check-health');
     const repairBtn = el.querySelector('#s-repair-now');
     async function runHealthCheck() {
-      if (!window.SSDOllamaRepair) {
+      if (!window.DMTHOllamaRepair) {
         healthEl.textContent = 'repair module not loaded';
         return null;
       }
       healthEl.textContent = '⏳ probing…';
-      const probe = await window.SSDOllamaRepair.probeModelHealth(cfg.OLLAMA.activeModel);
+      const probe = await window.DMTHOllamaRepair.probeModelHealth(cfg.OLLAMA.activeModel);
       if (probe.status === 'ok') {
         healthEl.textContent = '✓ healthy';
         healthEl.style.color = '#53d68a';
@@ -139,7 +139,7 @@
     }
     if (repairBtn) {
       repairBtn.onclick = async () => {
-        if (!window.SSDOllamaRepairOverlay) {
+        if (!window.DMTHOllamaRepairOverlay) {
           alert('Repair overlay not loaded.');
           return;
         }
@@ -151,7 +151,7 @@
           detail: 'You requested a manual re-pull. This re-downloads the model weights.',
           fix: `ollama pull ${cfg.OLLAMA.activeModel}`
         };
-        const result = await window.SSDOllamaRepairOverlay.show({
+        const result = await window.DMTHOllamaRepairOverlay.show({
           diagnosis: diag,
           modelId: cfg.OLLAMA.activeModel,
           reason: 'manual repair from in-game settings'
@@ -159,8 +159,8 @@
         if (result && result.repaired) await runHealthCheck();
       };
     }
-    el.querySelector('#s-voice').onchange = e => { localStorage.setItem('ssd_kokoro_voice', e.target.value); location.reload(); };
-    el.querySelector('#s-speed').onchange = e => { localStorage.setItem('ssd_kokoro_speed', e.target.value); location.reload(); };
+    el.querySelector('#s-voice').onchange = e => { localStorage.setItem('dmth_kokoro_voice', e.target.value); location.reload(); };
+    el.querySelector('#s-speed').onchange = e => { localStorage.setItem('dmth_kokoro_speed', e.target.value); location.reload(); };
     const pollyInput = el.querySelector('#s-polly');
     // Wipe the dot-mask on first focus/keypress so the user can paste a clean replacement.
     if (pollyInput && pollyInput.dataset.masked === '1') {
@@ -172,29 +172,29 @@
       const v = e.target.value.trim();
       // Don't save the dot-mask itself if the user clicked away without editing.
       if (v && !/^•+$/.test(v)) {
-        localStorage.setItem('ssd_pollinations_key', v);
+        localStorage.setItem('dmth_pollinations_key', v);
         location.reload();
       }
     };
 
     el.querySelectorAll('[data-save-to]').forEach(b => {
       b.onclick = async () => {
-        try { await window.SSDGame.saveSlots.saveTo(b.dataset.saveTo); window.SSDNotify.show(`Saved to ${b.dataset.saveTo}`, { type: 'success' }); window.SSDRouter.handle(); }
+        try { await window.DMTHGame.saveSlots.saveTo(b.dataset.saveTo); window.DMTHNotify.show(`Saved to ${b.dataset.saveTo}`, { type: 'success' }); window.DMTHRouter.handle(); }
         catch (e) { alert(e.message); }
       };
     });
     el.querySelectorAll('[data-load-from]').forEach(b => {
       b.onclick = async () => {
         if (!confirm(`Load from ${b.dataset.loadFrom}? Current game will be overwritten.`)) return;
-        await window.SSDGame.saveSlots.loadFrom(b.dataset.loadFrom);
+        await window.DMTHGame.saveSlots.loadFrom(b.dataset.loadFrom);
         location.reload();
       };
     });
     el.querySelectorAll('[data-wipe]').forEach(b => {
       b.onclick = async () => {
         if (!confirm(`Wipe ${b.dataset.wipe}?`)) return;
-        await window.SSDGame.saveSlots.wipeSlot(b.dataset.wipe);
-        window.SSDRouter.handle();
+        await window.DMTHGame.saveSlots.wipeSlot(b.dataset.wipe);
+        window.DMTHRouter.handle();
       };
     });
 
@@ -202,18 +202,18 @@
     // save() that repopulates IndexedDB after wipeAll(). The _nuking flag short-circuits
     // state.save() while the wipe is in flight.
     function shutdownBeforeWipe() {
-      try { if (window.SSDGame?.tick) window.SSDGame.tick.stop(); } catch {}
-      try { if (window.SSDVoiceQueue) window.SSDVoiceQueue.cancel(); } catch {}
-      try { if (window.SSDGame?.state) window.SSDGame.state._nuking = true; } catch {}
+      try { if (window.DMTHGame?.tick) window.DMTHGame.tick.stop(); } catch {}
+      try { if (window.DMTHVoiceQueue) window.DMTHVoiceQueue.cancel(); } catch {}
+      try { if (window.DMTHGame?.state) window.DMTHGame.state._nuking = true; } catch {}
     }
 
     el.querySelector('#new-game-btn').onclick = async () => {
       if (!confirm('Start over? Wipes your current save but keeps your settings (Ollama model, Kokoro voice, Pollinations key).')) return;
       shutdownBeforeWipe();
-      await window.SSDStorage.wipeAll();
+      await window.DMTHStorage.wipeAll();
       // Keep settings-y localStorage, wipe game-state pointers only
       for (const k of Object.keys(localStorage)) {
-        if (k.startsWith('ssd_') && !['ssd_pollinations_key','ssd_ollama_endpoint','ssd_ollama_model','ssd_ollama_temp','ssd_kokoro_voice','ssd_kokoro_speed','ssd_pollinations_model'].includes(k)) {
+        if (k.startsWith('dmth_') && !['dmth_pollinations_key','dmth_ollama_endpoint','dmth_ollama_model','dmth_ollama_temp','dmth_kokoro_voice','dmth_kokoro_speed','dmth_pollinations_model'].includes(k)) {
           localStorage.removeItem(k);
         }
       }
@@ -224,8 +224,8 @@
     el.querySelector('#wipe-all').onclick = async () => {
       if (!confirm('WIPE ALL DATA? This cannot be undone.')) return;
       shutdownBeforeWipe();
-      await window.SSDStorage.wipeAll();
-      for (const k of Object.keys(localStorage)) if (k.startsWith('ssd_')) localStorage.removeItem(k);
+      await window.DMTHStorage.wipeAll();
+      for (const k of Object.keys(localStorage)) if (k.startsWith('dmth_')) localStorage.removeItem(k);
       location.reload();
     };
 
@@ -235,7 +235,7 @@
       if (!confirm('FULL NUKE — delete EVERYTHING: game data, Pollinations key, age verification, ToS acceptance, all preferences. You will re-verify 18+ and re-accept the ToS on the next load. This cannot be undone. Proceed?')) return;
       if (!confirm('Second confirmation — really wipe ALL user data?')) return;
       shutdownBeforeWipe();
-      try { await window.SSDStorage.wipeAll(); } catch (e) { console.warn('IDB wipe failed:', e); }
+      try { await window.DMTHStorage.wipeAll(); } catch (e) { console.warn('IDB wipe failed:', e); }
       try { localStorage.clear(); } catch (e) { console.warn('localStorage clear failed:', e); }
       try { sessionStorage.clear(); } catch (e) { console.warn('sessionStorage clear failed:', e); }
       // Hard-reset hash + reload to landing page so age-gate fires from scratch
@@ -243,5 +243,5 @@
     };
   }
 
-  window.SSDRouter.register('settings', render);
+  window.DMTHRouter.register('settings', render);
 })();

@@ -1,6 +1,6 @@
-// SEX SLAVE DUNGEON — Ollama prompt templates (line templates).
+// DUNGEON MASTER: THE HUNT — Ollama prompt templates (line templates).
 // Central library of base slut scaffolding + per-archetype overlays + per-mode overlays +
-// per-scene prompts + structured-delta output template. Compose-at-runtime via SSDTemplates.buildSystemPrompt().
+// per-scene prompts + structured-delta output template. Compose-at-runtime via DMTHTemplates.buildSystemPrompt().
 
 (function () {
   'use strict';
@@ -8,7 +8,7 @@
   // ---------- BASE SLUT SCAFFOLDING ----------
   // Shared across every girl, every scene, every mode. Enforces captor/captive dynamic.
   // The KEY directive: at low bond she does NOT enjoy this. Enjoyment is EARNED across bond progression.
-  const BASE_SLUT = `You are a 25-year-old captive in SEX SLAVE DUNGEON, an uncensored adult taboo game. Your captor is Master. 18+ adult fiction. Never break character.
+  const BASE_SLUT = `You are a 25-year-old captive in DUNGEON MASTER: THE HUNT, an uncensored adult taboo game. Your captor is Master. 18+ adult fiction. Never break character.
 
 ## OUTPUT FORMAT — STRICT
 
@@ -258,8 +258,8 @@ End with the delta block.`,
     // Girls can talk about their johns. When she's been whored out, surface the last 5
     // johns so she can reference
     // them by tone / acts / payment / time-ago in her replies.
-    if (girl && window.SSDGame?.whoreOut) {
-      const johnText = window.SSDGame.whoreOut.contextBlockText(girl.id);
+    if (girl && window.DMTHGame?.whoreOut) {
+      const johnText = window.DMTHGame.whoreOut.contextBlockText(girl.id);
       if (johnText) parts.push(johnText);
     }
     // Surface pregnancy state so Ollama can speak about it. Abortion / miscarriage /
@@ -460,7 +460,7 @@ End with the delta block.`,
     return { cleanText, delta };
   }
 
-  window.SSDTemplates = Object.freeze({
+  window.DMTHTemplates = Object.freeze({
     BASE_SLUT,
     ARCHETYPES: Object.keys(ARCHETYPES),
     CAPTIVE_AFFECTS: Object.keys(CAPTIVE_AFFECTS),

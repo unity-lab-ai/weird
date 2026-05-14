@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — Pollinations imaging pipeline.
+// DUNGEON MASTER: THE HUNT — Pollinations imaging pipeline.
 // 6-block prompt composer: strict prefix + LOCKED face + LOCKED outfit+state layers +
 // pose + state tokens + env + strict suffix. Generates + caches in IDB keyed by (girlId, promptHash).
 // Same girl.visualIdentity.seed drives every image of her — facial + outfit persist across contexts.
@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  function cfg() { return window.SSDConfig.POLLINATIONS; }
+  function cfg() { return window.DMTHConfig.POLLINATIONS; }
 
   // Pollinations key attach: if a key is present (any prefix), send it to the authed endpoint.
   // Let the server tell us if it's rejected (403/401) — at which point we fall back to the legacy
@@ -214,7 +214,7 @@
     if (!girl) return false;
     const state = girl.body?.outfitState || '';
     if (state === 'nude' || state.includes('removed')) return 'full';
-    const wr = window.SSDGame?.wardrobe;
+    const wr = window.DMTHGame?.wardrobe;
     if (wr && typeof wr.isNude === 'function') {
       return wr.isNude(girl.currentOutfit) || false;
     }
@@ -223,7 +223,7 @@
 
   // Find the accessoriesOnly string for an outfit (only meaningful for nude:'accessories').
   function accessoriesOnlyFor(girl) {
-    const wr = window.SSDGame?.wardrobe;
+    const wr = window.DMTHGame?.wardrobe;
     if (!wr || typeof wr.getById !== 'function') return null;
     const o = wr.getById(girl.currentOutfit);
     return o?.accessoriesOnly || null;
@@ -295,8 +295,8 @@
     // 1. CAPTIVE IN DUNGEON — wins regardless of situation. Once she's in your hold,
     //    every image of her is rendered inside that hold.
     if (dungeonId) {
-      const dungeon = window.SSDGame.state.getDungeon(dungeonId);
-      const tpl = dungeon && window.SSDAssets.getById('dungeon', dungeon.templateId);
+      const dungeon = window.DMTHGame.state.getDungeon(dungeonId);
+      const tpl = dungeon && window.DMTHAssets.getById('dungeon', dungeon.templateId);
       if (tpl) {
         const idx = Number.isFinite(holdIdx) ? holdIdx : 0;
         const hold = dungeon.holds?.[idx];
@@ -319,7 +319,7 @@
     //    shot). Locations carry a `personEnvPrompt` field with the body-of-her-in-the-scene
     //    text that gets dynamically inserted into the meta prompts.
     if (locationId) {
-      const loc = window.SSDAssets.getById('location', locationId);
+      const loc = window.DMTHAssets.getById('location', locationId);
       if (loc) {
         const env = (loc.personEnvPrompt || loc.prompt || '').trim();
         if (env) {
@@ -645,7 +645,7 @@ ${holdEnvText ? `- hold environment: "${holdEnvText}"` : ''}
 
 SITUATION: ${situation}
 POSE: ${customPose || POSE_LIBRARY[situation] || 'standing front-facing neutral full-body'}
-${locationId ? `LOCATION: ${window.SSDAssets.getById('location', locationId)?.displayName || locationId}` : ''}
+${locationId ? `LOCATION: ${window.DMTHAssets.getById('location', locationId)?.displayName || locationId}` : ''}
 ${additionalTokens ? `ADDITIONAL: ${additionalTokens}` : ''}
 ${userStaging ? `\nUSER STAGING DIRECTIVE (user's verbatim scene/pose request — render this faithfully while keeping every HARD RULE above intact, especially adult-floor + full-body framing + nudity/pregnancy/drug markers):\n"${userStaging.replace(/"/g, '\\"').slice(0, 800)}"` : ''}
 
@@ -662,7 +662,7 @@ CANONICAL PROMPT POSITION ORDERING (8 slots):
 Write the Pollinations prompt now.`;
 
     try {
-      const res = await window.SSDGame.ollama.chat({
+      const res = await window.DMTHGame.ollama.chat({
         system: sys,
         messages: [{ role: 'user', content: 'Write the image prompt.' }]
       });
@@ -686,7 +686,7 @@ Write the Pollinations prompt now.`;
   // (useful for encounter thumbnails before the girl is in the roster).
   async function generateFor(girlIdOrObj, options = {}) {
     const girl = typeof girlIdOrObj === 'string'
-      ? window.SSDGame.state.getGirl(girlIdOrObj)
+      ? window.DMTHGame.state.getGirl(girlIdOrObj)
       : girlIdOrObj;
     if (!girl) throw new Error('no such girl');
     const girlId = girl.id;
@@ -704,7 +704,7 @@ Write the Pollinations prompt now.`;
     const cacheKey = `${girlId}:${options.situation || 'profile'}:${hash}`;
 
     // Check cache first
-    const cached = await window.SSDStorage.cache.get(cacheKey);
+    const cached = await window.DMTHStorage.cache.get(cacheKey);
     if (cached && cached.blobUrl && !options.forceRegenerate) {
       return { url: cached.blobUrl, cached: true, cacheKey, prompt };
     }
@@ -755,7 +755,7 @@ Write the Pollinations prompt now.`;
 
     // Persist the cache record ONLY if we got a blob (fetch succeeded)
     if (blob) {
-      await window.SSDStorage.cache.put(cacheKey, {
+      await window.DMTHStorage.cache.put(cacheKey, {
         girlId,
         situation: options.situation || 'profile',
         hash,
@@ -768,7 +768,7 @@ Write the Pollinations prompt now.`;
     }
 
     // Update girl's visualIdentity entry — only if she's in the roster
-    const girlNow = window.SSDGame.state.getGirl(girlId);
+    const girlNow = window.DMTHGame.state.getGirl(girlId);
     if (girlNow) {
       const additional = [...(girlNow.visualIdentity.additionalImages || [])];
       const existing = additional.findIndex(e => e.situation === (options.situation || 'profile'));
@@ -803,7 +803,7 @@ Write the Pollinations prompt now.`;
         patch.visualIdentity.profileImagePath = cacheKey;
         patch.visualIdentity.profileImageGeneratedAt = Date.now();
       }
-      window.SSDGame.state.updateGirl(girlId, patch);
+      window.DMTHGame.state.updateGirl(girlId, patch);
     }
 
     return {
@@ -819,13 +819,13 @@ Write the Pollinations prompt now.`;
   // Resolve an existing cached image by cacheKey → blob URL (rebuilds URL from stored blob).
   async function resolveCached(cacheKey) {
     if (!cacheKey) return null;
-    const rec = await window.SSDStorage.cache.get(cacheKey);
+    const rec = await window.DMTHStorage.cache.get(cacheKey);
     if (!rec) return null;
     if (rec.blobUrl) return rec.blobUrl;
     if (rec.blob)    {
       const url = URL.createObjectURL(rec.blob);
       // re-stash the fresh URL
-      await window.SSDStorage.cache.put(cacheKey, { ...rec, blobUrl: url });
+      await window.DMTHStorage.cache.put(cacheKey, { ...rec, blobUrl: url });
       return url;
     }
     return null;
@@ -846,7 +846,7 @@ Write the Pollinations prompt now.`;
   // Convenience — fetch the profile image blob URL for a girl, generating if missing.
   // Returns null if no Pollinations key + no cached image (text+emoji fallback is up to caller).
   async function profileImageFor(girlId, { lazy = false } = {}) {
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) return null;
     const existingKey = girl.visualIdentity?.profileImagePath;
     if (existingKey) {
@@ -866,7 +866,7 @@ Write the Pollinations prompt now.`;
 
   // Film cover generator
   async function filmCover(filmId) {
-    const film = window.SSDGame.state.getFilm(filmId);
+    const film = window.DMTHGame.state.getFilm(filmId);
     if (!film) return null;
     const result = await generateFor(film.girlId, {
       situation: 'film-cover',
@@ -874,7 +874,7 @@ Write the Pollinations prompt now.`;
       forceRegenerate: false
     });
     if (result.url) {
-      window.SSDGame.state.updateFilm(filmId, { coverImageCacheKey: result.cacheKey });
+      window.DMTHGame.state.updateFilm(filmId, { coverImageCacheKey: result.cacheKey });
     }
     return result.url;
   }
@@ -883,10 +883,10 @@ Write the Pollinations prompt now.`;
   // Unlike girl images, these don't have a fixed seed — the slot array hash IS the key.
   async function renderEnvironment({ kind, prompt, hash }) {
     const cacheKey = `env:${kind}:${hash}`;
-    const cached = await window.SSDStorage.cache.get(cacheKey);
+    const cached = await window.DMTHStorage.cache.get(cacheKey);
     if (cached?.blob) {
       const url = cached.blobUrl || URL.createObjectURL(cached.blob);
-      if (!cached.blobUrl) await window.SSDStorage.cache.put(cacheKey, { ...cached, blobUrl: url });
+      if (!cached.blobUrl) await window.DMTHStorage.cache.put(cacheKey, { ...cached, blobUrl: url });
       return { url, cached: true, cacheKey, prompt };
     }
     const seed = parseInt(hash, 16) & 0x7FFFFFFF;
@@ -912,7 +912,7 @@ Write the Pollinations prompt now.`;
 
     if (attempt.ok) {
       const objUrl = URL.createObjectURL(attempt.blob);
-      await window.SSDStorage.cache.put(cacheKey, { kind, hash, prompt, blob: attempt.blob, blobUrl: objUrl, createdAt: Date.now() });
+      await window.DMTHStorage.cache.put(cacheKey, { kind, hash, prompt, blob: attempt.blob, blobUrl: objUrl, createdAt: Date.now() });
       return { url: objUrl, cached: false, cacheKey, prompt };
     }
     // Fetch failed — return the direct URL anyway so the UI can try <img src=url>
@@ -921,7 +921,7 @@ Write the Pollinations prompt now.`;
 
   // Room-scene regeneration on meaningful state change.
   async function roomScene(girlId) {
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) return null;
     const bondTier = girl.bond.bondLevel <= 3 ? 'room-low-bond'
                    : girl.bond.bondLevel <= 6 ? 'room-mid-bond'
@@ -963,10 +963,10 @@ Write the Pollinations prompt now.`;
     if (!girl?.id) return null;
 
     const cacheKey = `disposal:${girl.id}:${method}`;
-    const cached = await window.SSDStorage.cache.get(cacheKey);
+    const cached = await window.DMTHStorage.cache.get(cacheKey);
     if (cached?.blob) {
       const url = cached.blobUrl || URL.createObjectURL(cached.blob);
-      if (!cached.blobUrl) await window.SSDStorage.cache.put(cacheKey, { ...cached, blobUrl: url });
+      if (!cached.blobUrl) await window.DMTHStorage.cache.put(cacheKey, { ...cached, blobUrl: url });
       return { url, cached: true, cacheKey, method };
     }
 
@@ -1008,7 +1008,7 @@ Write the Pollinations prompt now.`;
 
     if (attempt.ok) {
       const objUrl = URL.createObjectURL(attempt.blob);
-      await window.SSDStorage.cache.put(cacheKey, {
+      await window.DMTHStorage.cache.put(cacheKey, {
         method, girlId: girl.id, prompt, seed,
         blob: attempt.blob, blobUrl: objUrl, createdAt: Date.now()
       });
@@ -1018,8 +1018,8 @@ Write the Pollinations prompt now.`;
     return { url, directUrl: url, cached: false, error: attempt.status, cacheKey, method, prompt };
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.imaging = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.imaging = Object.freeze({
     composePrompt, composePromptViaOllama, buildUrl, promptHash,
     generateFor, resolveCached, profileImageFor, filmCover,
     renderEnvironment, roomScene, bondMilestone,

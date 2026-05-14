@@ -1,5 +1,5 @@
-// SEX SLAVE DUNGEON — central game state. Reactive, IDB-backed.
-// Every subsystem reads/writes through SSDGame.state.*. Mutations emit 'change' events
+// DUNGEON MASTER: THE HUNT — central game state. Reactive, IDB-backed.
+// Every subsystem reads/writes through DMTHGame.state.*. Mutations emit 'change' events
 // for UI refresh. Persisted atomically after every mutation.
 
 (function () {
@@ -61,7 +61,7 @@
   let loaded = false;
 
   async function load() {
-    const stored = await window.SSDStorage.save.get('main');
+    const stored = await window.DMTHStorage.save.get('main');
     state = stored && stored.version === DEFAULT_STATE.version
       ? Object.assign({}, DEFAULT_STATE, stored)
       : null;
@@ -74,8 +74,8 @@
     // Refuse to save while a wipe is in progress. Without this, an in-flight tick-driven
     // mutate() between wipeAll() and location.reload() would repopulate the save store
     // with the old state, defeating "fresh slate".
-    if (window.SSDGame?.state?._nuking) return;
-    await window.SSDStorage.save.put('main', state);
+    if (window.DMTHGame?.state?._nuking) return;
+    await window.DMTHStorage.save.put('main', state);
   }
 
   function initNew(opts = {}) {
@@ -83,9 +83,9 @@
     state.createdAt = Date.now();
     state.mode = opts.mode || 'normal';
     if (state.mode === 'sandbox') {
-      state.wallet.money = window.SSDConfig.GAME.sandboxMoney;
+      state.wallet.money = window.DMTHConfig.GAME.sandboxMoney;
     } else {
-      state.wallet.money = window.SSDConfig.GAME.startingMoney;
+      state.wallet.money = window.DMTHConfig.GAME.startingMoney;
     }
     return state;
   }
@@ -254,8 +254,8 @@
   // tick
   function bumpTick() { mutate(s => { s.tickCount++; }); }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.state = {
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.state = {
     get current() { return state; },
     isLoaded: () => loaded,
     load, save, initNew, onChange,

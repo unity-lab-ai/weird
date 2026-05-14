@@ -1,4 +1,4 @@
-# SEX SLAVE DUNGEON -- dev static server with no-cache headers.
+# DUNGEON MASTER: THE HUNT -- dev static server with no-cache headers.
 #
 # Wraps Python's stdlib http.server with Cache-Control: no-store on every
 # response. Without this, browsers aggressively cache .js / .html / .css and

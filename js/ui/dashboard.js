@@ -1,13 +1,13 @@
-// SEX SLAVE DUNGEON — dashboard page. Overview of everything.
+// DUNGEON MASTER: THE HUNT — dashboard page. Overview of everything.
 
 (function () {
   'use strict';
 
   function render(el) {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     if (!s || !s.createdAt) {
       el.innerHTML = `<div class="panel"><h2>No game in progress</h2><button id="new-game-btn" class="btn-primary">New Game</button></div>`;
-      el.querySelector('#new-game-btn').onclick = () => window.SSDRouter.go('newgame');
+      el.querySelector('#new-game-btn').onclick = () => window.DMTHRouter.go('newgame');
       return;
     }
 
@@ -54,7 +54,7 @@
           <a href="#shop" class="btn-small" data-tooltip="Buy tools, drugs, food, water, contraception, abortion supplies.">🛒 Shop</a>
           <a href="#slave-market" class="btn-small" data-tooltip="Buy/sell captives. Untrained cheap, trained premium.">⛓️ Slave market</a>
           <a href="#achievements" class="btn-small" data-tooltip="Unlocked milestones.">🏆 Achievements</a>
-          ${window.SSDGame.escapeRecovery && window.SSDGame.escapeRecovery.recoverable().length > 0 ? `<a href="#escape-recovery" class="btn-small btn-danger" data-tooltip="Girls have escaped — recapture them before they alert authorities.">🏃 ${window.SSDGame.escapeRecovery.recoverable().length} on the run</a>` : ''}
+          ${window.DMTHGame.escapeRecovery && window.DMTHGame.escapeRecovery.recoverable().length > 0 ? `<a href="#escape-recovery" class="btn-small btn-danger" data-tooltip="Girls have escaped — recapture them before they alert authorities.">🏃 ${window.DMTHGame.escapeRecovery.recoverable().length} on the run</a>` : ''}
           ${captives.length > 0 ? `<a href="#room?girl=${captives[0].id}" class="btn-small" data-tooltip="Jump straight into ${captives[0].name}'s hold.">🚪 Enter ${captives[0].name}'s hold</a>` : ''}
         </div>
       </section>
@@ -88,11 +88,11 @@
     `;
 
     // No listener cleanup needed for static anchors.
-    const unsub = window.SSDGame.state.onChange(() => {
+    const unsub = window.DMTHGame.state.onChange(() => {
       if (location.hash === '#dashboard' || location.hash === '') render(el);
     });
     return unsub;
   }
 
-  window.SSDRouter.register('dashboard', render);
+  window.DMTHRouter.register('dashboard', render);
 })();

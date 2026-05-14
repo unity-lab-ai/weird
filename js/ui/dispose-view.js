@@ -1,13 +1,13 @@
-// SEX SLAVE DUNGEON — disposal flow page.
+// DUNGEON MASTER: THE HUNT — disposal flow page.
 
 (function () {
   'use strict';
 
   function render(el, params) {
-    const girl = window.SSDGame.state.getGirl(params.girl);
+    const girl = window.DMTHGame.state.getGirl(params.girl);
     if (!girl) { el.innerHTML = `<p>no such girl · <a href="#roster">Roster</a></p>`; return; }
-    const dungeon = window.SSDGame.state.getDungeon(girl.assignedDungeonId);
-    const dungeonTpl = dungeon && window.SSDAssets.getById('dungeon', dungeon.templateId);
+    const dungeon = window.DMTHGame.state.getDungeon(girl.assignedDungeonId);
+    const dungeonTpl = dungeon && window.DMTHAssets.getById('dungeon', dungeon.templateId);
 
     el.innerHTML = `
       <div class="panel">
@@ -21,7 +21,7 @@
       <div class="panel">
         <h2>Choose a method</h2>
         <div class="girl-grid">
-          ${Object.entries(window.SSDGame.disposal.METHODS).map(([key, m]) => {
+          ${Object.entries(window.DMTHGame.disposal.METHODS).map(([key, m]) => {
             const cardTip = (m.notes || '').replace(/"/g, '&quot;');
             return `<div class="model-card" data-tooltip="${cardTip}">
               <div class="model-name">${m.emoji} ${m.displayName}</div>
@@ -37,23 +37,23 @@
       </div>
     `;
 
-    if (window.SSDAssetImg) window.SSDAssetImg.decorate(el, 80);
+    if (window.DMTHAssetImg) window.DMTHAssetImg.decorate(el, 80);
 
     el.querySelectorAll('[data-method]').forEach(b => {
       b.onclick = async () => {
         const method = b.dataset.method;
-        if (!confirm(`Dispose of ${girl.name} via ${window.SSDGame.disposal.METHODS[method].displayName}? This cannot be undone.`)) return;
+        if (!confirm(`Dispose of ${girl.name} via ${window.DMTHGame.disposal.METHODS[method].displayName}? This cannot be undone.`)) return;
         try {
           // Capture the girl ref BEFORE disposal mutates state, so we can narrate the final scene
           const girlSnapshot = JSON.parse(JSON.stringify(girl));
-          const result = window.SSDGame.disposal.dispose(girl.id, method);
+          const result = window.DMTHGame.disposal.dispose(girl.id, method);
           // Show final narration from Ollama
-          const narration = await window.SSDGame.disposal.narrateDisposal(girlSnapshot, method);
-          const resultHtml = `<div class="panel"><h3>${window.SSDGame.disposal.METHODS[method].emoji} ${window.SSDGame.disposal.METHODS[method].displayName}</h3>
+          const narration = await window.DMTHGame.disposal.narrateDisposal(girlSnapshot, method);
+          const resultHtml = `<div class="panel"><h3>${window.DMTHGame.disposal.METHODS[method].emoji} ${window.DMTHGame.disposal.METHODS[method].displayName}</h3>
             ${narration ? `<div class="log"><div class="log-entry assistant"><b>${girlSnapshot.name}:</b> ${escapeHtml(narration)}</div></div>` : ''}
             ${result.generatedFilmId ? `<p class="small gold">Finalization film ${result.generatedFilmId} recorded and listed.</p>` : ''}
             <div class="dispose-final-image-slot" id="dispose-final-image">
-              ${window.SSDGame.imaging?.isAvailable() && window.SSDGame.imaging.generateDisposalFinalImage
+              ${window.DMTHGame.imaging?.isAvailable() && window.DMTHGame.imaging.generateDisposalFinalImage
                 ? '<div class="small muted">📷 generating final scene…</div>'
                 : ''}
             </div>
@@ -65,13 +65,13 @@
           // Methods covered: bury / lose-at-sea / incinerate / release / finalization-film.
           // `trade` doesn't generate an image (girl goes to slave market alive).
           const imgSlot = el.querySelector('#dispose-final-image');
-          if (imgSlot && window.SSDGame.imaging?.generateDisposalFinalImage) {
+          if (imgSlot && window.DMTHGame.imaging?.generateDisposalFinalImage) {
             try {
-              const imgResult = await window.SSDGame.imaging.generateDisposalFinalImage({ method, girl: girlSnapshot });
+              const imgResult = await window.DMTHGame.imaging.generateDisposalFinalImage({ method, girl: girlSnapshot });
               if (imgResult?.url) {
                 imgSlot.innerHTML = `<figure class="dispose-final-image">
-                  <img src="${imgResult.url}" alt="${window.SSDGame.disposal.METHODS[method].displayName} — ${girlSnapshot.name}" class="gen-img dispose-final-img" onerror="this.outerHTML='<div class=\\'small muted\\'>(image fetch blocked — <a href=\\'' + this.src + '\\' target=\\'_blank\\'>open in new tab</a>)</div>';" />
-                  <figcaption class="small muted">${window.SSDGame.disposal.METHODS[method].emoji} ${window.SSDGame.disposal.METHODS[method].displayName} — final scene · ${girlSnapshot.name}</figcaption>
+                  <img src="${imgResult.url}" alt="${window.DMTHGame.disposal.METHODS[method].displayName} — ${girlSnapshot.name}" class="gen-img dispose-final-img" onerror="this.outerHTML='<div class=\\'small muted\\'>(image fetch blocked — <a href=\\'' + this.src + '\\' target=\\'_blank\\'>open in new tab</a>)</div>';" />
+                  <figcaption class="small muted">${window.DMTHGame.disposal.METHODS[method].emoji} ${window.DMTHGame.disposal.METHODS[method].displayName} — final scene · ${girlSnapshot.name}</figcaption>
                 </figure>`;
               } else {
                 imgSlot.innerHTML = '';
@@ -89,5 +89,5 @@
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
 
-  window.SSDRouter.register('dispose', render);
+  window.DMTHRouter.register('dispose', render);
 })();

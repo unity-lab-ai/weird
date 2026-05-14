@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — shop page.
+// DUNGEON MASTER: THE HUNT — shop page.
 
 (function () {
   'use strict';
@@ -7,8 +7,8 @@
 
   function render(el, params) {
     const subcat = params.sub || 'sedation';
-    const s = window.SSDGame.state.current;
-    const listings = window.SSDGame.shop.listingsBySubcategory(subcat);
+    const s = window.DMTHGame.state.current;
+    const listings = window.DMTHGame.shop.listingsBySubcategory(subcat);
 
     // Per-subcategory tooltip hints surfaced on the tab + per-item notes on the card.
     const SUBCAT_TOOLTIPS = {
@@ -63,20 +63,20 @@
 
     el.querySelectorAll('[data-buy]').forEach(b => {
       b.onclick = () => {
-        try { window.SSDGame.shop.buy(b.dataset.buy, 1); window.SSDRouter.handle(); }
+        try { window.DMTHGame.shop.buy(b.dataset.buy, 1); window.DMTHRouter.handle(); }
         catch (e) { alert(e.message); }
       };
     });
     el.querySelectorAll('[data-buy5]').forEach(b => {
       b.onclick = () => {
-        try { window.SSDGame.shop.buy(b.dataset.buy5, 5); window.SSDRouter.handle(); }
+        try { window.DMTHGame.shop.buy(b.dataset.buy5, 5); window.DMTHRouter.handle(); }
         catch (e) { alert(e.message); }
       };
     });
 
     // Asset images lazy-loaded (if any cover.png present in the folder)
-    if (window.SSDAssetImg) window.SSDAssetImg.decorate(el, 80);
+    if (window.DMTHAssetImg) window.DMTHAssetImg.decorate(el, 80);
   }
 
-  window.SSDRouter.register('shop', render);
+  window.DMTHRouter.register('shop', render);
 })();

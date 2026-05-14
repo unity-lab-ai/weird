@@ -1,10 +1,10 @@
-// SEX SLAVE DUNGEON — roster page. All collected girls.
+// DUNGEON MASTER: THE HUNT — roster page. All collected girls.
 
 (function () {
   'use strict';
 
   function render(el) {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     const roster = s.roster || [];
     const captives = roster.filter(g => g.encounterState === 'captive');
     const listed = roster.filter(g => s.slaveMarket.listed.some(l => l.girlId === g.id));
@@ -36,7 +36,7 @@
     `;
 
     function renderCard(g) {
-      const ls = window.SSDGame.lifespan ? window.SSDGame.lifespan.describeLifespan(g) : null;
+      const ls = window.DMTHGame.lifespan ? window.DMTHGame.lifespan.describeLifespan(g) : null;
       const preg = g.pregnancy || {};
       const pregBadge = preg.status === 'pregnant' ? ' 🤰' : '';
       const pregMeta = preg.status === 'pregnant'
@@ -64,5 +64,5 @@
     }
   }
 
-  window.SSDRouter.register('roster', render);
+  window.DMTHRouter.register('roster', render);
 })();

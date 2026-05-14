@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — drug scheduler with pharmacokinetic curves.
+// DUNGEON MASTER: THE HUNT — drug scheduler with pharmacokinetic curves.
 // Each intake creates a curve on the girl's body.activeDrugs; tick recomputes current effect.
 
 (function () {
@@ -47,11 +47,11 @@
   function administer(girlId, drugKey, { forFree = false } = {}) {
     const curve = DRUG_CURVES[drugKey];
     if (!curve) throw new Error('unknown drug: ' + drugKey);
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) throw new Error('no such girl');
 
     if (!forFree && curve.itemId) {
-      const ok = window.SSDGame.state.consumeItem(curve.itemId, 1);
+      const ok = window.DMTHGame.state.consumeItem(curve.itemId, 1);
       if (!ok) throw new Error(`no ${curve.itemId} in inventory`);
     }
 
@@ -72,7 +72,7 @@
       speechEffect: curve.speechEffect
     });
 
-    window.SSDGame.state.updateGirl(girlId, {
+    window.DMTHGame.state.updateGirl(girlId, {
       body: { ...girl.body, activeDrugs: active }
     });
     return { ok: true, curve, activeCount: active.length };
@@ -125,7 +125,7 @@
 
   // Called by tick — updates every captive girl's body.high + drug list.
   function tickAll() {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     if (!s) return;
     for (const girl of s.roster) {
       if (girl.encounterState !== 'captive') continue;
@@ -133,7 +133,7 @@
       // If nothing changed meaningfully, skip.
       const needsUpdate = (eff.high !== girl.body.high) || (eff.activeList.length !== (girl.body.activeDrugs || []).length);
       if (!needsUpdate) continue;
-      window.SSDGame.state.updateGirl(girl.id, {
+      window.DMTHGame.state.updateGirl(girl.id, {
         body: { ...girl.body, high: eff.high, activeDrugs: eff.activeList }
       });
     }
@@ -155,8 +155,8 @@
     }));
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.drugs = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.drugs = Object.freeze({
     DRUG_CURVES, administer, offer, currentEffect, tickAll, summarize,
     isUnconscious, unconsciousRemainingMs
   });

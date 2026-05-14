@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — whore-out passive-income subsystem.
+// DUNGEON MASTER: THE HUNT — whore-out passive-income subsystem.
 // Captives generate passive income through john encounters; the ledger tracks every john
 // (act / payment / time / quirks) so the captive can reference them in chat.
 //
@@ -67,20 +67,20 @@
   }
 
   function toggle(girlId, on) {
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) throw new Error('no such girl');
     const wo = { ...getWhoreOut(girl) };
     wo.enabled = !!on;
     if (on) wo.enabledAt = Date.now();
-    window.SSDGame.state.updateGirl(girlId, { whoreOut: wo });
+    window.DMTHGame.state.updateGirl(girlId, { whoreOut: wo });
     return wo;
   }
 
   function updateSettings(girlId, patch) {
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) throw new Error('no such girl');
     const wo = { ...getWhoreOut(girl), ...patch };
-    window.SSDGame.state.updateGirl(girlId, { whoreOut: wo });
+    window.DMTHGame.state.updateGirl(girlId, { whoreOut: wo });
     return wo;
   }
 
@@ -105,11 +105,11 @@
     if (Math.random() > rate.arrivalChance) return null;
 
     const isPregnant = girl.pregnancy?.status === 'pregnant';
-    let archetypeId = window.SSDJohnArchetypes.rollJohnArchetype(Math.random, { isPregnant });
+    let archetypeId = window.DMTHJohnArchetypes.rollJohnArchetype(Math.random, { isPregnant });
 
     // Player blocks this archetype? Re-roll once; if still blocked, skip.
     if (wo.blockedJohnTypes.includes(archetypeId)) {
-      archetypeId = window.SSDJohnArchetypes.rollJohnArchetype(Math.random, { isPregnant });
+      archetypeId = window.DMTHJohnArchetypes.rollJohnArchetype(Math.random, { isPregnant });
       if (wo.blockedJohnTypes.includes(archetypeId)) return null;
     }
 
@@ -117,7 +117,7 @@
   }
 
   function resolveEncounter(girl, archetypeId) {
-    const arc = window.SSDJohnArchetypes.JOHN_ARCHETYPES[archetypeId];
+    const arc = window.DMTHJohnArchetypes.JOHN_ARCHETYPES[archetypeId];
     if (!arc) return null;
     const wo = getWhoreOut(girl);
 
@@ -126,7 +126,7 @@
     // john preference matches, the john leaves without service (whitelist is binding now,
     // not "john gets his preferences anyway"). Prevents the player's whitelist from being
     // silently ignored.
-    let acts = window.SSDJohnArchetypes.rollJohnActs(archetypeId);
+    let acts = window.DMTHJohnArchetypes.rollJohnActs(archetypeId);
     if (wo.permittedActs.length > 0) {
       const filtered = acts.filter(a => wo.permittedActs.includes(a));
       if (filtered.length === 0) {
@@ -144,7 +144,7 @@
 
     // Compute pay using johnHappinessForGirl multiplier
     const basePay = arc.payRange[0] + Math.floor(Math.random() * (arc.payRange[1] - arc.payRange[0]));
-    const happiness = window.SSDGame.actionEffects?.johnHappinessForGirl(girl) || { multiplier: 1.0, breakdown: {} };
+    const happiness = window.DMTHGame.actionEffects?.johnHappinessForGirl(girl) || { multiplier: 1.0, breakdown: {} };
     const payment = Math.round(basePay * happiness.multiplier);
     const tipRoll = Math.random() < arc.tipChance;
     const tip = tipRoll ? Math.round(payment * (arc.tipMul - 1.0)) : 0;
@@ -156,12 +156,12 @@
     const moodBefore = girl.mood?.mood || 'neutral';
     const bondDebtBefore = girl.bond?.bondDebt || 0;
     const bondXPBefore = girl.bond?.bondXP || 0;
-    if (window.SSDGame.actionEffects?.applyAction) {
-      const strain = (girl.body?.stamina ?? 70) <= window.SSDGame.actionEffects.STAMINA_THRESHOLD_FOR_STRAIN;
-      window.SSDGame.actionEffects.applyAction(girl.id, arc.johnActionId, { strain });
+    if (window.DMTHGame.actionEffects?.applyAction) {
+      const strain = (girl.body?.stamina ?? 70) <= window.DMTHGame.actionEffects.STAMINA_THRESHOLD_FOR_STRAIN;
+      window.DMTHGame.actionEffects.applyAction(girl.id, arc.johnActionId, { strain });
     }
     // Re-read girl after applyAction mutations
-    const refreshed = window.SSDGame.state.getGirl(girl.id);
+    const refreshed = window.DMTHGame.state.getGirl(girl.id);
     const moodAfter = refreshed?.mood?.mood || moodBefore;
     const bondDebtAfter = refreshed?.bond?.bondDebt || 0;
     const bondXPAfter = refreshed?.bond?.bondXP || 0;
@@ -169,9 +169,9 @@
     // Determine cum delivery: vaginal-cum acts trigger pregnancy hook unless condomUsed
     const hasVaginalCum = acts.some(a => VAGINAL_CUM_ACTS.has(a));
     let pregnancyHookFired = false;
-    if (hasVaginalCum && !condomUsed && window.SSDGame.pregnancy) {
+    if (hasVaginalCum && !condomUsed && window.DMTHGame.pregnancy) {
       try {
-        const r = window.SSDGame.pregnancy.attemptConception(girl.id, {
+        const r = window.DMTHGame.pregnancy.attemptConception(girl.id, {
           conceptionSource: 'whore-out',
           johnEncounterId: null   // set below after we have the id
         });
@@ -215,7 +215,7 @@
       bondDebtAdded: bondDebtAfter - bondDebtBefore,
       bruisesAdded: arc.bruisesAdded || 0,
       cumLoadAdded: hasVaginalCum ? 1.2 : (acts.includes('oral') ? 1.0 : 0),
-      staminaDrained: Math.abs(window.SSDGame.actionEffects?.ACTIONS?.[arc.johnActionId]?.stamina || 5),
+      staminaDrained: Math.abs(window.DMTHGame.actionEffects?.ACTIONS?.[arc.johnActionId]?.stamina || 5),
       notes: `${arc.displayName} — ${arc.dialogueTone}. Acts: ${acts.join(', ')}.${condomUsed ? ' [condom used]' : ' [no condom]'}`,
       pregnancyHookFired
     };
@@ -233,11 +233,11 @@
     newWo.unclaimedEarnings = (newWo.unclaimedEarnings || 0) + totalPaid;
 
     // Notoriety bump per encounter — 1 per 4 encounters
-    if (window.SSDGame.state.addNotoriety && (newWo.johnLedger.length % 4 === 0)) {
-      window.SSDGame.state.addNotoriety(1);
+    if (window.DMTHGame.state.addNotoriety && (newWo.johnLedger.length % 4 === 0)) {
+      window.DMTHGame.state.addNotoriety(1);
     }
 
-    window.SSDGame.state.updateGirl(girl.id, { whoreOut: newWo });
+    window.DMTHGame.state.updateGirl(girl.id, { whoreOut: newWo });
     return encounter;
   }
 
@@ -246,7 +246,7 @@
   // -----------------------------------------------------------------------
 
   function runJohnTick() {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     if (!s) return;
     for (const girl of s.roster) {
       if (girl.encounterState !== 'captive') continue;
@@ -257,11 +257,11 @@
       // Multiple rolls per tick up to perTickCap — each is an independent arrival roll
       let arrivals = 0;
       for (let i = 0; i < rate.perTickCap; i++) {
-        const enc = tryArrival(window.SSDGame.state.getGirl(girl.id));  // re-read between rolls
+        const enc = tryArrival(window.DMTHGame.state.getGirl(girl.id));  // re-read between rolls
         if (enc) arrivals++;
       }
-      if (arrivals > 0 && window.SSDNotify && arrivals >= 2) {
-        window.SSDNotify.show(`💰 ${girl.name}: ${arrivals} johns this tick`, { type: 'info', durationMs: 2000 });
+      if (arrivals > 0 && window.DMTHNotify && arrivals >= 2) {
+        window.DMTHNotify.show(`💰 ${girl.name}: ${arrivals} johns this tick`, { type: 'info', durationMs: 2000 });
       }
     }
   }
@@ -271,21 +271,21 @@
   // -----------------------------------------------------------------------
 
   function cashout(girlId) {
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) throw new Error('no such girl');
     const wo = getWhoreOut(girl);
     const amount = wo.unclaimedEarnings || 0;
     if (amount <= 0) return { ok: false, reason: 'nothing to cash out', amount: 0 };
-    window.SSDGame.state.addMoney(amount, `whore-out:cashout:${girlId}`);
+    window.DMTHGame.state.addMoney(amount, `whore-out:cashout:${girlId}`);
     const newWo = { ...wo, unclaimedEarnings: 0 };
-    window.SSDGame.state.updateGirl(girlId, { whoreOut: newWo });
+    window.DMTHGame.state.updateGirl(girlId, { whoreOut: newWo });
     return { ok: true, amount };
   }
 
   // Summarize the last N encounters for Ollama context block / memory injection so the
   // captive can talk about her johns in chat.
   function summarizeLedger(girlId, opts = {}) {
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) return [];
     const wo = getWhoreOut(girl);
     const n = opts.last || 5;
@@ -311,8 +311,8 @@
     return `RECENT JOHNS (last 5 — she remembers and may reference them):\n${lines.join('\n')}`;
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.whoreOut = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.whoreOut = Object.freeze({
     RATE_PARAMS,
     STAMINA_FLOOR_JOHN_GATE,
     BONDDEBT_EXCESS,

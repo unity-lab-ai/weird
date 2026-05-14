@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — Kokoro voice catalog + emotion-state profiles.
+// DUNGEON MASTER: THE HUNT — Kokoro voice catalog + emotion-state profiles.
 // Kokoro's built-in female voices with archetype-fit tags and emotion modulation helpers.
 // Emotions modulate Kokoro speed + text pre-processing (no direct pitch/emo control in Kokoro v1).
 
@@ -163,7 +163,7 @@
     };
   }
 
-  window.SSDVoices = Object.freeze({
+  window.DMTHVoices = Object.freeze({
     VOICES,
     EMOTIONS: Object.keys(EMOTIONS),
     BOND_TO_EMOTION,

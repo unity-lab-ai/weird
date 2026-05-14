@@ -13,6 +13,90 @@
 
 ---
 
+## 2026-05-14 — Session: full rebrand — "SEX SLAVE DUNGEON" → "DUNGEON MASTER: THE HUNT"
+
+### Verbatim 2026-05-14:
+
+> *"lets rename the game 'Dungeon Master: The Hunt' from 'Sex Slave Dungeon' so finde all instances of the old name and rebrand"*
+>
+> *"no change and fix it all there are no saves to worry about"*
+
+### Scope — total replacement
+
+Initially scoped at user-facing strings only; second directive expanded to full programmatic rebrand (saves are not a concern). Final coverage:
+
+**User-facing text (all three case variants):**
+- `SEX SLAVE DUNGEON` → `DUNGEON MASTER: THE HUNT`
+- `Sex Slave Dungeon` → `Dungeon Master: The Hunt`
+- `sex slave dungeon` → `dungeon master: the hunt`
+
+Touches every `<title>`, `<h1>`, `<h2>`, chrome-brand, body copy, footer, launcher echo, source-file header comment, README, ARCHITECTURE, ROADMAP, SETUP-README, assets/README.
+
+**Programmatic identifiers (22 namespace globals + 11 localStorage keys + 2 module-private globals + 1 IDB name):**
+- `SSDGame` → `DMTHGame`
+- `SSDConfig` → `DMTHConfig`
+- `SSDStorage` → `DMTHStorage`
+- `SSDRouter` → `DMTHRouter`
+- `SSDOllamaRepair` → `DMTHOllamaRepair`
+- `SSDOllamaRepairOverlay` → `DMTHOllamaRepairOverlay`
+- `SSDNotify` → `DMTHNotify`
+- `SSDQuickActions` → `DMTHQuickActions`
+- `SSDKokoro` → `DMTHKokoro`
+- `SSDVoiceQueue` → `DMTHVoiceQueue`
+- `SSDVoices` → `DMTHVoices`
+- `SSDIsVoiceOn` → `DMTHIsVoiceOn`
+- `SSDTemplates` → `DMTHTemplates`
+- `SSDAssets` → `DMTHAssets`
+- `SSDAssetImg` → `DMTHAssetImg`
+- `SSDAssetLoader` → `DMTHAssetLoader`
+- `SSDAgeGate` → `DMTHAgeGate`
+- `SSDDetector` → `DMTHDetector`
+- `SSDInstaller` → `DMTHInstaller`
+- `SSDModels` → `DMTHModels`
+- `SSDTooltips` → `DMTHTooltips`
+- `SSDJohnArchetypes` → `DMTHJohnArchetypes`
+- `_SSD_lastEncounters` → `_DMTH_lastEncounters`
+- `_SSD_lastLocationId` → `_DMTH_lastLocationId`
+- All 11 `ssd_*` localStorage keys (`ssd_active_slot`, `ssd_asset_probes_enabled`, `ssd_kokoro_model/speed/voice`, `ssd_ollama_endpoint/model/temp`, `ssd_pollinations_key/model`, `ssd_voice_on`) → `dmth_*`
+- IDB name `sex_slave_dungeon` → `dungeon_master_the_hunt`
+- `SSDSave` (stale doc reference) → `dungeon_master_the_hunt`
+
+### Excluded from rename (intentional)
+
+- **`docs/FINALIZED.md`** — archive integrity LAW prohibits editing prior entries. Historical entries reference the old title as it was at the time.
+- **Git commit history** — immutable.
+
+### Process
+
+1. Project-wide grep for old-name variants → 89 files identified.
+2. First sed pass: user-facing text replacement (3 case variants) across all matching files except `FINALIZED.md`.
+3. Identifier enumeration: extracted every `SSD*` global, `ssd_*` localStorage key, `_SSD_*` module-private, and the IDB name.
+4. Second sed pass: programmatic-identifier replacement across 80 files (.js / .html / .css / .md / .bat / .sh / .ps1 / .py / .example).
+5. Three residual non-quoted references caught by separate Edit calls (`localStorage.ssd_asset_probes_enabled` member access, one `<code>ssd_*</code>` HTML span, one `'SSDSave'` doc string).
+6. Final verification: project-wide grep for `SSD|ssd_|sex_slave_dungeon|SEX SLAVE DUNGEON|Sex Slave Dungeon` outside `docs/FINALIZED.md` returns ZERO matches.
+
+### Files touched
+
+91 source / doc / launcher files in the first pass + 80 in the second pass (overlapping set). Touched categories:
+- `*.js` (every game engine + UI module)
+- `*.html` (`index.html`, `game.html`)
+- `*.css` (`landing.css`, `game.css`)
+- `*.md` (`README.md`, `SETUP-README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/TODO.md`, `assets/README.md`, `.claude/CLAUDE.md`)
+- `*.bat`, `*.sh`, `*.ps1`, `*.py` (launchers + dev scripts)
+- `.env.example`
+
+### Verification gates
+
+- Launch the game → chrome bar reads `DUNGEON MASTER: THE HUNT`, browser title reads `DUNGEON MASTER: THE HUNT — game`.
+- Landing page (`index.html`) → all H1s + body copy + footer reference the new name.
+- Settings → Wipe ALL description mentions `dmth_*` localStorage keys.
+- DevTools → IndexedDB → database `dungeon_master_the_hunt` (NOT `sex_slave_dungeon`).
+- localStorage → all keys prefixed `dmth_` (NOT `ssd_`).
+- Console: `window.DMTHGame`, `window.DMTHConfig`, `window.DMTHStorage` etc. all defined; `window.SSDGame` undefined.
+- Project-wide grep for the old name + old identifiers → 0 matches outside FINALIZED.md.
+
+---
+
 ## 2026-05-14 — Session: every-act satisfaction + stomp framing + Violence tab + Bondage tab + Love tab + applyId routing + bondage image-prompt tokens
 
 ### Gee verbatim 2026-05-14:

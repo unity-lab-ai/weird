@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — sentence-aware Kokoro TTS playback queue.
+// DUNGEON MASTER: THE HUNT — sentence-aware Kokoro TTS playback queue.
 //
 // Why this exists: TTS playback gets cut off on long paragraphs. The queue plays each
 // sentence one at a time in order, waiting for the first to complete before moving to
@@ -59,7 +59,7 @@
   // sentence finishes OR when cancelled. Safe to call concurrently — a second
   // call cancels the first and takes over.
   async function enqueue(text, voice, speed) {
-    if (!window.SSDKokoro || !window.SSDKokoro.isReady()) {
+    if (!window.DMTHKokoro || !window.DMTHKokoro.isReady()) {
       console.debug('[voice-queue] Kokoro not ready, skipping');
       return;
     }
@@ -118,10 +118,10 @@
   // Wrap Kokoro speak with a try/catch so a single bad sentence doesn't
   // poison the whole pipelined generation chain.
   function safeSpeak(text, voice, speed) {
-    return Promise.resolve().then(() => window.SSDKokoro.speak(text, voice, speed));
+    return Promise.resolve().then(() => window.DMTHKokoro.speak(text, voice, speed));
   }
 
-  window.SSDVoiceQueue = Object.freeze({
+  window.DMTHVoiceQueue = Object.freeze({
     enqueue,
     cancel,
     isActive,

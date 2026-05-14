@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — girl lifespan system.
+// DUNGEON MASTER: THE HUNT — girl lifespan system.
 // Days-captive tracking, physical/mental degradation from neglect, terminal states, slow game-time aging.
 
 (function () {
@@ -103,7 +103,7 @@
         patch.deceasedAt = Date.now();
         patch.deceasedCause = lifespan.state;
         // Log to disposal ledger
-        window.SSDGame.state.addDisposal({
+        window.DMTHGame.state.addDisposal({
           girlId: girl.id,
           girlNameAtDisposal: girl.name,
           method: lifespan.state,
@@ -114,25 +114,25 @@
           cause: lifespan.state
         });
         // Free the hold
-        const dungeon = window.SSDGame.state.getDungeon(girl.assignedDungeonId);
+        const dungeon = window.DMTHGame.state.getDungeon(girl.assignedDungeonId);
         if (dungeon) {
           const newHolds = dungeon.holds.map(h => h.captiveGirlId === girl.id ? { ...h, captiveGirlId: null } : h);
-          window.SSDGame.state.updateDungeon(dungeon.id, { holds: newHolds });
+          window.DMTHGame.state.updateDungeon(dungeon.id, { holds: newHolds });
         }
       }
     }
 
-    window.SSDGame.state.updateGirl(girl.id, patch);
+    window.DMTHGame.state.updateGirl(girl.id, patch);
 
     // Notify on state transitions
-    if (prev !== lifespan.state && window.SSDNotify) {
-      window.SSDNotify.show(`${girl.name}: ${STATES[lifespan.state].label}`, { type: lifespan.score < 30 ? 'error' : 'info' });
+    if (prev !== lifespan.state && window.DMTHNotify) {
+      window.DMTHNotify.show(`${girl.name}: ${STATES[lifespan.state].label}`, { type: lifespan.score < 30 ? 'error' : 'info' });
     }
     return lifespan;
   }
 
   function tickAll() {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     if (!s) return;
     for (const girl of s.roster || []) {
       if (girl.encounterState !== 'captive') continue;
@@ -153,8 +153,8 @@
     };
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.lifespan = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.lifespan = Object.freeze({
     STATES, evaluate, tickAll, daysCaptive, currentAge, careScore, describeLifespan,
     TICK_MS, REAL_MS_PER_GAME_DAY, AGING_REAL_MS_PER_GAME_YEAR
   });

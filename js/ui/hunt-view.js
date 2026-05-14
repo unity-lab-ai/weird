@@ -1,27 +1,27 @@
-// SEX SLAVE DUNGEON — hunt / outside world page.
+// DUNGEON MASTER: THE HUNT — hunt / outside world page.
 
 (function () {
   'use strict';
 
   function render(el, params) {
     const stage = params.stage || 'map';
-    if (stage === 'map')       { window.SSDRouter.go('town'); return; }   // redirect to the plot page
+    if (stage === 'map')       { window.DMTHRouter.go('town'); return; }   // redirect to the plot page
     if (stage === 'location') return renderLocation(el, params);
     if (stage === 'approach') return renderApproach(el, params);
   }
 
   function renderLocation(el, params) {
     const locId = params.loc;
-    const loc = window.SSDAssets.getById('location', locId);
+    const loc = window.DMTHAssets.getById('location', locId);
     if (!loc) { el.innerHTML = `<p>unknown location</p>`; return; }
-    const encounters = window.SSDGame.hunt.rollEncounters(locId, 3);
-    const inv = window.SSDGame.state.current.inventory;
+    const encounters = window.DMTHGame.hunt.rollEncounters(locId, 3);
+    const inv = window.DMTHGame.state.current.inventory;
 
     el.innerHTML = `
       <div class="panel">
         <h2>${loc.emoji} ${loc.displayName}</h2>
         <p class="small muted">${loc.notes}</p>
-        <div class="stat-row small"><span>Notoriety</span><b>${window.SSDGame.state.current.wallet.notoriety}</b>
+        <div class="stat-row small"><span>Notoriety</span><b>${window.DMTHGame.state.current.wallet.notoriety}</b>
           <span class="muted">(experience bonus applied to acquisitions)</span></div>
         <a href="#hunt" class="btn-small">← back to map</a>
       </div>
@@ -29,10 +29,10 @@
         <h2>Girls available to acquire</h2>
         <div class="girl-grid">
           ${encounters.map(g => {
-            const archDiff = window.SSDGame.hunt.ARCHETYPE_DIFFICULTY[g.archetypeTemplate] ?? 0.5;
+            const archDiff = window.DMTHGame.hunt.ARCHETYPE_DIFFICULTY[g.archetypeTemplate] ?? 0.5;
             const captureTools = ['rohypnol','chloroform','ether','ketamine','duct-tape','rope','zip-ties','handcuffs'].filter(id => inv[id] > 0);
             const bestOdds = captureTools.length === 0 ? null : Math.max(...captureTools.map(tid =>
-              window.SSDGame.hunt.previewCaptureOdds({ girl: g, toolId: tid, locationId: locId }).successP
+              window.DMTHGame.hunt.previewCaptureOdds({ girl: g, toolId: tid, locationId: locId }).successP
             ));
             const oddsLabel = bestOdds === null ? 'no tool owned' : `${Math.round(bestOdds * 100)}% best odds`;
             return `
@@ -60,14 +60,14 @@
     `;
 
     // Stash current roll in module state so approach page can find them
-    window._SSD_lastEncounters = encounters;
-    window._SSD_lastLocationId = locId;
+    window._DMTH_lastEncounters = encounters;
+    window._DMTH_lastLocationId = locId;
 
     el.querySelectorAll('[data-approach]').forEach(b => {
-      b.onclick = () => window.SSDRouter.go('hunt', { stage: 'approach', girl: b.dataset.approach, loc: locId });
+      b.onclick = () => window.DMTHRouter.go('hunt', { stage: 'approach', girl: b.dataset.approach, loc: locId });
     });
     el.querySelectorAll('[data-walk]').forEach(b => {
-      b.onclick = () => window.SSDRouter.go('hunt');
+      b.onclick = () => window.DMTHRouter.go('hunt');
     });
 
     // Make the whole card clickable — click anywhere on a girl card to approach her
@@ -77,7 +77,7 @@
         // Ignore clicks on inner buttons (they have their own handlers)
         if (ev.target.closest('button, a')) return;
         const id = card.querySelector('[data-approach]')?.dataset.approach;
-        if (id) window.SSDRouter.go('hunt', { stage: 'approach', girl: id, loc: locId });
+        if (id) window.DMTHRouter.go('hunt', { stage: 'approach', girl: id, loc: locId });
       };
     });
 
@@ -95,7 +95,7 @@
 
         const situation = `hunt-encounter-${locId}`;
         try {
-          const result = await window.SSDGame.imaging.generateFor(g, { situation, locationId: locId });
+          const result = await window.DMTHGame.imaging.generateFor(g, { situation, locationId: locId });
           if (result && result.url) {
             slot.innerHTML = `<img src="${result.url}" alt="${g.name}" class="gen-img hunt-thumb" onerror="this.outerHTML='<div class=\\'small muted\\'>(image blocked — click to approach anyway)</div>';" />`;
           } else {
@@ -110,16 +110,16 @@
 
   // 4-stage capture progress-bar UI. Player assigns one tool per stage
   // (Approach / Engage / Subdue / Secure) from inventory, clicks "Begin Attempt", and the four
-  // stages resolve via `window.SSDGame.capture.runAttempt()` with animated progress bars.
+  // stages resolve via `window.DMTHGame.capture.runAttempt()` with animated progress bars.
   function renderApproach(el, params) {
-    const encounters = window._SSD_lastEncounters || [];
+    const encounters = window._DMTH_lastEncounters || [];
     const girl = encounters.find(g => g.id === params.girl);
     const locId = params.loc;
     if (!girl) { el.innerHTML = `<p>encounter expired — <a href="#hunt">back to map</a></p>`; return; }
-    const inv = window.SSDGame.state.current.inventory;
-    const locName = window.SSDAssets.getById('location', locId)?.displayName;
+    const inv = window.DMTHGame.state.current.inventory;
+    const locName = window.DMTHAssets.getById('location', locId)?.displayName;
 
-    const cap = window.SSDGame.capture;
+    const cap = window.DMTHGame.capture;
     const archResist = cap.getArchetypeResistance(girl.archetypeTemplate);
 
     // Build per-stage eligible-tool option lists. Pre-select the best-stat tool per stage.
@@ -151,7 +151,7 @@
         `;
       }
       const optionsHtml = eligible.map(id => {
-        const item = window.SSDAssets.getById('item', id);
+        const item = window.DMTHAssets.getById('item', id);
         const stat = cap.getToolStages(id)[stageKey] || 0;
         const isSelected = stageLoadout[stageKey] === id;
         return `<option value="${id}"${isSelected ? ' selected' : ''}>${item.emoji} ${item.displayName} — stage stat ${stat} (have ${inv[id]})</option>`;
@@ -169,7 +169,7 @@
 
     function renderProgressMeter(stageKey, progress = 0, cleared = false, toolId = null) {
       const label = cap.STAGE_LABELS[stageKey];
-      const item = toolId ? window.SSDAssets.getById('item', toolId) : null;
+      const item = toolId ? window.DMTHAssets.getById('item', toolId) : null;
       const toolBadge = item ? `<span class="capture-tool-badge">${item.emoji}</span>` : '<span class="muted">—</span>';
       const cls = cleared ? 'cleared' : (progress > 0 ? 'in-progress' : 'idle');
       return `
@@ -184,7 +184,7 @@
     }
 
     const playerSkillNow = cap.getPlayerSkill();
-    const suspicionNow = window.SSDGame.state.current?.wallet?.suspicionByLocation?.[locId] || 0;
+    const suspicionNow = window.DMTHGame.state.current?.wallet?.suspicionByLocation?.[locId] || 0;
 
     el.innerHTML = `
       <div class="panel">
@@ -230,7 +230,7 @@
         userText: '', resultEl, heading: `${girl.name} says:`
       });
     };
-    el.querySelector('[data-action="walk"]').onclick = () => window.SSDRouter.go('hunt');
+    el.querySelector('[data-action="walk"]').onclick = () => window.DMTHRouter.go('hunt');
 
     // Live update stageLoadout when player changes a per-stage tool select.
     el.querySelectorAll('.capture-tool-select').forEach(sel => {
@@ -252,7 +252,7 @@
         return;
       }
 
-      const result = window.SSDGame.capture.runAttempt({
+      const result = window.DMTHGame.capture.runAttempt({
         girl,
         toolPerStage: stageLoadout,
         locationId: locId
@@ -288,7 +288,7 @@
         // Insert per-stage summary line after each meter resolves
         const sumDiv = document.createElement('div');
         sumDiv.className = 'capture-stage-summary small';
-        sumDiv.innerHTML = window.SSDGame.capture.summarizeStage(stageData);
+        sumDiv.innerHTML = window.DMTHGame.capture.summarizeStage(stageData);
         if (stageData.reason) {
           sumDiv.innerHTML += ` <span class="muted">(${stageData.reason})</span>`;
         }
@@ -307,7 +307,7 @@
         `<div class="stat-row small"><span>${girl.name} wariness</span><b class="warn">+${consequences.warinessDelta} (next attempt harder)</b></div>`);
       if (result.consumed?.length) {
         result.consumed.forEach(c => {
-          const item = window.SSDAssets.getById('item', c.toolId);
+          const item = window.DMTHAssets.getById('item', c.toolId);
           consElEl.insertAdjacentHTML('beforeend',
             `<div class="stat-row small"><span>Consumed</span><b>${item?.emoji || ''} ${item?.displayName || c.toolId} ×${c.count}</b></div>`);
         });
@@ -323,7 +323,7 @@
         sceneKey = result.witness ? 'acquire_critical_fail' : 'acquire_fail';
         sceneTool = result.stages.find(s => s.toolId)?.toolId || null;
       }
-      const sceneToolItem = sceneTool ? window.SSDAssets.getById('item', sceneTool) : null;
+      const sceneToolItem = sceneTool ? window.DMTHAssets.getById('item', sceneTool) : null;
       await runSceneNarration({
         girl, sceneKey,
         sceneVars: { LOCATION: locName, TOOL: sceneToolItem?.displayName || 'mixed approach' },
@@ -333,8 +333,8 @@
 
       // On success — escort + 4-beat transition sequence
       if (result.outcome === 'success') {
-        const escortResult = window.SSDGame.hunt.escortToHold(girl);
-        const sceneVars = window.SSDGame.hunt.composeSceneVars({
+        const escortResult = window.DMTHGame.hunt.escortToHold(girl);
+        const sceneVars = window.DMTHGame.hunt.composeSceneVars({
           girl, toolId: sceneTool, locationId: locId, dungeonId: escortResult.dungeonId
         });
         await playTransitionSequence({ resultEl, girl, sceneVars });
@@ -414,8 +414,8 @@
       logEl.appendChild(beatDiv);
       const spanEl = beatDiv.querySelector('span');
       try {
-        const system = window.SSDTemplates.buildSystemPrompt(girl, 'sexy', beat.key, sceneVars);
-        const { raw, parsed } = await window.SSDGame.ollama.chatStream({
+        const system = window.DMTHTemplates.buildSystemPrompt(girl, 'sexy', beat.key, sceneVars);
+        const { raw, parsed } = await window.DMTHGame.ollama.chatStream({
           system,
           messages: [{ role: 'user', content: '(play out this beat in first person from her POV)' }],
           onChunk: (chunk, full) => {
@@ -426,7 +426,7 @@
         spanEl.textContent = (parsed.cleanText || raw).trim();
         beatDiv.classList.remove('streaming');
         // Append to girl's turn log so she remembers her own narration
-        window.SSDGame.state.appendTurn(girl.id, 'assistant', `[${beat.heading}] ${spanEl.textContent}`);
+        window.DMTHGame.state.appendTurn(girl.id, 'assistant', `[${beat.heading}] ${spanEl.textContent}`);
       } catch (err) {
         spanEl.textContent = `(Ollama unreachable — beat skipped: ${err.message})`;
         beatDiv.classList.remove('streaming');
@@ -437,13 +437,13 @@
   // Run a scene narration — calls Ollama with the scene template, streams text into a DOM target.
   async function runSceneNarration({ girl, sceneKey, sceneVars, userText = '', resultEl, heading, injectInto }) {
     try {
-      const system = window.SSDTemplates.buildSystemPrompt(girl, 'sexy', sceneKey, sceneVars);
+      const system = window.DMTHTemplates.buildSystemPrompt(girl, 'sexy', sceneKey, sceneVars);
       let target = injectInto;
       if (!target && resultEl) {
         resultEl.innerHTML = `<div class="panel"><h3>${heading || girl.name}</h3><div class="log"><div class="log-entry assistant streaming"><b>${girl.name}:</b> <span id="narr-txt"></span></div></div></div>`;
         target = resultEl.querySelector('#narr-txt');
       }
-      const { raw, parsed } = await window.SSDGame.ollama.chatStream({
+      const { raw, parsed } = await window.DMTHGame.ollama.chatStream({
         system,
         messages: [{ role: 'user', content: userText || `(Master initiates the scene — narrate from your POV.)` }],
         onChunk: (chunk, full) => {
@@ -466,5 +466,5 @@
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
 
-  window.SSDRouter.register('hunt', render);
+  window.DMTHRouter.register('hunt', render);
 })();

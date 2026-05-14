@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — multi-stage capture engine.
+// DUNGEON MASTER: THE HUNT — multi-stage capture engine.
 // Replaces the prior single-tool-single-roll capture model with a 4-stage progress-bar
 // attempt sequence (Approach → Engage → Subdue → Secure) where each stage has its own
 // 0-100% progress meter driven by the selected tool's per-stage stats vs the girl-archetype's
@@ -51,18 +51,18 @@
 
   function getToolStages(toolId) {
     if (!toolId) return DEFAULT_TOOL_STAGES;
-    const item = window.SSDAssets.getById('item', toolId);
+    const item = window.DMTHAssets.getById('item', toolId);
     return item?.captureStages || DEFAULT_TOOL_STAGES;
   }
 
   function getArchetypeResistance(archetypeId) {
-    const reg = window.SSDGame.hunt.ARCHETYPE_CAPTURE_RESISTANCE;
+    const reg = window.DMTHGame.hunt.ARCHETYPE_CAPTURE_RESISTANCE;
     return reg?.[archetypeId] || DEFAULT_RESISTANCE;
   }
 
   // Tools in player inventory that have non-zero stat for the given stage.
   function eligibleToolsForStage(stageKey) {
-    const inv = window.SSDGame.state.current.inventory || {};
+    const inv = window.DMTHGame.state.current.inventory || {};
     return CAPTURE_TOOL_IDS.filter(id => {
       if (!inv[id] || inv[id] < 1) return false;
       const stages = getToolStages(id);
@@ -73,7 +73,7 @@
   // Player skill scales with notoriety (experience proxy) — same as existing previewCaptureOdds
   // notorietyBonus pattern. 0-30 cap so player skill never dominates the math.
   function getPlayerSkill() {
-    const notoriety = window.SSDGame.state.current?.wallet?.notoriety || 0;
+    const notoriety = window.DMTHGame.state.current?.wallet?.notoriety || 0;
     return Math.min(30, Math.round(notoriety * 0.4));
   }
 
@@ -81,8 +81,8 @@
   // higher location suspicion = more likely. Witness flag carries through every stage
   // as a flat -30 progress penalty (makes the attempt much harder once spotted).
   function rollWitness({ locationId }) {
-    const exposure = window.SSDGame.hunt.LOCATION_EXPOSURE?.[locationId] || 0;
-    const suspicion = window.SSDGame.state.current?.wallet?.suspicionByLocation?.[locationId] || 0;
+    const exposure = window.DMTHGame.hunt.LOCATION_EXPOSURE?.[locationId] || 0;
+    const suspicion = window.DMTHGame.state.current?.wallet?.suspicionByLocation?.[locationId] || 0;
     const chance = Math.max(0, Math.min(0.6, exposure + suspicion * 0.04));
     return Math.random() < chance;
   }
@@ -113,7 +113,7 @@
     const stages = getToolStages(toolId);
     const toolBonus = stages[stageKey] || 0;
     const resistance = getArchetypeResistance(girl.archetypeTemplate)[stageKey] || 25;
-    const exposure = window.SSDGame.hunt.LOCATION_EXPOSURE?.[locationId] || 0;
+    const exposure = window.DMTHGame.hunt.LOCATION_EXPOSURE?.[locationId] || 0;
     const locDifficulty = exposure * 100;
     const witnessPenalty = witness ? 30 : 0;
     const rng = Math.random() * 20 - 5;
@@ -158,7 +158,7 @@
     // inventory BEFORE resolution math fires. Guards against UI-engine desync race
     // (state mutated between render and attempt-fire). For non-single-use tools the
     // engine relies on UI eligibleToolsForStage filtering, which is render-time-only.
-    const inv = window.SSDGame.state.current?.inventory || {};
+    const inv = window.DMTHGame.state.current?.inventory || {};
     const required = {};
     for (const stageKey of STAGES) {
       const tid = toolPerStage?.[stageKey];
@@ -203,12 +203,12 @@
       consumeCounts[stage.toolId] = (consumeCounts[stage.toolId] || 0) + 1;
     }
     for (const [toolId, count] of Object.entries(consumeCounts)) {
-      const ok = window.SSDGame.state.consumeItem(toolId, count);
+      const ok = window.DMTHGame.state.consumeItem(toolId, count);
       if (ok) consumed.push({ toolId, count });
     }
 
     const outcome = failedAtStage ? 'failed' : 'success';
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     const consequences = { suspicionDelta: 0, notorietyDelta: 0, warinessDelta: 0 };
 
     if (outcome === 'failed') {
@@ -217,7 +217,7 @@
       if (witness) {
         susBump = 5;
         consequences.notorietyDelta = 2;
-        window.SSDGame.state.addNotoriety(2);
+        window.DMTHGame.state.addNotoriety(2);
       }
       consequences.suspicionDelta = susBump;
       s.wallet.suspicionByLocation[locationId] = sus + susBump;
@@ -240,14 +240,14 @@
   function summarizeStage(stageResult) {
     if (!stageResult) return '(no result)';
     if (!stageResult.toolId) return `${STAGE_LABELS[stageResult.stageKey]}: ${stageResult.reason}`;
-    const tool = window.SSDAssets.getById('item', stageResult.toolId);
+    const tool = window.DMTHAssets.getById('item', stageResult.toolId);
     const toolName = tool?.displayName || stageResult.toolId;
     const status = stageResult.cleared ? '✓ cleared' : '✗ failed';
     return `${STAGE_LABELS[stageResult.stageKey]} — ${tool?.emoji || ''}${toolName} → ${stageResult.progress}% ${status}`;
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.capture = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.capture = Object.freeze({
     STAGES,
     STAGE_LABELS,
     STAGE_DESCRIPTIONS,

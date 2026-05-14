@@ -1,10 +1,10 @@
-// SEX SLAVE DUNGEON — Kokoro TTS loader + in-browser synthesis.
+// DUNGEON MASTER: THE HUNT — Kokoro TTS loader + in-browser synthesis.
 // Uses kokoro-js from CDN. Model weights cached to IndexedDB on first load via the library's own cache.
 
 (function () {
   'use strict';
 
-  const cfg = () => window.SSDConfig;
+  const cfg = () => window.DMTHConfig;
 
   let state = {
     tts: null,
@@ -115,7 +115,7 @@
   function getError() { return state.error; }
   function onStateChange(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 
-  window.SSDKokoro = Object.freeze({
+  window.DMTHKokoro = Object.freeze({
     ensureLoaded,
     speak,
     isReady,

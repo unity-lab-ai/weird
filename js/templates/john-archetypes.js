@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — john archetype catalog.
+// DUNGEON MASTER: THE HUNT — john archetype catalog.
 // Captives generate passive income through john encounters; the ledger tracks every john
 // (act / payment / quirks) so the captive can talk about her johns in chat.
 //
@@ -206,9 +206,9 @@
     return shuffled.slice(0, count);
   }
 
-  window.SSDTemplates = window.SSDTemplates || {};
-  // Note: SSDTemplates is frozen elsewhere — this is a sibling registry.
-  window.SSDJohnArchetypes = Object.freeze({
+  window.DMTHTemplates = window.DMTHTemplates || {};
+  // Note: DMTHTemplates is frozen elsewhere — this is a sibling registry.
+  window.DMTHJohnArchetypes = Object.freeze({
     JOHN_ARCHETYPES,
     rollJohnArchetype,
     rollJohnActs

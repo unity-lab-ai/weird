@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — settings panel.
+// DUNGEON MASTER: THE HUNT — settings panel.
 // Slide-out panel: endpoint config, model swap, default voice picker, Pollinations key,
 // save wipe / export / import, re-open setup wizard.
 
@@ -8,9 +8,9 @@
   const $ = sel => document.querySelector(sel);
 
   function render() {
-    const cfg = window.SSDConfig;
-    const voices = window.SSDVoices.VOICES;
-    const catalog = window.SSDModels?.getCatalog() || cfg.OLLAMA.modelCatalog;
+    const cfg = window.DMTHConfig;
+    const voices = window.DMTHVoices.VOICES;
+    const catalog = window.DMTHModels?.getCatalog() || cfg.OLLAMA.modelCatalog;
 
     $('#settings-body').innerHTML = `
       <section class="settings-section">
@@ -79,25 +79,25 @@
 
     // Wire handlers
     $('#s-close').onclick = () => document.body.classList.remove('settings-open');
-    $('#s-endpoint').onchange = e => { localStorage.setItem('ssd_ollama_endpoint', e.target.value); softReload(); };
-    $('#s-model').onchange = e => { localStorage.setItem('ssd_ollama_model', e.target.value); softReload(); };
-    $('#s-temp').onchange = e => { localStorage.setItem('ssd_ollama_temp', e.target.value); softReload(); };
-    $('#s-voice').onchange = e => { localStorage.setItem('ssd_kokoro_voice', e.target.value); softReload(); };
-    $('#s-speed').onchange = e => { localStorage.setItem('ssd_kokoro_speed', e.target.value); softReload(); };
+    $('#s-endpoint').onchange = e => { localStorage.setItem('dmth_ollama_endpoint', e.target.value); softReload(); };
+    $('#s-model').onchange = e => { localStorage.setItem('dmth_ollama_model', e.target.value); softReload(); };
+    $('#s-temp').onchange = e => { localStorage.setItem('dmth_ollama_temp', e.target.value); softReload(); };
+    $('#s-voice').onchange = e => { localStorage.setItem('dmth_kokoro_voice', e.target.value); softReload(); };
+    $('#s-speed').onchange = e => { localStorage.setItem('dmth_kokoro_speed', e.target.value); softReload(); };
     $('#s-polly').onchange = e => {
       if (e.target.value.trim()) {
-        localStorage.setItem('ssd_pollinations_key', e.target.value.trim());
+        localStorage.setItem('dmth_pollinations_key', e.target.value.trim());
         e.target.value = '';
         softReload();
       }
     };
-    $('#s-polly-model').onchange = e => { localStorage.setItem('ssd_pollinations_model', e.target.value); softReload(); };
+    $('#s-polly-model').onchange = e => { localStorage.setItem('dmth_pollinations_model', e.target.value); softReload(); };
 
     $('#s-preview-voice').onclick = async () => {
       const voice = $('#s-voice').value;
       const speed = parseFloat($('#s-speed').value) || 1.0;
       try {
-        const url = await window.SSDKokoro.speak("fuck... let's see what this voice sounds like, Master.", voice, speed);
+        const url = await window.DMTHKokoro.speak("fuck... let's see what this voice sounds like, Master.", voice, speed);
         new Audio(url).play();
       } catch (err) {
         alert(`Voice preview failed: ${err.message}. Load Kokoro first.`);
@@ -105,7 +105,7 @@
     };
 
     $('#s-export').onclick = async () => {
-      const data = await window.SSDStorage.exportAll();
+      const data = await window.DMTHStorage.exportAll();
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -121,7 +121,7 @@
       try {
         const text = await file.text();
         const payload = JSON.parse(text);
-        await window.SSDStorage.importAll(payload);
+        await window.DMTHStorage.importAll(payload);
         alert('Save imported. Reloading.');
         location.reload();
       } catch (err) {
@@ -130,9 +130,9 @@
     };
     $('#s-wipe').onclick = async () => {
       if (!confirm('WIPE ALL game data and local settings? This cannot be undone.')) return;
-      await window.SSDStorage.wipeAll();
+      await window.DMTHStorage.wipeAll();
       // clear our localStorage keys only
-      for (const k of Object.keys(localStorage)) { if (k.startsWith('ssd_')) localStorage.removeItem(k); }
+      for (const k of Object.keys(localStorage)) { if (k.startsWith('dmth_')) localStorage.removeItem(k); }
       alert('All data wiped. Reloading.');
       location.reload();
     };
@@ -142,7 +142,7 @@
   // For now we just reload; config is frozen after init.
   function softReload() {
     // simplest implementation: reload the page
-    // future: make SSDConfig mutable/re-readable on demand
+    // future: make DMTHConfig mutable/re-readable on demand
     location.reload();
   }
 

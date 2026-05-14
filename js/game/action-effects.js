@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — central per-action stat-impact spec.
+// DUNGEON MASTER: THE HUNT — central per-action stat-impact spec.
 // Every actionable button (sex, drugs, violence, care) carries its own stamina/health/
 // mood/arousal/bondXP delta envelope. Some heal, some hurt, some drain stamina, some
 // rebuild it. This file is the single source of truth for those deltas.
@@ -247,7 +247,7 @@
       console.warn(`[action-effects] unknown action: ${actionId}`);
       return { ok: false, reason: 'unknown action' };
     }
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) return { ok: false, reason: 'no such girl' };
 
     const strainMul = opts.strain ? 1.5 : 1.0;
@@ -271,8 +271,8 @@
     // game-clock timestamps so the grace-period
     // model in tickStaminaHealth resets. Any action id starting with 'feed-'
     // touches lastFedAt; any starting with 'water-' touches lastWateredAt.
-    if (window.SSDGame.gameClock) {
-      const now = window.SSDGame.gameClock.now();
+    if (window.DMTHGame.gameClock) {
+      const now = window.DMTHGame.gameClock.now();
       if (actionId.startsWith('feed-')) body.lastFedAt = now;
       if (actionId.startsWith('water-')) body.lastWateredAt = now;
     }
@@ -311,19 +311,19 @@
       bond.bondDebt = Math.max(0, (bond.bondDebt ?? 0) + d);
     }
 
-    if (action.notoriety && window.SSDGame.state.addNotoriety) {
-      window.SSDGame.state.addNotoriety(action.notoriety);
+    if (action.notoriety && window.DMTHGame.state.addNotoriety) {
+      window.DMTHGame.state.addNotoriety(action.notoriety);
     }
 
     // Player satisfaction — every action sexualizes; the meter reads action.satisfaction.
     // John actions intentionally have satisfaction=0 in their spec (proxied service, not
     // direct intimacy). Mercy / passive ticks have 0 too. Hunting bonus draws from this
     // meter via hunt.previewCaptureOdds.
-    if (action.satisfaction && window.SSDGame.state.addSatisfaction) {
-      window.SSDGame.state.addSatisfaction(action.satisfaction, actionId);
+    if (action.satisfaction && window.DMTHGame.state.addSatisfaction) {
+      window.DMTHGame.state.addSatisfaction(action.satisfaction, actionId);
     }
 
-    window.SSDGame.state.updateGirl(girlId, { body, bond, mood });
+    window.DMTHGame.state.updateGirl(girlId, { body, bond, mood });
     return { ok: true, action, strain: !!opts.strain };
   }
 
@@ -389,16 +389,16 @@
   const FOOD_AUTOCONSUME_DAYS = 2.5;    // half the 5-day food grace
   const WATER_AUTOCONSUME_DAYS = 1.5;   // half the 3-day water grace
   function tickStaminaHealth() {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     if (!s) return;
-    const clock = window.SSDGame.gameClock;
+    const clock = window.DMTHGame.gameClock;
     for (const girl of s.roster) {
       if (girl.encounterState !== 'captive') continue;
       const body = { ...(girl.body || {}) };
       const bruises = body.bruises || 0;
 
       // Look up the hold once — used for self-serve consumption + plumbing check.
-      const dungeon = window.SSDGame.state.getDungeon(girl.assignedDungeonId);
+      const dungeon = window.DMTHGame.state.getDungeon(girl.assignedDungeonId);
       const holdIdx = girl.assignedHoldIdx ?? 0;
       const hold = dungeon?.holds?.[holdIdx];
       const toiletTier = hold?.upgrades?.toilet ?? 0;
@@ -434,7 +434,7 @@
 
       if (holdDirty && dungeon) {
         const newHolds = dungeon.holds.map((h, i) => i === holdIdx ? holdPatch : h);
-        window.SSDGame.state.updateDungeon(dungeon.id, { holds: newHolds });
+        window.DMTHGame.state.updateDungeon(dungeon.id, { holds: newHolds });
       }
 
       // ── Drain evaluation ────────────────────────────────────────────────
@@ -503,14 +503,14 @@
         unlockedTier = 2;
       }
 
-      window.SSDGame.state.updateGirl(girl.id, { body, bonuses, _lastStaminaReasons: reasons });
+      window.DMTHGame.state.updateGirl(girl.id, { body, bonuses, _lastStaminaReasons: reasons });
 
       if (payout > 0) {
-        window.SSDGame.state.addMoney(payout);
-        if (window.SSDNotify) {
+        window.DMTHGame.state.addMoney(payout);
+        if (window.DMTHNotify) {
           const label = unlockedTier === 2 ? '⚡ SUPER STRESS BONUS' : '💢 STRESS BONUS';
           const mul = unlockedTier === 2 ? STRESS_TIER_2_FILM_MUL : STRESS_TIER_1_FILM_MUL;
-          window.SSDNotify.show(`${label} — ${girl.name} kept tense for ${unlockedTier === 2 ? 15 : 5} days. +$${payout.toLocaleString()} + ${mul}× film multiplier on her recordings.`, { type: 'success', durationMs: 6000 });
+          window.DMTHNotify.show(`${label} — ${girl.name} kept tense for ${unlockedTier === 2 ? 15 : 5} days. +$${payout.toLocaleString()} + ${mul}× film multiplier on her recordings.`, { type: 'success', durationMs: 6000 });
         }
       }
     }
@@ -523,7 +523,7 @@
   // diagnostic breakdown for tooltip display.
   //
   // The john-resolver should call this when computing per-encounter pay:
-  //   const { multiplier } = SSDGame.actionEffects.johnHappinessForGirl(girl);
+  //   const { multiplier } = DMTHGame.actionEffects.johnHappinessForGirl(girl);
   //   const finalPay = basePay * multiplier;
   function johnHappinessForGirl(girl) {
     if (!girl) return { multiplier: 1.0, breakdown: {} };
@@ -571,8 +571,8 @@
     };
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.actionEffects = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.actionEffects = Object.freeze({
     ACTIONS,
     STAMINA_THRESHOLD_FOR_STRAIN,
     applyAction,
