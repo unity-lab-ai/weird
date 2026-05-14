@@ -10,7 +10,23 @@
 
 ---
 
-## 🟢 ACTIVE BACKLOG — empty
+## 🔴 ACTIVE BACKLOG — 7 post-review findings (2026-05-14)
+
+Gee verbatim 2026-05-14: *"make sure everything is 100% complete and anything not finished put ion the todo write up"*. Post-`/super-review` sweep on the just-shipped `7a59f9c` work surfaced 7 items.
+
+| ID | Priority | File | Description |
+|---|---|---|---|
+| **POST-REVIEW.1** | 🔴 | `js/ui/room.js` data-drug / data-feed / data-water handlers | **11 ACTIONS entries are dead code** — drug / feed / water buttons bypass `applyAction(girl.id, actionId)` and mutate state directly. Result: drug-coke / drug-weed / drug-mdma / drug-acid / drug-whiskey / drug-ketamine / drug-tranquilizer / feed-basic / feed-gourmet / water-bottled / water-filtered ACTIONS entries' declared stamina/health/mood/arousal/wetness deltas never reach state. Same bug-class as SR.1 was for mood — declared in spec, never applied. Fix: wrap each handler so applyAction fires BEFORE the legacy direct-mutation. Mapping: data-drug="coke" → applyAction('drug-coke'); data-feed="basic-meal" → applyAction('feed-basic'); data-water="bottled-water" → applyAction('water-bottled'). Legacy stock bumps + scheduler curve activation can stay as the second step. |
+| **POST-REVIEW.2** | 🟡 | `js/ui/room.js` Custom pose textarea | Textarea value wiped on every state.onChange re-render. 30-second tick fires → user's mid-typed scene description vanishes. Fix: module-scoped `customPoseDrafts` Map keyed by girl.id; restore on render, update on input event. |
+| **POST-REVIEW.3** | 🟡 | `js/game/imaging.js` composePrompt fallback | `composePromptViaOllama` accepts `userStaging` but hardcoded `composePrompt` fallback does NOT. When Ollama is unavailable, generateFor silently substitutes a generic pose-library image instead of erroring. Fix: either thread userStaging through composePrompt as slot-8 additionalTokens, OR guard generateFor to abort with "Ollama required for custom pose" error when userStaging is set + Ollama unavailable. |
+| **POST-REVIEW.4** | 🟡 | `js/ui/room.js` #custom-pose-slot | Custom-pose result image is rendered into #custom-pose-slot which is RESET on every state.onChange re-render (background tick, drug-curve update, consumable decay). User generates image, 30 sec later tick fires, image disappears. Fix: module-scoped `customPoseResults` Map keyed by girl.id; restore in render template. |
+| **POST-REVIEW.5** | 🟢 | `js/ui/gallery-view.js` download button | `<a href="${url}" download="...">` may not trigger download on cross-origin Pollinations URLs — `download` attribute is honored only for same-origin per HTML5 spec. Cross-origin URLs open inline instead. Fix: fetch + blob + URL.createObjectURL + click pattern; fallback to direct href on CORS-block. |
+| **POST-REVIEW.6** | 🟢 | `js/ui/hunt-view.js` Line ~146 | `eligible.length === 0` branch of renderStageLoadoutRow (no tool in inventory) was missed in the CO.7-hunt-view tooltip pass. Inconsistent coverage on the same surface. Fix: one-line `data-tooltip` attr addition explaining the no-eligible-tool state + pointing at shop. |
+| **POST-REVIEW.7** | ⚪ | `js/game/wardrobe.js` CONDOM_PSEUDO.description | Condom-on outfit description is symbolic ("wearing a condom (not visible in image)") but routes through clothed image-prompt slot 4. Pollinations might render "wearing a condom" abstractly or ignore — creates rendering ambiguity. Better: track `girl.previousOutfit` at equip time and render THAT description at slot 4 when condom-on is current; treat condom as a state overlay flag, not a wardrobe entry. |
+
+---
+
+## 🟢 PRIOR SESSION CLOSED-OUT WORK
 
 Status as of session-end **2026-05-14**:
 
@@ -112,4 +128,4 @@ For complete per-session detail, files touched, verbatim Gee directives, and ver
 
 ---
 
-*Active backlog: 0 tasks. Nothing deferred — every item either shipped or dropped per Gee's audit-actual-need directive.* 🖤
+*Active backlog: 7 post-review findings (1 critical action-effects routing bug + 4 medium-severity UX gaps + 2 low/nitpick). Surfaced by /super-review 2026-05-14. Everything else shipped or audit-dropped.* 🖤
