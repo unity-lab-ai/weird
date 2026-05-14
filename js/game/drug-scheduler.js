@@ -15,12 +15,15 @@
     whiskey: { onsetMs: 5 * 60_000,  peakMs: 20 * 60_000, wearOffMs: 90 * 60_000, highContribution: 45, speechEffect: 'drunk',     stackable: true,  itemId: 'wine' },  // routed through 'wine'/'whiskey' item
     alcohol: { onsetMs: 5 * 60_000,  peakMs: 20 * 60_000, wearOffMs: 90 * 60_000, highContribution: 45, speechEffect: 'drunk',     stackable: true,  itemId: 'wine' },
     ketamine:{ onsetMs: 2 * 60_000,  peakMs: 8 * 60_000,  wearOffMs: 40 * 60_000, highContribution: 75, speechEffect: 'broken',    stackable: false, itemId: 'ketamine' },
-    // Tranquilizer drug — makes the captive limp and unconscious with a 4-minute timer.
-    // 4-min wearOffMs total span,
-    // 5-sec onset, 10-sec peak. Distinct from ketamine (dissociation) — this is full
-    // knockout. While active, body.unconscious + body.limp resolve true via
-    // isUnconscious(girl) helper, gating chat / consensual actions in room.js.
-    tranquilizer: { onsetMs: 5_000, peakMs: 10_000, wearOffMs: 240_000, highContribution: 30, speechEffect: 'unconscious', stackable: false, itemId: 'tranquilizer' }
+    // Tranquilizer — 4 real minutes of total knockout. In game-time terms that's
+    // 4 real-min × 60 game-min/real-min = 240 game-minutes = 4 game hours (since
+    // 1 real sec = 1 game minute). Hard binary effect — see curveMagnitude special-
+    // case below. 5-sec onset for the inject-to-down transition, then full knockout
+    // until wearOffAt, then she snaps awake. Distinct from ketamine (dissociation)
+    // — this is total unresponsiveness. While active, isUnconscious(girl) returns
+    // truthy, gating chat / consensual actions in room.js and front-loading
+    // unconscious markers in the image prompt.
+    tranquilizer: { onsetMs: 5_000, peakMs: 10_000, wearOffMs: 240_000, highContribution: 100, speechEffect: 'unconscious', stackable: false, itemId: 'tranquilizer' }
   };
 
   // Return the active tranquilizer entry on the girl if she's still within
@@ -108,8 +111,15 @@
   }
 
   // Bell-ish curve — ramps up to peak, holds briefly, decays to wear-off.
+  // Tranquilizer is a special case — flat hard knockout from administration to wearOff
+  // with zero decay, so she stays fully unconscious for the entire 4-real-minute window
+  // instead of gradually "waking up" as the magnitude tapers off.
   function curveMagnitude(d, now) {
     if (now < d.administeredAt) return 0;
+    if (now >= d.wearOffAt) return 0;
+    if (d.name === 'tranquilizer') {
+      return d.highContribution;
+    }
     if (now < d.onsetAt) {
       const p = (now - d.administeredAt) / Math.max(1, d.onsetAt - d.administeredAt);
       return p * d.highContribution * 0.5;
@@ -118,7 +128,6 @@
       const p = (now - d.onsetAt) / Math.max(1, d.peakAt - d.onsetAt);
       return d.highContribution * (0.5 + 0.5 * p);
     }
-    if (now >= d.wearOffAt) return 0;
     const p = (now - d.peakAt) / Math.max(1, d.wearOffAt - d.peakAt);
     return d.highContribution * (1 - p);
   }
