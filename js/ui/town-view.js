@@ -10,7 +10,7 @@
       <div class="panel">
         <h2>🌆 Town</h2>
         <p class="small muted">Click any location to visit and hunt the girls available there. Each location spawns different archetypes at different difficulty levels.</p>
-        <div class="stat-row small"><span>Notoriety</span><b>${window.SSDGame.state.current.wallet.notoriety}</b>
+        <div class="stat-row small" data-tooltip="Cumulative heat from your operation. Higher = harder spawns, lower capture odds, more cop interest."><span>Notoriety</span><b>${window.SSDGame.state.current.wallet.notoriety}</b>
           <span class="muted">(affects spawns + acquire odds)</span></div>
       </div>
 
@@ -23,7 +23,7 @@
       <div class="panel">
         <h2>Render town</h2>
         <p class="small muted">Generate a full-res Pollinations image of the town layout.</p>
-        <button id="render-btn" class="btn-small btn-primary">Render town →</button>
+        <button id="render-btn" class="btn-small btn-primary" data-tooltip="Pollinations renders the full town grid as a single overhead image. Hash-cached so repeat clicks reuse the cached image until you change slots.">Render town →</button>
         <div id="town-render-slot"></div>
       </div>
     `;
@@ -63,8 +63,9 @@
       </div>`;
     }
     const diff = s.subcategory === 'easy' ? '🟢' : s.subcategory === 'medium' ? '🟡' : '🔴';
+    const tip = `${s.label} — ${s.subcategory} difficulty. Click to visit + hunt girls who spawn here.`;
     return `
-      <button class="plot-slot filled" data-visit="${s.itemId}" style="grid-column:${s.x+1};grid-row:${s.y+1}">
+      <button class="plot-slot filled" data-visit="${s.itemId}" style="grid-column:${s.x+1};grid-row:${s.y+1}" data-tooltip="${tip}">
         <div class="asset-slot slot-emoji" data-asset-category="location" data-asset-id="${s.itemId}" data-asset-size="64">${s.emoji}</div>
         <div class="slot-label">${s.label}</div>
         <div class="slot-meta">${diff} ${s.subcategory}</div>

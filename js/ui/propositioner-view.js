@@ -12,8 +12,9 @@
     el.innerHTML = `
       <div class="panel">
         <h2>📬 Propositioner Inbox</h2>
+        <p class="small muted">Bespoke single-deal upmarket clients with specific needs. Different from whore-out's general-public flow.</p>
         <div class="btn-row">
-          <button id="force-roll" class="btn-small">Force a new arrival</button>
+          <button id="force-roll" class="btn-small" data-tooltip="Manually roll a new propositioner instead of waiting for the next tick arrival.">Force a new arrival</button>
         </div>
       </div>
 

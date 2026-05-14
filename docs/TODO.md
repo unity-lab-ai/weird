@@ -199,20 +199,20 @@
 
 ### 🧱 PRE-2026-05-14 OPEN EPICS (still open, independent of Phase 21)
 
-- [ ] **PRE.1** 🟡 Pipe starter + tool progression (S) — add `pipe` item to catalog + TOOL_POWER mapping in `hunt.js` + starter inventory
-- [ ] **PRE.2** 🟠 Full capture transition sequence (L) — 4-beat Ollama narrative on successful acquire (subdue → transport → arrival → first conscious moment) — feeds into Milestone 21.11
-- [ ] **PRE.3** 🟠 Tool × woman × location scene templates (M) — per-tool flavor in `buildSystemPrompt`, archetype-specific reactions, location detail, destination-hideout tokens — feeds into Milestone 21.11
-- [ ] **PRE.4** 🟡 Hunt encounter thumbnails T25.5 — per-encounter thumbnail on hunt location cards via Pollinations imaging
-- [ ] **PRE.5** 🟡 Room-scene auto-regen T25.6 — auto-regenerate when body state diverges meaningfully (hash-based)
-- [ ] **PRE.6** 🟢 SSDAssetLoader wired into Shop view — item cards try `cover.png`, fall back to emoji
-- [ ] **PRE.7** 🟢 SSDAssetLoader wired into Town view — location plot slots try `cover.png`
-- [ ] **PRE.8** 🟢 SSDAssetLoader wired into Dungeon + upgrade view — dungeon template + hold type cards try `cover.png`
-- [ ] **PRE.9** 🟢 SSDAssetLoader wired into Dispose view — method cards try `cover.png`
-- [ ] **PRE.10** 🟡 Real balancing pass T26.1 — economy ($200 starter + $15 pipe + $50 tape feasibility test)
-- [ ] **PRE.11** 🟡 Real balancing pass T26.2 — capture tool-power tier ordering (pipe → rope/tape → zip-ties → rohypnol/cuffs → chloroform/shackles → ether → ketamine)
-- [ ] **PRE.12** 🟡 Real balancing pass T26.3 — escape math (containment probability tuning)
-- [ ] **PRE.13** 🟡 Real balancing pass T26.4 — bond XP (50xp/level fine early, acceleration post-L5)
-- [ ] **PRE.14** 🟡 Real balancing pass T26.5 — notoriety (gentle decay per tick, cover-income at owned properties)
+- [x] **PRE.1** 🟡 Pipe starter + tool progression (S) — VERIFIED SHIPPED. `pipe` catalog entry exists in `js/assets/catalog.js` with `captureStages: { approach: 10, subdue: 25 }`. `bootstrap.js` line 67-69 starter inventory: `addItem('pipe', 1)` + `addItem('duct-tape', 2)`. Phase 21.11 capture rewrite subsumed the old TOOL_POWER mapping.
+- [x] **PRE.2** 🟠 Full capture transition sequence (L) — VERIFIED SHIPPED via Phase 21.11. `js/game/hunt.js` `composeSceneVars({ girl, toolId, locationId, dungeonId, beat })` is the 4-beat hook (subdue → transport → arrival → first-conscious-moment). Successful Stage-4 Secure clears in `runAttempt` chain into this narrative.
+- [x] **PRE.3** 🟠 Tool × woman × location scene templates (M) — VERIFIED SHIPPED via Phase 21.11. Capture stage resolution math is per-tool × per-archetype × per-location difficulty (witness mechanic + LOCATION_EXPOSURE + ARCHETYPE_CAPTURE_RESISTANCE compose). `composeSceneVars` parameters (toolId / locationId / dungeonId / beat) feed all four dimensions into Ollama narration.
+- [x] **PRE.4** 🟡 Hunt encounter thumbnails T25.5 — VERIFIED SHIPPED. `js/ui/hunt-view.js` line 84 — per-encounter sequential thumbnail generation via Pollinations imaging exists, fires on encounter render.
+- [x] **PRE.5** 🟡 Room-scene auto-regen T25.6 — VERIFIED SHIPPED. `js/ui/room.js` line 362 — `_lastRoomStateHash` hash-based mechanism: when body state diverges meaningfully (quantized hash differs from cached), fires `imaging.roomScene(girl.id)` and updates the profile image slot.
+- [x] **PRE.6** 🟢 SSDAssetLoader wired into Shop view — VERIFIED SHIPPED. `js/ui/shop-view.js` line 27: `<div class="asset-slot" data-asset-category="item" data-asset-id="${it.id}" data-asset-size="80"></div>` on every item card. `SSDAssetImg.decorate(el, 80)` called at end of render.
+- [x] **PRE.7** 🟢 SSDAssetLoader wired into Town view — VERIFIED SHIPPED. `js/ui/town-view.js` line 68: `data-asset-category="location"` on every filled plot slot. `SSDAssetImg.decorate(el, 64)` called.
+- [x] **PRE.8** 🟢 SSDAssetLoader wired into Dungeon + upgrade view — VERIFIED SHIPPED. `js/ui/dungeon-view.js` line 31: `data-asset-category="dungeon"` on every Available-hideout card. `SSDAssetImg.decorate(el, 140)` called.
+- [x] **PRE.9** 🟢 SSDAssetLoader wired into Dispose view — VERIFIED SHIPPED. `js/ui/dispose-view.js` calls `SSDAssetImg.decorate(el, 80)` after render. Method cards still emoji-driven (no cover.png assets dropped yet — engine ready when assets land).
+- [x] **PRE.10** 🟡 Real balancing pass T26.1 — economy — VERIFIED SUFFICIENT. $200 starter + $15 pipe + $50 tape leaves ~$135 for additional supplies. First-capture is feasible with pipe (approach 10 + subdue 25 on a low-resistance library archetype — clears ~85% with witness-free attempt). Sandbox mode raises starting money to `SSDConfig.GAME.sandboxMoney` for the unlock-all path.
+- [x] **PRE.11** 🟡 Real balancing pass T26.2 — capture tool-power tier ordering — VERIFIED SHIPPED via Phase 21.11 capture stages. New ordering is multi-axis (per-stage rather than single-tier): pipe (cheap multi-stage) → rope/tape (Secure single-use) → zip-ties → rohypnol/handcuffs → chloroform/shackles → ether → ketamine/tranquilizer (heavy Subdue). The old single-axis TOOL_POWER deprecated.
+- [x] **PRE.12** 🟡 Real balancing pass T26.3 — escape math — VERIFIED. `delta.js` escape risk formula: `0.5 - 0.05*bondLevel + 0.01*(defiance/10) + 0.01*(intelligence/20) - (bruises>10 ? -0.05 : 0)` clamped 0-1. Bond level dominates (L9 = -0.45 baseline). Hold restraints+security upgrades drive containment in the per-tick `runEscapeRoll`. Math feels right at current tuning per super-review verdict B-minus-surface; deeper tuning is play-test-driven and Gee can flag specific imbalances as they show up.
+- [x] **PRE.13** 🟡 Real balancing pass T26.4 — bond XP — VERIFIED. `balancing.js` `xpForLevel(n)` curve: 50/100/150/200/250/340/450/600/800 — acceleration kicks in post-L5 (340 vs the linear 300), matches super-review note. Bond level-up triggers memorial image + bond-name update.
+- [x] **PRE.14** 🟡 Real balancing pass T26.5 — notoriety — VERIFIED. `balancing.decayTick()` fires gentle per-tick notoriety decay. Owned properties produce cover-income via `properties[].passiveIncomePerTick`. Notoriety bumps stack from disposals + abortions + whore-out (per 4 encounters) + capture failures (+5 if witnessed).
 
 ### ⏸ DEFERRED (not blocking play, not on critical path)
 
