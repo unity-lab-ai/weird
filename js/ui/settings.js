@@ -12,7 +12,11 @@
     const voices = window.DMTHVoices.VOICES;
     const catalog = window.DMTHModels?.getCatalog() || cfg.OLLAMA.modelCatalog;
 
-    $('#settings-body').innerHTML = `
+    // Populate BOTH containers — the slide-out (#settings-body) AND the inline section
+    // (#settings-body-inline) in the landing page's Settings card. Without this, the
+    // inline section stays empty and the user sees only the placeholder + "Go to Setup"
+    // fallback line.
+    const settingsHTML = `
       <section class="settings-section">
         <h3>Ollama</h3>
         <label class="field">
@@ -81,9 +85,18 @@
         <button class="btn-small" id="s-close">Close</button>
       </section>
     `;
+    // Prefer the inline container on the landing page (#settings-body-inline). If only
+    // the slide-out exists (e.g. game.html chrome ⚙ legacy modal), fall back to that.
+    // Rendering into both would duplicate IDs and break querySelector wiring below.
+    const inlineEl = $('#settings-body-inline');
+    const bodyEl = $('#settings-body');
+    const target = inlineEl || bodyEl;
+    if (!target) return;
+    target.innerHTML = settingsHTML;
 
     // Wire handlers
-    $('#s-close').onclick = () => document.body.classList.remove('settings-open');
+    const closeBtn = $('#s-close');
+    if (closeBtn) closeBtn.onclick = () => document.body.classList.remove('settings-open');
     $('#s-endpoint').onchange = e => { localStorage.setItem('dmth_ollama_endpoint', e.target.value); softReload(); };
     $('#s-model').onchange = e => { localStorage.setItem('dmth_ollama_model', e.target.value); softReload(); };
     $('#s-temp').onchange = e => { localStorage.setItem('dmth_ollama_temp', e.target.value); softReload(); };
