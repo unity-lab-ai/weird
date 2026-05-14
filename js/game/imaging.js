@@ -124,6 +124,29 @@
     return out.join(', ');
   }
 
+  // Phase 21.10 + T36.75 (2026-05-14) — Gee verbatim: "21.10 girls can get apperance image
+  // trait 9-months pregnate". Per-trimester visible markers, front-loaded near nudity/face
+  // slot so the model doesn't bury the pregnancy in tail tokens. Three tiers map to
+  // pregnancy.trimester (1/2/3) plus a separate full-term band at day >= 250 for the
+  // maximum-bump appearance. All tiers enforce the adult-floor invariant via callers
+  // (girl.age >= 18 is already gated in girl-gen).
+  function pregnancyTokens(pregnancy) {
+    if (!pregnancy || pregnancy.status !== 'pregnant') return '';
+    const days = pregnancy.gestationDays || 0;
+    const tri  = pregnancy.trimester || 1;
+    if (days >= 250) {
+      return 'NINE MONTHS PREGNANT, full-term pregnant adult woman, large heavy round pregnancy bump prominent at the belly stretching skin taut, dark linea-nigra line running down the lower belly, fully swollen breasts with darkened areolae, swollen ankles, slow careful posture with one hand cradling the lower back or supporting the underside of the heavy belly, late-pregnancy glow, visible exhaustion';
+    }
+    if (tri === 3) {
+      return 'PREGNANT 3rd trimester, pronounced heavy round pregnancy bump at the belly, visible bump curve from the side and front, stretch marks faintly visible across the lower belly, fuller breasts with darkened areolae, slightly swollen ankles, slower more deliberate posture with a hand resting on the belly';
+    }
+    if (tri === 2) {
+      return 'PREGNANT 2nd trimester, clearly visible rounded pregnancy bump at the lower belly, fuller breasts with darker areolae, dewy glowing skin, soft pregnancy glow on cheeks';
+    }
+    // 1st trimester — subtle
+    return 'PREGNANT early stage, subtle lower-belly bloating barely visible, slightly fuller breasts, soft pregnancy glow on cheeks';
+  }
+
   // --- Outfit layers — additive on top of defaultOutfitDescription ---
   function outfitStateTokens(body) {
     const state = body?.outfitState || 'intact';
@@ -307,6 +330,7 @@
 
     const stateTokens = bodyStateTokens(girl.body);
     const drugTokens  = drugStateTokens(girl.body);
+    const pregTokens  = pregnancyTokens(girl.pregnancy);
     const pose = customPose || POSE_LIBRARY[situation] || POSE_LIBRARY.profile;
     const env = envTokens({
       situation,
@@ -328,6 +352,7 @@
       parts = [
         prefix,               // 1
         nudeBlock,            // 2 — aggressive nudity front-load (replaces face slot)
+        pregTokens,           // 2.5 — pregnancy markers front-loaded so the bump isn't buried at tail
         env,                  // 3 — hold-specific environment, promoted from old pos 7
         faceBlock,            // 4 — face moves to 4 when nude (nude is at 2)
         pose,                 // 5
@@ -342,6 +367,7 @@
       parts = [
         prefix,                                                                   // 1
         faceBlock,                                                                // 2
+        pregTokens,                                                               // 2.5 — pregnancy markers front-loaded so the bump isn't buried at tail
         env,                                                                      // 3 — hold-specific environment, promoted from old pos 7
         outfitBlock + (outfitState ? ', ' + outfitState : ''),                    // 4
         pose,                                                                     // 5
@@ -507,6 +533,12 @@ ${nudeStrength ? rulesNude : rulesClothed}
    - ketamine: disconnected vacant stare, half-lidded eyes, fully slack jaw, motionless dissociated posture, body limp
    - tranquilizer: completely unconscious — eyes fully closed, jaw slack, head tilted, body limp with no muscle tension, arms dropped, totally unresponsive, deeply sedated. OVERRIDES other drug markers (closed eyes win over dilated pupils, slack over jaw clench).
    If drugs are 'none' in GIRL CONTEXT, do NOT render any drug effects — keep her eyes/posture sober.
+8b. PREGNANCY VISIBLE MARKERS — when GIRL CONTEXT 'pregnancy' shows status 'pregnant', the prompt MUST visibly render pregnancy markers FRONT-LOADED near the nudity / face slot (not at the tail). Trimester-tiered:
+   - 1st trimester (day 0-93): subtle lower-belly bloating barely visible, slightly fuller breasts, soft pregnancy glow
+   - 2nd trimester (day 94-186): clearly visible rounded pregnancy bump at lower belly, fuller breasts with darker areolae, dewy glowing skin
+   - 3rd trimester (day 187-249): pronounced heavy round bump, visible from side + front, stretch marks faintly visible, fuller breasts with darkened areolae, slightly swollen ankles, hand resting on belly
+   - Full-term (day 250+): NINE MONTHS PREGNANT — large heavy round bump stretching skin taut, dark linea nigra line down lower belly, fully swollen breasts with dark areolae, swollen ankles, slow careful posture with hand cradling lower back or supporting belly, late-pregnancy glow
+   When pregnancy.status is 'none' / 'aborted' / 'miscarried' / 'birthed' / 'lost', do NOT render any pregnancy markers. Adult-floor invariant (age 18+) already enforced by girl-gen — every pregnant captive is necessarily an adult.
 7. FRAME THE SUBJECT HEAD TO TOE — full body shot. NEVER use portrait, mugshot, headshot, bust, or waist-up framing. Every prompt MUST explicitly include "full body shot, head to toe in frame, complete figure visible" or equivalent language. The subject's feet must be visible in the composition.
 8. All subjects are adults age 18 or older. Use the GIRL CONTEXT 'age' value verbatim (e.g. "age 18", "age 22", "age 27") — NEVER hardcode "20s" or any range that excludes 18-19.
 
@@ -515,6 +547,7 @@ GIRL CONTEXT (all numerical values shown with their full scale per [[feedback-ai
 - mood: ${girl.mood?.mood || 'neutral'} · Stockholm rating: L${girl.bond?.bondLevel || 0}/9
 - body: arousal ${girl.body?.arousal || 0}/100, wetness ${girl.body?.wetness || 0}/100, bruises ${girl.body?.bruises || 0} (count), high ${girl.body?.high || 0}/100, cumLoad ${(girl.body?.cumLoad || 0).toFixed(1)}L
 - active drugs: ${(girl.body?.activeDrugs || []).map(d => d.name || d).join(', ') || 'none'}
+- pregnancy: ${girl.pregnancy?.status || 'none'}${girl.pregnancy?.status === 'pregnant' ? ` (day ${girl.pregnancy.gestationDays}/280, trimester ${girl.pregnancy.trimester})` : ''}
 - outfit state: ${girl.body?.outfitState || 'intact'}
 - current outfit: ${currentOutfitEntry?.displayName || 'default'}
 ${holdEnvText ? `- hold environment: "${holdEnvText}"` : ''}

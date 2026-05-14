@@ -37,15 +37,25 @@
 
     function renderCard(g) {
       const ls = window.SSDGame.lifespan ? window.SSDGame.lifespan.describeLifespan(g) : null;
+      const preg = g.pregnancy || {};
+      const pregBadge = preg.status === 'pregnant' ? ' 🤰' : '';
+      const pregMeta = preg.status === 'pregnant'
+        ? `<span class="muted small" title="🤰 Pregnant — gestation day ${preg.gestationDays}/280 (trimester ${preg.trimester})">🤰T${preg.trimester}·d${preg.gestationDays}</span>`
+        : preg.status === 'aborted' ? `<span class="muted small" title="Pregnancy aborted">⚪aborted</span>`
+        : preg.status === 'miscarried' ? `<span class="muted small" title="Miscarried (complication)">🩸miscarried</span>`
+        : preg.status === 'birthed' ? `<span class="muted small" title="Birthed">🍼birthed</span>`
+        : preg.status === 'lost' ? `<span class="muted small" title="Lost to authorities">🚨lost</span>`
+        : '';
       return `
         <a class="girl-card" href="#room?girl=${g.id}">
           <div class="girl-emoji">${g.mood.moodEmoji}</div>
-          <div class="girl-name">${g.name}</div>
+          <div class="girl-name">${g.name}${pregBadge}</div>
           <div class="girl-meta">
             <span>L${g.bond.bondLevel}</span>
             <span>${g.archetypeTemplate}</span>
             <span>🩸${g.body.bruises}</span>
             ${ls ? `<span>${ls.daysCaptive}d</span>` : ''}
+            ${pregMeta}
           </div>
           ${ls ? `<div class="small muted">${ls.label}</div>` : ''}
           <div class="bar"><div class="bar-fill ${ls && ls.score < 30 ? 'danger' : ''}" style="width:${Math.round(((g.bond.bondXP % 50) / 50) * 100)}%"></div></div>

@@ -864,7 +864,7 @@ Phase 21 (Major Systems Overhaul — 2026-05-14)
    │    ↑ Milestones 21.1-21.6 enhance Phase 19 imaging + Phase 4 voice prompts
    │    ↑ Milestone 21.7 enhances Phase 9 women templates (CAPTIVE_AFFECTS overlay)
    │    ↑ Milestones 21.8-21.9 enhance Phase 15 dungeon upgrades (water/feed automation)
-   │    ↑ Milestone 21.10 new vertical (pregnancy) — depends on Phase 8 multi-girl + Phase 5 bond
+   │    ↑ Milestone 21.10 new vertical (pregnancy) — SHIPPED 2026-05-14. New module `js/game/pregnancy.js` (schema + attemptConception + applyAbortion + resolveFullTerm + tickPregnancies @ 7 days/tick) + 5 catalog items (condom/plan-b/abortion-pill-medical/surgical-kit-back-alley/obgyn-referral-clean) + delta.js conception hook gated by VAGINAL_CUM_TAGS set + Pregnancy panel in room.js with abort buttons + dashboard.js + roster.js 🤰 light per girl + imaging.js pregnancyTokens per-trimester markers front-loaded at slot 2.5 + BASE_SLUT delta-block doc taught the vaginal-cum tag protocol. Johns-can-impregnate hook ready (attemptConception accepts {conceptionSource:'whore-out', johnEncounterId}); Phase 21.16 just calls it.
    │    ↑ Milestone 21.11 reformulates Phase 13 capture mechanic — 4-stage progress-bar attempt (Approach → Engage → Subdue → Secure), per-tool stage stats, per-archetype stage resistance; spam dies because tools are stage-specific
    │    ↑ Milestone 21.12 replaces Phase 10 setup-wizard-as-landing with real public landing
    │    ↑ Milestone 21.13 cleanup tail

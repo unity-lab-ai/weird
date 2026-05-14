@@ -86,6 +86,36 @@
             <button class="btn-small" data-water="filtered-water">Water (5gal)</button>
           </div>
 
+          ${(() => {
+            // Phase 21.10 (2026-05-14) — Pregnancy panel. Status + gestation day + trimester +
+            // abort options gated by current window + outcome history.
+            const preg = girl.pregnancy || { status: 'none' };
+            if (preg.status === 'none' && !(preg.outcomeHistory || []).length) return '';
+            const methods = window.SSDGame.pregnancy
+              ? window.SSDGame.pregnancy.allAbortionMethodsForDisplay(girl)
+              : [];
+            const statusEmoji = {
+              pregnant: '🤰', aborted: '⚪', miscarried: '🩸',
+              birthed: '🍼', lost: '🚨'
+            }[preg.status] || '·';
+            return `<h3>${statusEmoji} Pregnancy</h3>
+              <div class="stat-row"><span>Status</span><b>${preg.status.toUpperCase()}</b></div>
+              ${preg.status === 'pregnant' ? `
+                <div class="stat-row"><span>Gestation</span><b>day ${preg.gestationDays}/280 · trimester ${preg.trimester}</b></div>
+                <div class="bar-row"><label>Term</label><div class="bar"><div class="bar-fill" style="width:${Math.min(100, Math.round((preg.gestationDays/280)*100))}%"></div></div><b>${Math.round((preg.gestationDays/280)*100)}%</b></div>
+                <div class="small muted">Source: ${preg.conceptionSource || 'organic'}${preg.johnEncounterId ? ' · john ledger: ' + preg.johnEncounterId : ''}</div>
+                <div class="btn-row" style="margin-top:6px">
+                  ${methods.map(m => `<button class="btn-small ${m.inWindow && m.inStock ? 'btn-danger' : ''}" data-abort="${m.id}" ${m.inWindow && m.inStock ? '' : 'disabled'} title="${m.label}${!m.inStock ? ' — none in inventory' : ''}${!m.inWindow ? ' — outside window (' + m.windowDays[0] + '-' + m.windowDays[1] + ')' : ''} · ${Math.round(m.complications*100)}% complication · +${m.notorietyHit} notoriety">${m.emoji} ${m.label}${m.owned > 0 ? ` (${m.owned})` : ''}</button>`).join('')}
+                </div>
+              ` : ''}
+              ${preg.outcomeHistory && preg.outcomeHistory.length ? `
+                <div class="small muted" style="margin-top:6px"><b>History:</b></div>
+                <ul class="small muted">
+                  ${preg.outcomeHistory.slice(-5).map(h => `<li>${h.status}${h.method ? ' via ' + h.method : ''} · day ${h.day}${h.notes ? ' — ' + h.notes : ''}</li>`).join('')}
+                </ul>
+              ` : ''}`;
+          })()}
+
           <h3>Drugs</h3>
           <div class="btn-row">
             <button class="btn-small" data-drug="coke">❄️ Line of coke</button>
@@ -437,6 +467,29 @@
           const xpGain = itemId === 'filtered-water' ? 2 : 1;
           const newBond = { ...girl.bond, bondXP: girl.bond.bondXP + xpGain };
           window.SSDGame.state.updateGirl(girl.id, { bond: newBond });
+        } catch (e) { alert(e.message); }
+      };
+    });
+
+    // Phase 21.10 — Abortion method buttons. Each consumes 1 of the corresponding catalog
+    // item from inventory and applies the resolver. Confirmation dialog before firing.
+    el.querySelectorAll('[data-abort]').forEach(b => {
+      b.onclick = () => {
+        const methodId = b.dataset.abort;
+        const method = window.SSDGame.pregnancy?.ABORT_METHODS?.[methodId];
+        if (!method) { alert('unknown abort method'); return; }
+        const complicationPct = Math.round(method.complications * 100);
+        const msg = `Apply ${method.label} to ${girl.name}?\n\n` +
+          `· Window: gestation day ${method.windowDays[0]}-${method.windowDays[1]}\n` +
+          `· Complication chance: ${complicationPct}%\n` +
+          `· Notoriety: +${method.notorietyHit}\n` +
+          `· Mood penalty: -${method.moodPenalty}\n\n` +
+          `Consumes 1× ${methodId} from inventory.`;
+        if (!confirm(msg)) return;
+        try {
+          const r = window.SSDGame.pregnancy.applyAbortion(girl.id, methodId);
+          if (!r.ok) { alert(r.reason); return; }
+          window.SSDRouter.handle();
         } catch (e) { alert(e.message); }
       };
     });

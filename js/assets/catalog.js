@@ -177,6 +177,50 @@
       notes: 'Capture tool AND in-dungeon administered drug. Heavy Subdue 50. Single-use. 4-minute unconscious window — she goes limp, eyes close, slack jaw, deeply sedated. Distinct from ketamine (which is dissociation, not knockout).'
     },
 
+    // --- REPRODUCTIVE / CONTRACEPTION (Phase 21.10, 2026-05-14) ---
+    // Gee verbatim 2026-05-14: "have pregnacy and stuff where u can kknock them up with all
+    // the ways thinkable to abort buyable and the outcomes if used or not".
+    // Items consumed by pregnancy.js applyAbortion() per gestation-window rules.
+    {
+      id: 'condom', displayName: 'Condom (3-pack)', emoji: '🎈',
+      category: 'item', subcategory: 'contraception',
+      prompt: 'product photograph of three plain unmarked square foil condom packets fanned out on a plain backdrop, generic pharmacy commerce style, muted lighting',
+      cost: 6, tier: 1,
+      notes: 'Preventive — when equipped/used during a turn, blocks conception roll. Stacks of 3. (Wardrobe-equip wiring deferred — for now, owning ≥1 is the gate.)'
+    },
+    {
+      id: 'plan-b', displayName: 'Plan B Pill', emoji: '💊',
+      category: 'item', subcategory: 'reproductive-medical',
+      prompt: 'product photograph of a small unmarked white tablet next to its foil blister-pack on a plain backdrop, pharmacy commerce style',
+      cost: 25, tier: 1,
+      pregnancyAbort: { window: [0, 3], complications: 0.05, notoriety: 0 },
+      notes: 'Post-coital emergency contraceptive. Works only in gestation days 0-3. 5% complication chance. Zero notoriety.'
+    },
+    {
+      id: 'abortion-pill-medical', displayName: 'Medical Abortion Pill', emoji: '💊',
+      category: 'item', subcategory: 'reproductive-medical',
+      prompt: 'product photograph of a sealed clinical pharmacy blister-pack with two unmarked pills, beside a folded prescription slip on a plain backdrop, medical-supply catalog composition',
+      cost: 120, tier: 2,
+      pregnancyAbort: { window: [4, 93], complications: 0.10, notoriety: 1 },
+      notes: '1st-trimester abortion (days 4-93). 10% complication chance. Mild notoriety bump.'
+    },
+    {
+      id: 'surgical-kit-back-alley', displayName: 'Back-alley Surgical Kit', emoji: '🔪',
+      category: 'item', subcategory: 'reproductive-medical',
+      prompt: 'product shot of a battered closed leather pouch lying on dark concrete, partial glint of metal instruments visible at the seam, ominous low-key documentary photography',
+      cost: 200, tier: 3,
+      pregnancyAbort: { window: [94, 186], complications: 0.30, notoriety: 3 },
+      notes: '2nd-trimester procedure (days 94-186). 30% complication risk — miscarriage with damage. +3 notoriety. Cheap but dangerous.'
+    },
+    {
+      id: 'obgyn-referral-clean', displayName: 'Clean OB-GYN Referral', emoji: '🏥',
+      category: 'item', subcategory: 'reproductive-medical',
+      prompt: 'product photograph of a sealed white medical envelope with embossed clinic logo, neat appointment card visible at the corner, professional clinical-supply catalog style',
+      cost: 600, tier: 4,
+      pregnancyAbort: { window: [0, 200], complications: 0.03, notoriety: 0 },
+      notes: 'Clean clinical referral — works any time before day 200. 3% complication. Zero notoriety. Expensive but safe.'
+    },
+
     // --- BLUNT ---
     {
       id: 'pipe', displayName: 'Lead Pipe', emoji: '🔧',

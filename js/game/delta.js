@@ -70,7 +70,40 @@
       body, mood, bond, escape,
       _lastTags: Array.isArray(delta.tags) ? delta.tags : []
     });
+
+    // Phase 21.10 + 21.10 addendum T36.103 (2026-05-14) — Gee verbatim: "can only get
+    // knowcked up with a chance roll when cumming in vag". Conception hook fires ONLY when
+    // BOTH conditions hit on this turn: (a) cumLoad delta >= 1.0 (semen delivery proxy)
+    // AND (b) delta.tags contains at least one VAGINAL_CUM_TAG marker (so BJ / anal /
+    // facial / body-shot don't fire conception). Inner gates (bond < 9, no condom, status
+    // not already pregnant) live inside pregnancy.attemptConception() — defense in depth.
+    if (window.SSDGame.pregnancy && delta.cumLoad >= 1.0) {
+      const tags = Array.isArray(delta.tags) ? delta.tags.map(t => String(t).toLowerCase()) : [];
+      const isVaginalCum = tags.some(t => VAGINAL_CUM_TAGS.has(t));
+      if (isVaginalCum) {
+        try {
+          window.SSDGame.pregnancy.attemptConception(girlId, { conceptionSource: 'organic' });
+        } catch (err) {
+          console.debug('[pregnancy] conception hook error:', err);
+        }
+      }
+    }
   }
+
+  // Tags that signal vaginal cum delivery in the delta block. The model is taught these
+  // via BASE_SLUT delta-block doc — when the act was vaginal penetration ending inside,
+  // it MUST emit one of these tags. Other cum deliveries (oral / anal / facial / body /
+  // pulled-out) MUST NOT include any of these tags, so conception roll skips silently.
+  const VAGINAL_CUM_TAGS = new Set([
+    'creampie',
+    'cum-in-pussy',
+    'cum-inside',
+    'cuminside',
+    'vaginal-cum',
+    'breeding',
+    'inside-pussy',
+    'inside-her'
+  ]);
 
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 

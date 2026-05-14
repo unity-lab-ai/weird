@@ -63,16 +63,26 @@
         <h2>Recent captives</h2>
         ${captives.length === 0
           ? `<p class="muted small">No captives. <a href="#hunt">Go hunt one.</a></p>`
-          : `<div class="girl-grid">${captives.map(g => `
-              <a class="girl-card" href="#room?girl=${g.id}">
-                <div class="girl-emoji">${g.mood.moodEmoji}</div>
-                <div class="girl-name">${g.name}</div>
+          : `<div class="girl-grid">${captives.map(g => {
+              const preg = g.pregnancy || {};
+              const pregLight = preg.status === 'pregnant'
+                ? `<span class="preg-light" title="🤰 Pregnant — gestation day ${preg.gestationDays}/280 (trimester ${preg.trimester})">🤰</span>`
+                : preg.status === 'aborted' ? `<span class="preg-light" title="Pregnancy aborted (day ${preg.outcomeHistory?.slice(-1)[0]?.day || '?'})">⚪</span>`
+                : preg.status === 'miscarried' ? `<span class="preg-light" title="Miscarried (complication)">🩸</span>`
+                : preg.status === 'birthed' ? `<span class="preg-light" title="Birthed">🍼</span>`
+                : preg.status === 'lost' ? `<span class="preg-light" title="Lost to authorities">🚨</span>`
+                : '';
+              return `<a class="girl-card" href="#room?girl=${g.id}">
+                <div class="girl-emoji">${g.mood.moodEmoji}${pregLight}</div>
+                <div class="girl-name">${g.name}${preg.status === 'pregnant' ? ' 🤰' : ''}</div>
                 <div class="girl-meta">
                   <span>L${g.bond.bondLevel}</span>
                   <span>${g.archetypeTemplate}</span>
+                  ${preg.status === 'pregnant' ? `<span class="muted small" title="gestation day ${preg.gestationDays}/280">T${preg.trimester}·d${preg.gestationDays}</span>` : ''}
                 </div>
                 <div class="bar"><div class="bar-fill" style="width:${Math.round(((g.bond.bondXP % 50) / 50) * 100)}%"></div></div>
-              </a>`).join('')}</div>`
+              </a>`;
+            }).join('')}</div>`
         }
       </section>
     `;

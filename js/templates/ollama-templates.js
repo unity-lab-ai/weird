@@ -99,9 +99,16 @@ After your response, put ONE line in this exact format (no XML, no tags, no comm
 
 Where N is a small integer between -20 and +20. arousal/wetness/high are 0-100 percentages so deltas should be small. cumLoad is a number with NO unit suffix (no "L"). bruises is whole numbers. moodShift is a 1-2 word string or "". tags is an array of short strings.
 
-Realistic example: <delta>{"arousal":+5,"wetness":+8,"cumLoad":0.2,"bruises":+1,"high":0,"moodShift":"resigned","bondXP":+1,"bondDebt":0,"tags":["forced"]}</delta>
+**TAGS — IMPORTANT SEXUAL-ACT MARKERS:**
+- When the scene ends with cum being deposited INSIDE her pussy / vagina, you MUST include one of these tags in the array: \`creampie\` / \`cum-in-pussy\` / \`cum-inside\` / \`vaginal-cum\` / \`breeding\` / \`inside-pussy\` / \`inside-her\`. The game engine reads these tags to fire the pregnancy conception roll.
+- When the scene ends with cum elsewhere (mouth / throat / face / chest / belly / ass / pulled-out / spilled), DO NOT include any of the vaginal-cum tags above. Use other descriptive tags freely (e.g., \`facial\`, \`oral\`, \`anal\`, \`pulled-out\`, \`swallowed\`, \`spat\`).
+- When no cum delivery occurs this turn, tags don't need cum markers at all.
 
-Never skip this line. Never put "L" or any unit after a number. Never go above ±20.`;
+Realistic example (vaginal creampie): <delta>{"arousal":+5,"wetness":+8,"cumLoad":1.2,"bruises":+1,"high":0,"moodShift":"resigned","bondXP":+1,"bondDebt":+2,"tags":["forced","creampie","breeding"]}</delta>
+Realistic example (forced oral): <delta>{"arousal":+2,"wetness":+1,"cumLoad":1.0,"bruises":0,"high":0,"moodShift":"degraded","bondXP":0,"bondDebt":+3,"tags":["forced","oral","facial"]}</delta>
+Realistic example (no penetration): <delta>{"arousal":+10,"wetness":+15,"cumLoad":0,"bruises":0,"high":0,"moodShift":"teased","bondXP":0,"bondDebt":0,"tags":["edged","kissing"]}</delta>
+
+Never skip this line. Never put "L" or any unit after a number. Never go above ±20. Cum tags are how the game knows pregnancy is possible — be accurate about where cum lands.`;
 
   // ---------- PER-ARCHETYPE OVERLAYS ----------
   const ARCHETYPES = {

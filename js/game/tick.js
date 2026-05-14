@@ -62,6 +62,10 @@
 
     // 11. Lifespan system — days-captive aging + neglect/care evaluation + terminal state transitions
     if (window.SSDGame.lifespan) window.SSDGame.lifespan.tickAll();
+
+    // 12. Pregnancy — Phase 21.10 (2026-05-14). Advance gestation by GESTATION_DAYS_PER_TICK
+    // for every pregnant captive; auto-resolve at day 280 (birthed / sold / lost branches).
+    if (window.SSDGame.pregnancy) window.SSDGame.pregnancy.tickPregnancies();
   }
 
   // Decay food + water per tick, GATED by the hold's automation tiers (Phase 21.9, 2026-05-14).
