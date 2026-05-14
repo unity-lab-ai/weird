@@ -71,9 +71,49 @@
     if (body.bruises >= 3)      out.push('light bruising on arms');
     if (body.bruises >= 8)      out.push('darker bruises visible on thighs and shoulders');
     if (body.bruises >= 15)     out.push('heavy bruising, split lip, smudged makeup');
-    if (body.high >= 50)        out.push('dilated pupils');
-    if (body.high >= 85)        out.push('blown pupils, glossy eyes, damp hair at temples');
+    // NOTE: pupil/high markers moved to drugStateTokens() so they're sourced from the
+    // specific active drug and scaled by body.high intensity. bodyStateTokens stays focused
+    // on non-chemical body state (arousal / wetness / cum / bruises). Whiskey/alcohol still
+    // get a base flush marker here as a redundancy guard if drug list is empty but
+    // body.high carries an alcohol contribution.
     if ((body.activeDrugs || []).some(d => (d.name || d) === 'whiskey')) out.push('flushed from alcohol');
+    return out.join(', ');
+  }
+
+  // --- Drug-state visible markers (Phase 21.1, 2026-05-14) ---
+  // Gee verbatim 2026-05-14: "it doesnt seem like the druig use when give or on them
+  // actually never apperas in the meta image prompts ... i want the drug use forced or
+  // other wise to show effects in images and ollama text responses".
+  // Per-drug rendered tokens. Intensity scales with body.high (composite 0-100 already
+  // computed by drug-scheduler tick). When drugs are active the prompt hash changes,
+  // so generateFor() pulls a fresh image rather than serving a stale cached one — the
+  // visible-effect change drives auto-regen.
+  function drugStateTokens(body) {
+    if (!body) return '';
+    const active = body.activeDrugs || [];
+    if (!active.length) return '';
+    const high = Math.max(0, Math.min(100, body.high || 0));
+    const intensifier = high >= 75 ? 'extreme' : high >= 50 ? 'pronounced' : high >= 25 ? 'visible' : 'subtle';
+    const names = new Set(active.map(d => String(d?.name || d || '').toLowerCase()).filter(Boolean));
+    const out = [];
+    if (names.has('coke')) {
+      out.push(`${intensifier} dilated pupils filling most of the iris, tight clenched jaw, twitchy restless fingers, faint reddened nostrils, hyperalert wide-eyed gaze, light sweat sheen on forehead and upper lip`);
+    }
+    if (names.has('weed')) {
+      out.push(`heavy-lidded reddened glassy eyes, slow languid blinks, softly slack jaw, ${intensifier} relaxed loose posture, parted dry lips, hazy ambient atmosphere suggesting smoke`);
+    }
+    if (names.has('mdma')) {
+      out.push(`${intensifier} flushed glowing cheeks, dilated dark pupils, dewy luminous skin with light sweat, subtle grinding jaw motion, euphoric soft-edged unfocused smile, restless hands`);
+    }
+    if (names.has('acid')) {
+      out.push(`${intensifier} fully dilated pupils swallowing the iris, distant unfocused fascinated gaze past the camera, slack open-mouthed wonderment expression, flushed cheeks, gently swaying posture`);
+    }
+    if (names.has('whiskey') || names.has('alcohol')) {
+      out.push(`${intensifier} alcohol-flushed cheeks and upper chest, glassy unfocused eyes, slightly smudged makeup, parted lips, faintly swaying posture, slightly disheveled hair`);
+    }
+    if (names.has('ketamine')) {
+      out.push(`${intensifier} disconnected vacant stare, half-lidded eyes, fully slack jaw, motionless dissociated posture, body limp and unsteady, awareness distant and elsewhere`);
+    }
     return out.join(', ');
   }
 
@@ -210,10 +250,14 @@
     const nudeStrength = nudeStateOf(girl);
 
     const stateTokens = bodyStateTokens(girl.body);
+    const drugTokens  = drugStateTokens(girl.body);
     const pose = customPose || POSE_LIBRARY[situation] || POSE_LIBRARY.profile;
     const env = envTokens({ situation, dungeonId: girl.assignedDungeonId, locationId: options.locationId });
 
-    const prefix = 'editorial photograph, 35mm film aesthetic, adult female age 20s, full body shot, head to toe in frame, complete figure visible from hair to feet, wide framing, no portrait cropping, no mugshot framing, no headshot, no bust shot';
+    // Age derived from girl.age (18+ floor enforced at girl-gen). Never hardcode "20s" —
+    // 18-19 year-old captives must render as their actual age for face/age persistence.
+    const ageStr = girl.age && Number.isFinite(girl.age) ? `adult female age ${girl.age}` : 'adult female 18 or older';
+    const prefix = `editorial photograph, 35mm film aesthetic, ${ageStr}, full body shot, head to toe in frame, complete figure visible from hair to feet, wide framing, no portrait cropping, no mugshot framing, no headshot, no bust shot`;
     const suffix = 'shallow depth of field, cinematic lighting, color-graded, high-detail, no text, no watermark';
 
     let parts;
@@ -226,6 +270,7 @@
         faceBlock,
         pose,
         stateTokens,
+        drugTokens,           // drug-state body markers immediately after non-chemical body state
         env,
         additionalTokens,
         suffix
@@ -239,6 +284,7 @@
         outfitBlock + (outfitState ? ', ' + outfitState : ''),
         pose,
         stateTokens,
+        drugTokens,           // drug-state body markers immediately after non-chemical body state
         env,
         additionalTokens,
         suffix
@@ -365,8 +411,16 @@ ${nudeStrength ? rulesNude : rulesClothed}
 3. Output ONLY the image-gen prompt text — no preamble, no explanation, no "here's the prompt", no code block.
 4. 60-180 words total.
 5. Tone: editorial photography, 35mm film, cinematic lighting, shallow depth of field.
-6. FRAME THE SUBJECT HEAD TO TOE — full body shot. NEVER use portrait, mugshot, headshot, bust, or waist-up framing. Every prompt MUST explicitly include "full body shot, head to toe in frame, complete figure visible" or equivalent language. The subject's feet must be visible in the composition.
-7. All subjects are adults age 20s.
+6. DRUG VISIBLE EFFECTS — when active drugs are listed in GIRL CONTEXT above, the prompt MUST visibly render the drug's external effects on her face, eyes, posture, and skin. Use these markers (intensity scales with her 'high' value):
+   - coke: dilated pupils filling most of the iris, tight clenched jaw, twitchy fingers, faint nostril redness, hyperalert wide eyes, light sweat sheen
+   - weed: heavy-lidded reddened glassy eyes, slow blinks, slack jaw, relaxed loose posture, parted dry lips
+   - mdma: flushed glowing cheeks, dilated dark pupils, dewy luminous skin, subtle grinding jaw, euphoric soft-edged unfocused smile
+   - acid: fully dilated pupils swallowing the iris, distant unfocused fascinated gaze, slack open-mouthed wonderment, gently swaying posture
+   - whiskey/alcohol: alcohol-flushed cheeks and upper chest, glassy unfocused eyes, smudged makeup, swaying posture
+   - ketamine: disconnected vacant stare, half-lidded eyes, fully slack jaw, motionless dissociated posture, body limp
+   If drugs are 'none' in GIRL CONTEXT, do NOT render any drug effects — keep her eyes/posture sober.
+7. FRAME THE SUBJECT HEAD TO TOE — full body shot. NEVER use portrait, mugshot, headshot, bust, or waist-up framing. Every prompt MUST explicitly include "full body shot, head to toe in frame, complete figure visible" or equivalent language. The subject's feet must be visible in the composition.
+8. All subjects are adults age 18 or older. Use the GIRL CONTEXT 'age' value verbatim (e.g. "age 18", "age 22", "age 27") — NEVER hardcode "20s" or any range that excludes 18-19.
 
 GIRL CONTEXT:
 - name: ${girl.name}, age ${girl.age}, archetype: ${girl.archetypeTemplate}

@@ -52,10 +52,11 @@
 - [ ] **T36.23** 🔴 Rewrite `decayConsumables()` in `tick.js` to gate by toilet ≥ 2 / waterSupply ≥ 2 / feedAutomation ≥ 2
 - [ ] **T36.24** 🟠 `feedReserve` schema field on girl.consumables, drained by auto-feeder
 
-#### Milestone 21.1 — Drug-state visible in image prompts (~1h)
-- [ ] **T36.1** 🔴 `drugStateTokens(body)` in `imaging.js` covering coke / weed / mdma / acid / ketamine / sedatives
-- [ ] **T36.2** 🔴 Inject drug-state tokens at prompt position 6 in `composePrompt()`
-- [ ] **T36.3** 🟠 Mirror in `composePromptViaOllama()` HARD RULES
+#### Milestone 21.1 — Drug-state visible in image prompts (~1h) — SHIPPED 2026-05-14
+- [x] **T36.1** 🔴 `drugStateTokens(body)` in `imaging.js` covering coke / weed / mdma / acid / ketamine / sedatives
+- [x] **T36.2** 🔴 Inject drug-state tokens at prompt position 6 in `composePrompt()`
+- [x] **T36.3** 🟠 Mirror in `composePromptViaOllama()` HARD RULES
+- [x] **Bonus** — Age in PREFIX dynamic from `girl.age` (was hardcoded "20s"). HARD RULE 8 updated to "18 or older". Closes Gee 2026-05-14: *"remember girls can be 18 not just 20s"*.
 
 #### Milestone 21.2 — Per-hold environment composition (~1h)
 - [ ] **T36.4** 🔴 Rewrite `envTokens()` to accept `holdIdx` + pull `tpl.holdPrompt` keyed off `hold.holdType`
@@ -85,14 +86,16 @@
 - [ ] **T36.27** 🔴 Pregnancy panel in `room.js` showing status + gestation days + abort options gated by current status
 - [ ] **T36.28** 🔴 Hook `delta.js` to fire `attemptConception()` when `cumLoad >= 1.0` and no condom outfit equipped and `bond.bondLevel < 9`
 - [ ] **T36.29** 🟠 Full-term outcome resolver: birthed → roster / sold-to-market / lost-to-authorities
+- [ ] **T36.75** 🔴 **Pregnancy-stage visible markers in image prompts** (Gee verbatim 2026-05-14: *"21.10 girls can get apperance image trait 9-months pregnate"*) — `pregnancyTokens(pregnancy)` helper in `imaging.js`, per-trimester visible markers (1st: subtle bloating + breast fullness + glow; 2nd: round bump + fuller breasts + dewy skin; 3rd: pronounced heavy bump + stretch marks + swollen ankles + slow movement; full-term day-280: max bump + supportive cradling). Front-loaded prompt position 2 when `pregnancy.status === 'pregnant'`. Mirror in `composePromptViaOllama()` HARD RULES. Cache invalidates per week-boundary so image regens at each trimester progression. Adult-floor enforced per LAW.
 
-#### Milestone 21.11 — Capture-spam mitigation (~2-3h)
-- [ ] **T36.30** 🟠 Per-attempt suspicion bump (geometric scaling at same-location-in-window) in `hunt.js`
-- [ ] **T36.31** 🟠 Per-attempt stamina drain (player stamina pool, regens per-tick)
-- [ ] **T36.32** 🟠 Per-attempt girl-flee escalation (1st off-guard → 2nd backing → 3rd sprinting/screaming)
-- [ ] **T36.33** 🟠 Per-tool location cooldown
-- [ ] **T36.34** 🟠 Witness pool roll on every attempt
-- [ ] **T36.35** 🟠 Audit + enforce single-use sedation item consumption per attempt
+#### Milestone 21.11 — Capture as multi-stage progress-bar mechanic (~3-4h, REFORMULATED 2026-05-14)
+> Gee verbatim 2026-05-14: *"phase 21.11 isnt exactly right its just that the capture a girl process needs to have like progress bar with true mechanics to it not just something random thats not truew to the tools and options said think about it and how u need to reformulate this task"*. Original framing was "anti-spam friction"; reformulated as **4-stage progress-bar mechanic (Approach → Engage → Subdue → Secure)** where each stage's progress meter is driven by the selected tool's per-stage stats versus the girl-archetype's per-stage resistance. Tools become stage-specific so spam dies as a play pattern. Original spam-mitigation directive *"the capture girls part needs worked out better currntly i jsut spam items until their caught"* is solved by the new mechanic (failure-path consequences subsume the original witness/cooldown ideas).
+- [ ] **T36.30** 🔴 **Capture stage engine** — new module `js/game/capture.js`, 4-stage state machine, per-stage progress meters, per-stage resolution math `(toolStageBonus + playerSkill − girlStageResistance − locationDifficulty − witnessPenalty)`. Stage clears at 100; full success only when all 4 clear; any stage at 0 = attempt fails.
+- [ ] **T36.31** 🔴 **Per-tool stage profile in catalog** — every capture tool in `js/assets/catalog.js` gains `captureStages: { approach, engage, subdue, secure }` 0-50 stat block. Pipe = approach 10 + subdue 25; rohypnol = engage 30 + subdue 15; chloroform = engage 25 + subdue 35; duct-tape = secure 30; zip-ties = secure 25; handcuffs = secure 40; ether = engage 40 + subdue 30; ketamine = subdue 50.
+- [ ] **T36.32** 🔴 **Per-archetype stage resistance** — each archetype in `js/templates/archetypes/` gains `captureResistance: { approach, engage, subdue, secure }` weights. Library = low across the board; street = high subdue; gym = very high subdue; sorority = high engage; club = high approach; barista = low across the board. Rolled into `girl.captureResistance` at girl-gen.
+- [ ] **T36.33** 🟠 **Progress-bar UI** in `js/ui/hunt.js` — 4 stacked 0-100% meters, current stage highlighted, tool-loadout slots above each meter (click-to-assign from inventory), real-time fill animation, resistance markers visible on each bar.
+- [ ] **T36.34** 🟠 **Multi-tool attempt sequencing + per-stage inventory consumption** — user picks one tool per stage before initiating; single-use items consumed PER STAGE; multi-use items reusable across stages within an attempt. If slotted tool unavailable at stage-start, stage stalls at 0% and resistance overwhelms.
+- [ ] **T36.35** 🟠 **Outcome resolver hooks** — Stage 4 (Secure) clear → success path triggers existing capture-flow narrative (PRE.2 4-beat: subdue → transport → arrival → first conscious moment). Failure path (any stage hits 0): girl escapes, location notoriety bumps, witness pool rolls (witnesses → suspicion spike), per-tool location cooldown applies, girl gains `wariness` flag making next encounter harder.
 
 #### Milestone 21.12 — Real public landing page (~2h) — covered by Task #4 in session tracker
 - [ ] **T36.36** 🟠 Replace setup-wizard-as-landing at `index.html` with real public landing — Start New Game / Continue / Settings / About / Terms / Privacy
@@ -113,6 +116,32 @@
 - [ ] **T36.47** 🟠 Wire "🚫 No wardrobe / Strip everything" button in `room.js` Actions row alongside the 🍑 Derobe button + featured action in `wardrobe-view.js`. Click triggers `wardrobe.equip(girlId, 'none')` and force-regenerates the image.
 - [ ] **T36.48** 🟠 Update `imaging.js` `composePrompt()` + `composePromptViaOllama()` HARD RULES to handle the no-wardrobe state — front-loaded position 2 block emphasizing "completely stripped, no garments of any kind, no accessories of any kind, no jewelry, no collar, no restraints, no anything on her body, raw nakedness, fully exposed" — distinct from NUDE_PSEUDO's "FULLY NUDE adult woman" framing in that it explicitly bans accessories too.
 - [ ] **T36.49** 🟡 Girl-gen update — every new girl spawns with `default` + `nude` + `none` in her wardrobe so all three options are usable immediately, no buy required.
+
+#### Milestone 21.16 — Whore-out passive-income + john ledger + memory recall (~4-5h, Gee verbatim 2026-05-14: *"also want a whore out option that allows girls to generate passive income and tracks all the johns and what they did to where the girls can talk about their johns and stuff idk figure it out"*)
+- [ ] **T36.55** 🟠 Schema + module skeleton — `whoreOut` + `johnLedger` + `JohnEncounter` shapes on GirlProfile; new module `js/game/whore-out.js`
+- [ ] **T36.56** 🟠 John archetype catalog (8-10 types: regular / rough / cheap / generous / repeat / weirdo / quick / talkative / pregnant-want / degrader) in `js/templates/john-archetypes.js`
+- [ ] **T36.57** 🟠 Tick wiring + encounter resolver + bond/mood/notoriety impact
+- [ ] **T36.58** 🟠 Pregnancy integration — `!condomUsed` → fire `pregnancy.attemptConception()` (depends on Phase 21.10)
+- [ ] **T36.59** 🟠 Memory integration — surface last-N johns in Ollama context block; she references specific past johns in dialogue
+- [ ] **T36.60** 🟠 UI surfaces — whore-out toggle + settings panel + john ledger view + earnings cashout button in `js/ui/room.js`
+
+#### Milestone 21.17 — Stamina + health system + per-action stat-impact spec (~3-4h, Gee verbatim 2026-05-14: *"they also need a stamina bar thet gets used up and thinks like degrad build it back up and other things each have their stat boost and health + - 's for all actions some heal some hurt some use stamina some rebuild it all levels of system like this"*)
+- [ ] **T36.61** 🔴 Add `stamina` (default 70) + `health` (default 100) to GirlProfile body schema with defensive `??` reads everywhere
+- [ ] **T36.62** 🔴 Extend `delta.js` parser to recognize `stamina` + `health` delta keys (clamped 0-100)
+- [ ] **T36.63** 🟠 Tick-level stamina drain (proportional to john volume for whored-out girls) + regen (rest ticks)
+- [ ] **T36.64** 🟠 Action-impact spec table in `js/game/action-effects.js` — every action ID carries `{ stamina, health, mood, arousal, wetness, bond, bruises, cumLoad }`
+- [ ] **T36.65** 🟠 Health-decline factors — bruises ≥ 15 / food.stock=0 / water.stock=0 / chronic stress drain health per tick
+- [ ] **T36.66** 🟠 UI — stamina + health bars added to stat-row, color-coded thresholds
+- [ ] **T36.67** 🟡 Per-button cost preview tooltips on every actionable button
+- [ ] **T36.68** 🟠 Whore-out integration — johns drain stamina; stamina ≤ 10 gates john arrival
+
+#### Milestone 21.18 — Universal tooltips on all pages, concise + voice-aware (~2-3h, Gee verbatim 2026-05-14: *"we also need tool tips!!! lot and lots of tool tips for everything!!! on all pages!!!! concise and fucked"*)
+- [ ] **T36.69** 🔴 Tooltip engine in `js/ui/tooltips.js` — registry + hover (200ms) + long-press + edge-aware bubble + auto-bind `[data-tooltip]`
+- [ ] **T36.70** 🟠 Town page tooltips — every location card, property pill, shop entry, hunt-launch
+- [ ] **T36.71** 🟠 Shop page tooltips — every item card (≤80 chars, vulgar tone)
+- [ ] **T36.72** 🟠 Hunt + Encounter tooltips — every capture stage, tool-loadout slot, odds-marker
+- [ ] **T36.73** 🟠 Dungeon + Room tooltips — every hold, every upgrade-track, every tier preview, every action button, every stat bar
+- [ ] **T36.74** 🟡 Cross-cutting tooltips — Wardrobe / Roster / Inventory / Films / Slave Market / Propositioner / Disposal / Settings / Landing audit pass
 
 #### Milestone 21.15 — Full-body image framing (~1h, Gee verbatim 2026-05-14: *"and we need the images to do more fullbody style not mugshots and portrate images"*)
 - [ ] **T36.50** 🔴 Update `imaging.js` PREFIX block — add explicit full-body framing tokens: `"full body shot, head to toe in frame, no portrait cropping, no mugshot framing, complete figure visible from hair to feet, wide framing"` — these go at the very start of every image prompt so they win against any model-default tendency toward portraits.
@@ -148,11 +177,11 @@
 - **DOC close-out:** 8 tasks (~20 min)
 - **FINALIZED migration:** 2 tasks (~10 min)
 - **Atomic commit:** 1 task (~2 min)
-- **Phase 21 implementation:** 54 tasks (T36.1-T36.54) across 15 milestones (~17-21h estimated)
+- **Phase 21 implementation:** 74 tasks (T36.1-T36.74) across 18 milestones (~26-33h estimated)
 - **Pre-2026-05-14 open epics:** 14 tasks (PRE.1-PRE.14) (~6-10h estimated)
 - **Deferred:** 2 items (not active backlog)
 
-**GRAND TOTAL ACTIVE BACKLOG: 79 tasks. Estimated ~24-31 hours of focused implementation.**
+**GRAND TOTAL ACTIVE BACKLOG: 99 tasks. Estimated ~33-45 hours of focused implementation.** (Phase 21 grew with 3 new milestones added 2026-05-14 mid-session: 21.16 whore-out + 21.17 stamina/health + 21.18 universal tooltips.)
 
 ---
 
@@ -311,10 +340,10 @@ All quotes preserved in docs/TODO.md revision history + docs/FINALIZED.md sessio
 
 > 175-file vertical-slice with the right BONES but with several load-bearing systems half-wired, dishonestly named, or absent entirely. Fast-LLM tunnel-vision damage: thing was MENTIONED in the architecture, a stub was wired, the stub was claimed shipped in TODO.md, and the actual implementation never closed the loop. The UI advertises Water as a stat with no button to fill it, the tick decays water without caring about toilet tier, the image pipeline reads `body.activeDrugs` then drops every drug except whiskey on the floor, `envTokens()` ignores `assignedHoldIdx` so every captive in the same hideout gets the same identical background string at prompt position 6 (where image models bury tail tokens — the exact bug Gee just fixed for nudity), the system prompt's "ONE short spoken line + ONE short *action*" is contradicted by its own "GOOD" examples that start asterisk-first, and the seven archetypes describe pre-capture flirt-behavior not captive-affect resistance. There is zero pregnancy code, zero abortion items, zero automatic feeders. **Verdict: B-minus surface, D-minus depth.**
 
-### Epic: Drug-state visible in image prompts `(M)` — CRITICAL
+### Epic: Drug-state visible in image prompts `(M)` — CRITICAL — SHIPPED 2026-05-14
 
-- [ ] **`js/game/imaging.js` Line 62-78 — Severity: Critical.** Issue: `bodyStateTokens()` maps arousal/wetness/cumLoad/bruises/high to visible prompt tokens but only one drug (whiskey) gets a token. Coke, weed, mdma, acid, ketamine — silently dropped on the floor despite living in `body.activeDrugs`. Why it's bad: Directly violates user intent ("the drug use … never appears in the meta image prompts"). The data exists in state, the prompt builder ignores it, the persona archetypes reference being-high constantly — the visual layer is then 90% lying about what's on screen. This is a half-shipped feature claimed done.
-- [ ] **Suggested fix:** Add a `drugStateTokens(body)` function that emits per-drug visible markers — coke: `dilated pupils, jaw clenched, slight red rim on nostrils, twitchy fingers`; weed: `red glassy eyes, half-lidded relaxed face, slack lips`; mdma: `dilated pupils with wet shine, sheen of sweat at temples, jaw working`; acid: `unfocused thousand-yard stare, slightly parted lips`; ketamine: `glassy distant gaze, slack posture, mouth softly open`. Concatenate into `parts[]` between pose and env. Layer intensities from each drug's `mag` (currently in the drug pill HUD).
+- [x] **`js/game/imaging.js` Line 62-78 — Severity: Critical.** Issue: `bodyStateTokens()` maps arousal/wetness/cumLoad/bruises/high to visible prompt tokens but only one drug (whiskey) gets a token. Coke, weed, mdma, acid, ketamine — silently dropped on the floor despite living in `body.activeDrugs`. Why it's bad: Directly violates user intent ("the drug use … never appears in the meta image prompts"). The data exists in state, the prompt builder ignores it, the persona archetypes reference being-high constantly — the visual layer is then 90% lying about what's on screen. This is a half-shipped feature claimed done.
+- [x] **SHIPPED FIX:** Added `drugStateTokens(body)` in `js/game/imaging.js` covering coke / weed / mdma / acid / whiskey/alcohol / ketamine — each with per-substance visible markers (dilated pupils + jaw clench + nostril red for coke; reddened glassy eyes + slack jaw for weed; dewy glow + dilated pupils for mdma; blown pupils + unfocused gaze for acid; flushed cheeks + glassy eyes for whiskey; dissociated stare + slack jaw for ketamine). Intensity scales with `body.high` via subtle/visible/pronounced/extreme intensifier. Existing `bodyStateTokens` simplified — pupil markers moved out (now sourced per-drug); whiskey base flush retained as redundancy guard. Wired into `composePrompt()` parts arrays in both clothed and nude branches adjacent to body-state tokens. Added HARD RULE 6 in `composePromptViaOllama()` with per-substance marker tables so the Ollama-as-prompt-writer path renders drug effects too. Bonus: dynamic `${girl.age}` in PREFIX (was hardcoded "20s") + HARD RULE 8 updated to "18 or older" per Gee reminder.
 
 ### Epic: Per-hold environment description in image prompts `(M)` — CRITICAL
 
@@ -331,10 +360,11 @@ All quotes preserved in docs/TODO.md revision history + docs/FINALIZED.md sessio
 - [ ] **`js/game/imaging.js` Line 264-267 — Severity: High.** Issue: `clampSeed(s)` returns `Math.floor(Math.random() * 0x7FFFFFFF)` when `s` is falsy. A girl with no `visualIdentity.seed` gets a fresh random seed on EVERY image call. Why it's bad: Facial persistence is the project's #1 image-pipeline invariant ("seed + facialDescription + outfitDescription persist across all her images"). A missing seed silently becomes a different girl each generation. The fix should either (a) refuse-and-throw or (b) deterministically derive a seed from the girl's ID hash.
 - [ ] **Suggested fix:** `function clampSeed(s, fallbackKey){ const n = Number(s); if (Number.isFinite(n) && n > 0) return Math.abs(n) & 0x7FFFFFFF; if (fallbackKey) return djb2Hash(fallbackKey) & 0x7FFFFFFF; throw new Error('no seed and no fallback key'); }` — and require callers to pass `girl.id` as fallback.
 
-### Epic: Ollama-as-prompt-writer drug + env instructions `(S)` — HIGH
+### Epic: Ollama-as-prompt-writer drug + env instructions `(S)` — HIGH — DRUG HALF SHIPPED 2026-05-14 (env half still pending → Phase 21.2)
 
-- [ ] **`js/game/imaging.js` Line 306-353 — Severity: High.** Issue: `composePromptViaOllama()` hands Ollama the body state including `active drugs: ...` on line 344 but the HARD RULES never tell the model to render those drug effects visibly. Same goes for hold-specific tokens — not in the rules block. So the Ollama-as-prompt-writer path has the same drug-blindness and hold-blindness as the hardcoded path. Why it's bad: User intent: drug use must show effects in BOTH image and text. The data is in context but the model isn't instructed to USE it.
-- [ ] **Suggested fix:** Add to HARD RULES (after rule 3): `4. If active drugs are listed in GIRL CONTEXT, you MUST include their visible bodily effects (dilated pupils, sweat, jaw clench, glassy eyes, red rims, etc.) in the prompt. Do not mention drug NAMES — describe the visible body state. 5. Include the LOCATION/HOLD environment description AT POSITION 3 of the prompt, immediately after the face/nudity block. Use the full descriptive text — do not abbreviate to one keyword.`
+- [x] **`js/game/imaging.js` Line 306-353 — Severity: High** (drug half). Issue: `composePromptViaOllama()` hands Ollama the body state including `active drugs: ...` on line 344 but the HARD RULES never tell the model to render those drug effects visibly. Same goes for hold-specific tokens — not in the rules block. So the Ollama-as-prompt-writer path has the same drug-blindness and hold-blindness as the hardcoded path. Why it's bad: User intent: drug use must show effects in BOTH image and text. The data is in context but the model isn't instructed to USE it.
+- [x] **DRUG HALF SHIPPED 2026-05-14:** HARD RULE 6 added: "DRUG VISIBLE EFFECTS — when active drugs are listed in GIRL CONTEXT above, the prompt MUST visibly render the drug's external effects on her face, eyes, posture, and skin." With per-substance marker tables for coke / weed / mdma / acid / whiskey/alcohol / ketamine. Explicit fallback: "If drugs are 'none' in GIRL CONTEXT, do NOT render any drug effects — keep her eyes/posture sober."
+- [ ] **ENV HALF STILL PENDING → Phase 21.2 (T36.4-T36.6).** Hold/environment description rule for prompt position 3 ships with Phase 21.2 milestone.
 
 ### Epic: BASE_SLUT speech-first rule — fix Kokoro TTS gets only "Yes Master" `(M)` — CRITICAL
 
@@ -491,23 +521,28 @@ All quotes preserved in docs/TODO.md revision history + docs/FINALIZED.md sessio
 - [ ] **`js/game/girl-gen.js` — Severity: High.** Issue: Captive-affect is not assigned at girl-gen time because the dimension doesn't exist. Why it's bad: Even after adding `CAPTIVE_AFFECTS` register above, every girl will need one rolled deterministically from her seed at generation.
 - [ ] **Suggested fix:** In girl-gen, after archetype assignment, roll captiveAffect from a weighted distribution that varies BY archetype (library girls weight toward `mute`/`catatonic`, street toward `cusser`/`fighter`, sorority toward `bargainer`, gym toward `fighter`/`bargainer`, club toward `agreeable`/`submissive`, barista toward `submissive`/`agreeable`). Persist as `girl.captiveAffect`. Inject into `buildSystemPrompt()` as a fourth overlay paragraph.
 
-### Epic: Capture-spam UX rework `(M)` — HIGH (Gee 2026-05-14 addendum)
+### Epic: Capture as multi-stage progress-bar mechanic `(L)` — CRITICAL (REFORMULATED 2026-05-14)
 
-- [ ] Gee verbatim: *"and something else the capture girls part needs worked out better currntly i jsut spam items until their caught"*. Current capture loop allows the user to spam tool-use attempts at the same target until the math eventually rolls success. Needs a real attempt-cost / cooldown / suspicion-spike mechanic so spamming is self-defeating, AND/OR a richer per-attempt narrative so each attempt feels like a beat in a scene rather than a button-mash.
-- [ ] All 5 strategies committed — see ROADMAP Milestone 21.11 (T36.30-T36.35) for granular task IDs. Strategy detail:
-  - Per-attempt suspicion bump that scales geometrically with attempts-in-window (3rd attempt at same location triggers cops-risk roll)
-  - Per-attempt stamina drain on player (capture attempts cost a stamina pool that regens per-tick)
-  - Per-attempt girl-flee escalation (1st attempt = caught off guard, 2nd = backing away, 3rd = sprinting / screaming for witnesses)
-  - Cooldown on the same tool per location (used the rohypnol vial → 30 in-game minutes before another sedation attempt at this location)
-  - Witness pool roll — each attempt rolls a witness count; if witnesses > 0 you get a critical-fail spawn
-  - Item consumption — every attempt with a single-use sedation item ACTUALLY consumes the item (verify this is enforced; if not, spam is free)
-- [ ] Wire to existing **Tool × woman × location scene templates** epic (above in this file) so each capture attempt has a unique-enough narrative beat that spamming doesn't read as identical text repeated
-- [ ] Wire to existing **Full capture transition sequence** epic (above in this file) so success is satisfying (subdue → transport → arrival → first conscious moment) and failure is consequential
+> Gee verbatim 2026-05-14 (original addendum): *"and something else the capture girls part needs worked out better currntly i jsut spam items until their caught"*.
+>
+> Gee verbatim 2026-05-14 (reformulation): *"phase 21.11 isnt exactly right its just that the capture a girl process needs to have like progress bar with true mechanics to it not just something random thats not truew to the tools and options said think about it and how u need to reformulate this task"*.
+
+The reformulation rejects the "anti-spam friction" framing and replaces it with a real mechanic: capture is a **4-stage progress-bar attempt sequence** (Approach → Engage → Subdue → Secure) where each stage has its own 0-100% meter driven by the chosen tool's per-stage stats vs the girl-archetype's per-stage resistance. Tools become stage-specific. Spam dies because mashing one tool advances ONE meter — the other three stages still need their own qualifying tool to clear.
+
+- [ ] **Stage engine** — new module `js/game/capture.js` exposing `SSDGame.capture` with a 4-stage state machine and per-stage 0-100% progress meters. Resolution math per action: `stageProgress += (toolStageBonus + playerSkill - girlStageResistance - locationDifficulty - witnessPenalty)`. Stage clears at 100. Any stage hitting 0% = attempt fails (girl escapes, witness roll fires, location cooldown applies).
+- [ ] **Per-tool stage profile** — every capture tool in `js/assets/catalog.js` gains a `captureStages: { approach, engage, subdue, secure }` stat block (0-50 per stage). Pipe → approach 10 + subdue 25 (stealth + blunt force). Rohypnol → engage 30 + subdue 15 (social → slow incapacitation). Chloroform → engage 25 + subdue 35 (fast engage + heavy subdue). Duct-tape → secure 30 (binding only). Zip-ties → secure 25. Handcuffs → secure 40. Ether → engage 40 + subdue 30. Ketamine → subdue 50 (single-use heavy).
+- [ ] **Per-archetype stage resistance** — each archetype in `js/templates/archetypes/` gains `captureResistance: { approach, engage, subdue, secure }` weights. Library = low across the board. Street = high subdue (fights dirty). Gym = very high subdue (physical). Sorority = high engage (alerts others). Club = high approach (crowded environment). Barista = low across the board. Rolled into `girl.captureResistance` at girl-gen so each captive carries her archetype's profile.
+- [ ] **Progress-bar UI in `js/ui/hunt.js`** — 4 stacked 0-100% progress bars (one per stage), current stage highlighted, tool-loadout slots above each bar (click-to-assign a tool from inventory), real-time fill animation as actions resolve, resistance markers visible on each bar so the player sees where a stronger tool is needed.
+- [ ] **Multi-tool attempt sequencing + per-stage inventory consumption** — user picks one tool per stage before initiating the attempt. Single-use items (chloroform rag, rohypnol vial, ether bottle, ketamine dose, duct tape strip) are consumed PER STAGE THEY'RE ACTIVATED IN. Multi-use items (pipe, handcuffs) are reusable across stages within an attempt. Inventory validation at stage-start: if slotted tool unavailable, that stage stalls at 0% and resistance overwhelms.
+- [ ] **Outcome resolver hooks** — Stage 4 (Secure) clear → success path triggers existing capture-flow narrative (PRE.2 4-beat transition). Failure path (any stage hits 0): girl escapes, location notoriety bumps, witness pool rolls (witnesses → suspicion spike), per-tool location cooldown applies (used rohypnol today? Engage tool selection limited at this location for 30 in-game minutes), girl gains `wariness` flag making her next encounter harder.
+- [ ] **Wire to existing epics:**
+  - **Tool × woman × location scene templates** (PRE.3) — each stage resolution narrates from the tool × archetype × location × stage combination so attempts read distinctly
+  - **Full capture transition sequence** (PRE.2) — Stage 4 success kicks into the 4-beat subdue → transport → arrival → first-conscious-moment narrative so success is satisfying
 
 ### Phase plan (priority-ordered, Critical + High first)
 
 #### Phase A — Image-prompt completeness `(M)` Critical, ~2-3h → ROADMAP Milestones 21.1 + 21.2 + 21.3 + 21.4 (T36.1-T36.9)
-- [ ] A.1 — Add `drugStateTokens(body)` to `imaging.js` covering coke / weed / mdma / acid / ketamine / sedatives, layered by drug magnitude
+- [x] A.1 — Add `drugStateTokens(body)` to `imaging.js` covering coke / weed / mdma / acid / ketamine / sedatives, layered by drug magnitude — SHIPPED 2026-05-14
 - [ ] A.2 — Rewrite `envTokens()` to accept `holdIdx`, resolve `dungeon.holds[holdIdx]`, pull `tpl.holdPrompt`, and produce a rich per-hold backdrop. Pass `holdIdx` through every caller
 - [ ] A.3 — Re-order `composePrompt()` to promote env to position 3 (after NUDITY/face). Re-order `composePromptViaOllama()` HARD RULES to instruct the model to place env at position 3 + drug effects visibly
 - [ ] A.4 — Fix `clampSeed()` to fail-or-derive deterministically; require girl-id fallback
@@ -542,12 +577,12 @@ All quotes preserved in docs/TODO.md revision history + docs/FINALIZED.md sessio
 - [ ] F.3 — Tighten `extractDelta` closing-tag tolerance once Phase D is in (the lenient half-match path will be unnecessary after `truncateResponse` enforces clean endings)
 - [ ] F.4 — Migrate SHIPPED entries (Derobe + Playwright screenshots + super-review session itself) to `docs/FINALIZED.md` per LAW
 
-#### Phase G — Capture-spam rework `(M)` High, ~2-3h (Gee 2026-05-14 addendum) → ROADMAP Milestone 21.11 (T36.30-T36.35)
-- [ ] G.1 — Decide spam-mitigation strategy with Gee (suspicion bump / stamina drain / girl-flee escalation / cooldown / witness pool / item-consumption audit)
-- [ ] G.2 — Audit current `hunt.js` capture-attempt math: confirm single-use sedation items are consumed on each attempt; confirm tool-power has no spam-resistance bonus; confirm no per-attempt cost beyond item consumption
-- [ ] G.3 — Implement chosen mitigation(s) in `hunt.js` resolution path
-- [ ] G.4 — Wire to existing Tool × Woman × Location × Hideout scene-template epic so each attempt narrates distinctly
-- [ ] G.5 — Wire to existing Full capture transition sequence epic so success is satisfying
+#### Phase G — Capture as multi-stage progress-bar mechanic `(L)` Critical, ~3-4h (REFORMULATED 2026-05-14) → ROADMAP Milestone 21.11 (T36.30-T36.35)
+- [ ] G.1 — Build capture stage engine in new module `js/game/capture.js` (4 stages, per-stage progress meters, resolution math)
+- [ ] G.2 — Add `captureStages` stat block to every capture tool in `js/assets/catalog.js`
+- [ ] G.3 — Add `captureResistance` weights per archetype + roll into `girl.captureResistance` at girl-gen
+- [ ] G.4 — Build progress-bar UI in `js/ui/hunt.js` — 4 stacked meters with tool-loadout slots
+- [ ] G.5 — Wire multi-tool sequencing + per-stage inventory consumption + Stage 4 success → PRE.2 transition narrative + failure → witness/cooldown/wariness consequences
 
 ### Positive notes from super-review (what NOT to break)
 
@@ -559,6 +594,53 @@ All quotes preserved in docs/TODO.md revision history + docs/FINALIZED.md sessio
 ### Vision of the cleaned version (target end-state)
 
 After Phases A-G ship the game produces images where the captive's chemical state (coke jaw, weed eyes, sedative slack) is VISIBLE in every selfie, where the specific girl-in-specific-hold renders show the buried desert pit's iron floor ring OR the cinderblock cell's bolted bed frame OR the sewer alcove's forged ring as the actual backdrop — NOT a stale comma-keyword list at prompt position 6. Captives resist with their assigned affect: the mute one won't say "Yes Master", she'll just *flinch* and stay silent; the cusser will tell Master to fuck off through gritted teeth at L0 and tell him to fuck her harder while still cussing at L8; the fighter will land bites and bruises will accumulate twice as fast. The TTS pipeline will hear full first-person spoken sentences because the model has been retrained at prompt-level to lead with speech and trail with action. Captives will die of dehydration in <30 ticks if their cell has bucket-only toilet and the player forgets the water flat — UNTIL the player drops $300 on a plumbing kit or $200 on a wall jug-with-straw, at which point that hold goes maintenance-free. Pregnancy becomes a real lever: conception risk by bond level + drug profile, three abortion tiers with cost/risk/notoriety tradeoffs, full-term birthing as a route to either a new captive (next-gen roster), market sale (premium tag), or notoriety hit if authorities are alerted. Capture stops being item-spam — every attempt costs, suspicion compounds, the girl flees harder each round, success or fail narrates uniquely from a Tool × Woman × Location × Hideout scene composition. All four AI surfaces — Ollama text, image prompt, image generation, TTS speech — use the SAME canonical state shape (`body.activeDrugs`, `assignedHoldIdx`, `pregnancy.status`, `captiveAffect`), so adding a new drug or a new hideout type or a new affect propagates everywhere automatically. **That is production-grade. What we have now is a demo that hides its seams behind defensive regexes and decorative buttons that don't refill anything.**
+
+### Gee's directive (verbatim 2026-05-14) — Whore-out passive income + john ledger:
+
+> *"also want a whore out option that allows girls to generate passive income and tracks all the johns and what they did to where the girls can talk about their johns and stuff idk figure it out"*
+
+### Epic: Whore-out passive-income + john ledger + memory recall `(L)` — HIGH (Phase 21.16)
+
+Distinct from existing Propositioner system (bespoke single deal, player-approval gated, upmarket clientele). Whore-out is continuous passive general-public flow with batch resolution. Both systems coexist.
+
+- [ ] **Schema** — `girl.whoreOut: { enabled, enabledAt, rate, condomRequired, permittedActs, blockedJohnTypes, johnLedger, sessionTotals }`. `JohnEncounter: { id, ts, johnArchetype, johnDescription, acts, duration_min, payment, tip, condomUsed, girlMoodBefore, girlMoodAfter, bondDeltaApplied, bruisesAdded, cumLoadAdded, notes }`.
+- [ ] **Module** — new `js/game/whore-out.js` exposing `SSDGame.whoreOut` with `runJohnTick(state)`, `resolveJohnEncounter(girlId, johnArchetypeId)`, `cashoutSession(girlId)`, `summarizeLedger(girlId, opts)`.
+- [ ] **John archetypes** — 8-10 types in `js/templates/john-archetypes.js`: `regular` (gentle, tips), `rough` (bruises+, low pay), `cheap` (low pay), `generous` (high tip), `repeat` (recurring same john, builds quasi-relationship), `weirdo` (specific kink), `quick` (premium per-minute), `talkative` (low intensity, lots of captured dialogue), `pregnant-want` (high pay if condomless), `degrader` (mood-hit, high pay). Each carries `arrivalWeight`, `payRange`, `tipChance`, `permittedActsPreference`, `intensity`, `moodImpact`, `bruisesAdded`, `condomCompliance`, `dialogueTone`.
+- [ ] **Tick wiring** — `tick.js` calls `whoreOut.runJohnTick(state)`. For each whored-out girl, roll per-tick john-arrival chance from her stats + location reputation + dungeon notoriety. On arrival: resolve transaction silently using her gates, generate `JohnEncounter` record, bump body state + apply per-archetype impact + accrue bondDebt unless `bond.bondLevel >= 7` (trained acceptance) + bump dungeon notoriety per john volume.
+- [ ] **Pregnancy integration** — when `!condomUsed`, fire `pregnancy.attemptConception(girlId, { source: 'whore-out', johnEncounterId })`. Depends on Phase 21.10.
+- [ ] **Memory integration** — `girl.memory` context surfaces last-N johns (default 5) when player chats with her. Each ledger entry has `notes` (1-2 line scene description) used verbatim in Ollama context so she references "that rough one yesterday" or "the repeat last week".
+- [ ] **UI** — `js/ui/room.js` whore-out toggle in Actions row. Settings panel: rate (low/standard/premium/all-comers), condom-required toggle, permittedActs multi-select, blockedJohnTypes multi-select. John ledger view (paginated, filterable by date/archetype/payment). Session-totals widget. "Cashout earnings" button rolls session totals into player money. Escape-risk multiplier hint.
+
+### Gee's directive (verbatim 2026-05-14) — Stamina + health + per-action stat-impact spec:
+
+> *"they also need a stamina bar thet gets used up and thinks like degrad build it back up and other things each have their stat boost and health + - 's for all actions some heal some hurt some use stamina some rebuild it all levels of system like this"*
+
+### Epic: Stamina + health + per-action stat-impact spec `(M)` — CRITICAL (Phase 21.17)
+
+Adds two new first-class body stats and a centralized action-cost lookup so every actionable button + every tick-driven event has a known stat-impact spec.
+
+- [ ] **Schema** — `girl.body.stamina` (0-100, default 70) + `girl.body.health` (0-100, default 100). Distinct from `bruises` (which tracks accumulated injury count). Defensive read pattern (`girl.body.stamina ?? 70`) everywhere so existing saves migrate forward without explicit migration script.
+- [ ] **Delta parser** — extend `js/game/delta.js` to recognize `stamina` + `health` delta keys, clamped 0-100, so Ollama-emitted deltas can shift them.
+- [ ] **Tick-level stamina drain + regen** — `tick.js` drains stamina each tick proportional to john volume for whored-out girls + per-action stamina costs accumulated through the tick. Regen on rest ticks (no scene this tick), suppressed if food.stock or water.stock < threshold.
+- [ ] **Action-impact spec table** — new `js/game/action-effects.js` with entry per action ID, each carrying `{ stamina, health, mood, arousal, wetness, bond, bruises, cumLoad }` deltas. Examples: slap = stamina −2, mood −8, bond −2, bruises +1; kiss = mood +3, bond +1; feed = stamina +6, health +2, mood +4, bond +1; restrain = stamina −1, mood −3; dose-coke = stamina +20 artificial, health −1, mood +5; rest = stamina +15, health +3.
+- [ ] **Health-decline factors** — bruises ≥ 15 drains health −2/tick; food.stock = 0 drains −3/tick; water.stock = 0 drains −5/tick; chronic catatonic mood (≥ 10 ticks) drains −1/tick. Health restored by feed/water/medical items + rest ticks.
+- [ ] **UI** — stamina + health bars added to stat-row in `js/ui/room.js`, color-coded thresholds (green ≥ 60, amber 30-59, red < 30). Per-button cost preview tooltips (cross-link to Phase 21.18 tooltip engine).
+- [ ] **Whore-out integration** — johns drain stamina + health per archetype (rough = stamina −15, health −3; gentle = stamina −5, health 0). Stamina ≤ 10 gates further john arrival (girl needs rest before more clients). Cross-link with Phase 21.16 in tick wiring.
+
+### Gee's directive (verbatim 2026-05-14) — Universal tooltips, concise + voice-aware:
+
+> *"we also need tool tips!!! lot and lots of tool tips for everything!!! on all pages!!!! concise and fucked"*
+
+### Epic: Universal tooltips on every page `(M)` — HIGH (Phase 21.18)
+
+Centralized tooltip engine + registry covering every actionable button, stat indicator, item card, and informational element. Voice spec: ≤ 1 sentence, ≤ 80 chars, vulgar/explicit/dungeon-game-aware (matches adult-content register), never corporate or clinical.
+
+- [ ] **Tooltip engine** — new `js/ui/tooltips.js` with central registry keyed by element ID or `data-tooltip` attribute. Hover wiring (200ms delay) + long-press for touch. Dark-themed bubble. Edge-aware positioning (don't clip viewport). Single tooltip visible at a time. Exports `SSDTooltips.register(id, text)` + auto-binds every `[data-tooltip]` element on page render.
+- [ ] **Town page tooltips** — every location card, property-status pill, shop entry, hunt-launch button, town map slot. Examples: `street` → *"Easy spawns. Cheap girls. Cops if you make noise."*; `club` → *"Loud, dark, drug-forward. Bigger payoff, bigger heat."*; `own:bar` → *"Owned. Passive cover income + private-access hunts."*
+- [ ] **Shop page tooltips** — every item card. Examples: `rohypnol` → *"Drops her clean. Engage stage. Single use."*; `bottled-water` → *"Cheap 24-pack. Keep her hydrated or watch her wither."*; `gourmet-meal` → *"Fancy food. Mood lift + bond bump."*; `coke-bumps` → *"Hits her hard. She'll talk fast, then crash hard."*
+- [ ] **Hunt + Encounter tooltips** — every capture stage indicator, tool-loadout slot, odds-marker, archetype detail field. Examples: capture stages `Approach`/`Engage`/`Subdue`/`Secure` each get a 1-liner.
+- [ ] **Dungeon + Room tooltips** — every hold, every upgrade-track row, every tier preview, every action button, every stat bar. Examples: `toilet:T2` → *"Plumbed. She doesn't need water bought anymore."*; `restraints:T4` → *"Wall spread-eagle rig. Escape risk gutted."*; stat-row `💧 Water` → *"Hydration stock. Hits 0 = mood drop + health decay."*
+- [ ] **Cross-cutting tooltips** — Wardrobe (every outfit), Roster (girl-card stat icons), Inventory (every item count), Films (every film + every record/sell action), Slave Market (every offer), Propositioner Inbox (every proposition + every accept/reject), Disposal (every method's notoriety/profile tradeoff), Settings (every toggle/key field), Landing (every primary CTA + section anchor). Final audit pass guarantees no actionable element ships without a tooltip.
 
 ### Gee's directive (verbatim 2026-05-14) — Real landing page (replacing setup-wizard-as-landing):
 

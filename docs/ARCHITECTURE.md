@@ -977,17 +977,33 @@ Memory starts simple: a chronological JSONL log of turns. Retrieval: tag-filter 
 ### Hunting pattern
 The user goes *"huntinG"* (Gee verbatim) by picking a location from the outside world map. The `hunting.mjs` engine rolls a spawn table for that location — mix of regulars, rare encounters, and template-generated unique girls. User picks one, chooses approach type (talk / charm / bribe / attempt-capture-with-tool-from-inventory), and the outcome resolves against the girl's stats + public/private context + current player inventory + suspicion state. Harder locations spawn more vibrant / higher-rarity girls. Capture success moves the girl from "in the wild" to "captive in your dungeon".
 
-### Capture-spam mitigation pattern (Gee verbatim 2026-05-14: *"the capture girls part needs worked out better currntly i jsut spam items until their caught"*)
-Repeated tool-use attempts at the same target compound cost so spamming items is self-defeating:
+### Capture-as-progress-bar mechanic pattern (REFORMULATED 2026-05-14)
 
-- **Per-attempt suspicion bump (geometric scaling)** — each attempt at the same location-in-window adds suspicion; 3rd attempt triggers a cops-risk roll regardless of capture success.
-- **Per-attempt stamina drain** — capture attempts cost a player stamina pool that regens per-tick. Spamming bottoms the pool and gates further attempts.
-- **Per-attempt girl-flee escalation** — 1st attempt = caught off guard, 2nd = backing away (success probability halved), 3rd = sprinting / screaming for witnesses (forced critical-fail with witness spawn).
-- **Per-tool location cooldown** — used the rohypnol vial → 30 in-game minutes before another sedation attempt at this location.
-- **Witness pool roll** — each attempt rolls a witness count against the location's `publicness` factor; witnesses > 0 → critical-fail spawn.
-- **Single-use item consumption** — every sedation attempt consumes the item, success or fail. Pipe / blunt items survive but suspicion-bump applies.
+Gee verbatim 2026-05-14 (original addendum): *"the capture girls part needs worked out better currntly i jsut spam items until their caught"*.
+Gee verbatim 2026-05-14 (reformulation): *"phase 21.11 isnt exactly right its just that the capture a girl process needs to have like progress bar with true mechanics to it not just something random thats not truew to the tools and options said think about it and how u need to reformulate this task"*.
 
-Successful captures trigger the 4-beat capture transition sequence (subdue → transport → arrival → first conscious moment) factored by tool × archetype × source location × destination hideout.
+The capture is **not** a single dice-roll-with-friction. It's a **4-stage progress-bar attempt sequence** where each stage has its own 0-100% meter driven by the selected tool's per-stage stats vs the girl-archetype's per-stage resistance. Spam dies as a play pattern because tools are stage-specific — mashing one tool advances ONE meter while the other three stages still need their own qualifying tool.
+
+**The four stages:**
+
+1. **Approach** — close distance / get the girl alone / set up the action. Stealth + observation. Pipe (10), chloroform (0), rohypnol (0).
+2. **Engage** — apply the active subduing tool. Social hand-off, fast incapacitation, or grapple-distance. Rohypnol (30), chloroform (25), ether (40), pipe (0).
+3. **Subdue** — wear her down until incapacitated. Per-tick subdue rate from each tool. Ketamine (50, single-use), chloroform (35), ether (30), pipe (25), rohypnol (15).
+4. **Secure** — bind / restrain so transport is possible. Duct-tape (30), zip-ties (25), handcuffs (40, reusable).
+
+**Per-stage resolution math:** `stageProgress += (toolStageBonus + playerSkill - girlStageResistance - locationDifficulty - witnessPenalty)` per action. Stage clears at 100. Any stage hitting 0% = attempt fails.
+
+**Per-tool stage profile** lives in `js/assets/catalog.js` on every capture tool: `captureStages: { approach, engage, subdue, secure }` (0-50 per stage).
+
+**Per-archetype stage resistance** lives in `js/templates/archetypes/`: `captureResistance: { approach, engage, subdue, secure }`. Library = low across; Street = high subdue (fights dirty); Gym = very high subdue (physical); Sorority = high engage (alerts others); Club = high approach (crowded); Barista = low across.
+
+**Multi-tool sequencing:** user picks one tool per stage before initiating. Single-use items (chloroform rag, rohypnol vial, ether bottle, ketamine dose, duct-tape strip) are consumed PER STAGE THEY'RE ACTIVATED IN. Multi-use items (pipe, handcuffs) reusable across stages within the attempt. Inventory validation at stage-start: if slotted tool unavailable, stage stalls at 0% and resistance overwhelms.
+
+**Outcome resolver:** Stage 4 (Secure) clear → success path triggers the existing 4-beat capture transition narrative (subdue → transport → arrival → first conscious moment) factored by tool × archetype × source location × destination hideout. Failure path (any stage hits 0): girl escapes, location notoriety bumps, witness pool rolls (witnesses → suspicion spike), per-tool location cooldown applies (used rohypnol today? Engage tool selection limited at this location for 30 in-game minutes), girl gains `wariness` flag making her next encounter harder.
+
+The original anti-spam friction mechanics (witness roll, location cooldown, suspicion bumps) survive as failure-path consequences within the new mechanic. Single-use sedation item consumption is now enforced AT STAGE GRANULARITY rather than per-attempt — chloroforming her unconscious requires using the chloroform tool at the Engage stage, not just clicking a "use chloroform" button.
+
+Engine lives in `js/game/capture.js` (new module). UI in `js/ui/hunt.js` renders 4 stacked 0-100% progress bars with tool-loadout slots above each, current-stage highlight, real-time fill animation, and resistance markers visible on each bar so the player sees where a stronger tool is needed.
 
 ### Hideout-specific environment composition pattern (image renders)
 Every dungeon template in `js/assets/catalog.js` carries `plotTokens` (template aesthetic) AND `holdPrompt` (per-hold specific description). The image-prompt composer reads BOTH at position 3 of the prompt (immediately after face/nudity) so every captive in every hold renders her own specific hold as the background. Example compositions:
