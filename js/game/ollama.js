@@ -145,16 +145,15 @@
         if (chunk) { raw += chunk; if (onChunk) onChunk(chunk, raw); }
       } catch {}
     }
-    // Apply truncateResponse AFTER stream completes — caps runaway narration
-    // at 50 words / 3 sentences while preserving the <delta>...</delta> block.
-    // Enforces the SPEECH-FIRST RULE shape at the model-output boundary so
-    // long third-person asterisk-narrations get trimmed before reaching delta-parse
-    // and TTS. The user sees the full stream arrive then watches it collapse to
-    // the speech-first shape when the bubble finalizes — that visible collapse is
-    // intentional, it teaches the right output shape.
-    const truncated = truncateResponse(raw, { maxSentences: 3, maxWords: 50 });
-    const parsed = window.DMTHTemplates.extractDelta(truncated);
-    return { raw: truncated, parsed };
+    // No post-stream truncation. Earlier this function clipped the model's response
+    // to 3 sentences / 50 words to enforce the SPEECH-FIRST RULE shape, but that
+    // produced a visible "collapse" — the live stream showed the model's full reply,
+    // and then the bubble snapped to a shortened version once parsing finished.
+    // The model now chooses its own length; the scrubbers in extractDelta still
+    // strip system-prompt leakage + third-person Master narration, but never trim
+    // for length.
+    const parsed = window.DMTHTemplates.extractDelta(raw);
+    return { raw, parsed };
   }
 
   // High-level: run a turn for a girl — assembles full prompt, streams, returns parsed.
