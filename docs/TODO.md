@@ -10,7 +10,9 @@
 
 ---
 
-## 🟢 ACTIVE BACKLOG
+## 🟢 ACTIVE BACKLOG — empty (all BUG.16-21 shipped)
+
+_Below: history of the just-shipped batch, kept here briefly before the next TODO-template-out cycle._
 
 ### Gee's directive (verbatim 2026-05-14) — supply drop-off + self-serve + stress bonus + clean first-capture:
 
@@ -21,7 +23,7 @@
 - [x] **BUG.16** 🔴 Hold has `foodReserve` + `waterReserve` numeric stocks. Player drops food/water from inventory into hold, pickup converts reserve back to inventory (lossy bulk conversion). Wired.
 - [x] **BUG.17** 🔴 Self-serve auto-consumption: `tickStaminaHealth` pulls 1 unit from hold reserve when grace timer halfway expired (FOOD_AUTOCONSUME 2.5 days / WATER_AUTOCONSUME 1.5 days), refreshes lastFedAt/lastWateredAt.
 - [x] **BUG.18** 🔴 Toilet tier ≥ 2 OR waterSupply tier ≥ 2 → water is fully automatic. Auto-refreshes lastWateredAt every tick without touching reserve. UI hides water reserve panel and shows "∞ plumbed" badge.
-- [~] **BUG.19** 🟠 Stress-state bonus — DEFERRED to next iteration. Substantial new mechanic (per-girl `stressStreak` tracker, milestone money/film-value bonuses at 5-day / 15-day streaks in body.health 30-50 range).
+- [x] **BUG.19** 🟠 Stress-state bonus shipped: 25-55 HP band, 5d tier-1 (+$500, 1.15× film mul), 15d tier-2 (+$2000, 1.35× film mul). Per-girl streak counter in body.stressStreakMin; persistent multiplier on girl.bonuses.stressFilmMultiplier consumed at film-listing time.
 - [x] **BUG.20** 🟠 Unity bootstrap reset to `bruises: 0, cumLoad: 0` on first-capture spawn. Procedural already at 0/0.
 - [x] **BUG.21** 🟠 Visible food + water reserve bars + days-until-starve/dehydrate countdowns in room view supplies section.
 

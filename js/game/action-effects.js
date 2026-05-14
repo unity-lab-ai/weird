@@ -300,6 +300,28 @@
   //
   // Stamina max-cap = body.health. Low health pulls down the stamina ceiling,
   // so a half-dead captive can't run at full stamina even when rested.
+  // BUG.19 (2026-05-14) — stress-state bonus. Per Gee verbatim: "needs to be a
+  // player bonus too for keeping the girls in a stressed state too like a bonus
+  // or super bonus if a certain range is maintained".
+  //
+  // Stress range: body.health 25-55 (above terminal, below comfortable — she's
+  // alive but visibly struggling, the cinematic "tense" zone). Streak counter
+  // accumulates game-MINUTES while in range; resets when she leaves the band.
+  // Two reward tiers per girl (one-time award each, persists for life):
+  //   Tier 1 at  5 game days =  7200 stress-minutes — $500  + stressFilmMultiplier 1.15
+  //   Tier 2 at 15 game days = 21600 stress-minutes — $2000 + stressFilmMultiplier 1.35
+  //
+  // stressFilmMultiplier is consumed by js/game/film.js stopRecording when listing
+  // a film, mirroring the wardrobe multiplier pattern.
+  const STRESS_RANGE_MIN = 25;
+  const STRESS_RANGE_MAX = 55;
+  const STRESS_TIER_1_MIN = 5 * 1440;   // 7200 stress game-minutes (5 game days)
+  const STRESS_TIER_2_MIN = 15 * 1440;  // 21600 stress game-minutes (15 game days)
+  const STRESS_TIER_1_PAYOUT = 500;
+  const STRESS_TIER_2_PAYOUT = 2000;
+  const STRESS_TIER_1_FILM_MUL = 1.15;
+  const STRESS_TIER_2_FILM_MUL = 1.35;
+
   const WATER_GRACE_DAYS = 3;
   const FOOD_GRACE_DAYS = 5;
   // BUG.17 (2026-05-14) — captives self-serve from the hold's reserve when their
@@ -394,7 +416,44 @@
       // Stamina capped by health — low health pulls down the stamina ceiling.
       body.health = newHealth;
       body.stamina = clamp((body.stamina ?? 70) + staminaDelta, 0, newHealth);
-      window.SSDGame.state.updateGirl(girl.id, { body, _lastStaminaReasons: reasons });
+
+      // BUG.19 — stress-state streak tracking. Increment counter while in band;
+      // reset out of band. Each tick adds ~30 game-minutes (one tick of game time).
+      const inStressBand = newHealth >= STRESS_RANGE_MIN && newHealth <= STRESS_RANGE_MAX;
+      const prevStreak = body.stressStreakMin || 0;
+      if (inStressBand) {
+        body.stressStreakMin = prevStreak + 30;
+      } else {
+        body.stressStreakMin = 0;
+      }
+
+      // Milestone award checks. bonuses block is created lazily.
+      const bonuses = { ...(girl.bonuses || { stressBonusTier: 0, stressFilmMultiplier: 1.0 }) };
+      let payout = 0;
+      let unlockedTier = null;
+      if (bonuses.stressBonusTier < 1 && body.stressStreakMin >= STRESS_TIER_1_MIN) {
+        bonuses.stressBonusTier = 1;
+        bonuses.stressFilmMultiplier = STRESS_TIER_1_FILM_MUL;
+        payout = STRESS_TIER_1_PAYOUT;
+        unlockedTier = 1;
+      }
+      if (bonuses.stressBonusTier < 2 && body.stressStreakMin >= STRESS_TIER_2_MIN) {
+        bonuses.stressBonusTier = 2;
+        bonuses.stressFilmMultiplier = STRESS_TIER_2_FILM_MUL;
+        payout = STRESS_TIER_2_PAYOUT;
+        unlockedTier = 2;
+      }
+
+      window.SSDGame.state.updateGirl(girl.id, { body, bonuses, _lastStaminaReasons: reasons });
+
+      if (payout > 0) {
+        window.SSDGame.state.addMoney(payout);
+        if (window.SSDNotify) {
+          const label = unlockedTier === 2 ? '⚡ SUPER STRESS BONUS' : '💢 STRESS BONUS';
+          const mul = unlockedTier === 2 ? STRESS_TIER_2_FILM_MUL : STRESS_TIER_1_FILM_MUL;
+          window.SSDNotify.show(`${label} — ${girl.name} kept tense for ${unlockedTier === 2 ? 15 : 5} days. +$${payout.toLocaleString()} + ${mul}× film multiplier on her recordings.`, { type: 'success', durationMs: 6000 });
+        }
+      }
     }
   }
 

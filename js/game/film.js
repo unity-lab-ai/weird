@@ -98,6 +98,19 @@
         });
       }
     }
+    // BUG.19 (2026-05-14) — stress-state bonus multiplier. Stacks with wardrobe.
+    // Awarded by action-effects.js when body.health stays in the 25-55 band long
+    // enough (5 days = tier 1 = 1.15×, 15 days = tier 2 = 1.35×).
+    const stressMul = girl.bonuses?.stressFilmMultiplier || 1.0;
+    if (stressMul !== 1.0) {
+      const current = window.SSDGame.state.current.films.find(f => f.id === film.id);
+      const newPrice = Math.round((current?.currentListPrice || film.currentListPrice) * stressMul);
+      window.SSDGame.state.updateFilm(film.id, {
+        currentListPrice: newPrice,
+        stressMultiplier: stressMul,
+        stressBonusTier: girl.bonuses?.stressBonusTier || 0
+      });
+    }
     // Auto-generate cover image IF Pollinations is configured — otherwise text+emoji film lives fine without it.
     if (window.SSDGame.imaging && window.SSDGame.imaging.isAvailable()) {
       window.SSDGame.imaging.filmCover(film.id).catch(() => {});

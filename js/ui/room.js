@@ -107,6 +107,27 @@
               <div class="bar-row" data-tooltip="Health 0-100. Drained by bruises ≥ 15 / starvation / dehydration / violence. Restored only by heal action + feed/water. Below 30 = severe — survival risk."><label>Health</label><div class="bar"><div class="bar-fill ${hpClass}" style="width:${hp}%"></div></div><b>${hp}</b></div>
             `;
           })()}
+          ${(() => {
+            // BUG.19 (2026-05-14) — stress-state streak badge. Shows the current
+            // accumulated stress-band time + next milestone countdown + earned tier.
+            const streakMin = girl.body?.stressStreakMin || 0;
+            const tier = girl.bonuses?.stressBonusTier || 0;
+            const mul = girl.bonuses?.stressFilmMultiplier || 1.0;
+            const streakDays = streakMin / 1440;
+            const inBand = (girl.body?.health ?? 100) >= 25 && (girl.body?.health ?? 100) <= 55;
+            const T1 = 5, T2 = 15;
+            let line;
+            if (tier === 2) {
+              line = `<span class="gold">⚡ Super stress bonus unlocked · ${mul}× film multiplier permanent</span>`;
+            } else if (tier === 1) {
+              line = `<span class="gold">💢 Stress bonus tier 1 unlocked · ${mul}× film multiplier · ${(T2 - streakDays).toFixed(1)} more days in band → super bonus</span>`;
+            } else if (inBand) {
+              line = `💢 In stress band · streak ${streakDays.toFixed(1)}d / ${T1}d (tier 1) → ${(T1 - streakDays).toFixed(1)}d to bonus`;
+            } else {
+              line = `<span class="muted">Stress band 25-55 HP · keep her here ${T1}d for tier-1 bonus (+$500 + 1.15× film mul), ${T2}d for super (+$2000 + 1.35×)</span>`;
+            }
+            return `<div class="stat-row small" data-tooltip="Maintain body.health in the 25-55 range to accumulate the stress streak. Tier 1 awards $500 + 1.15× permanent film multiplier at 5 game days; tier 2 awards $2000 + 1.35× at 15 game days. Streak resets when she leaves the band.">${line}</div>`;
+          })()}
           ${activeDrugs.length > 0 ? `<div class="drug-hud small">${activeDrugs.map(d => `<span class="drug-pill">💊 ${d.name} · mag ${d.mag} · ${d.remainingMin}m left</span>`).join(' ')}</div>` : ''}
           ${isUnconscious ? `<div class="tranq-banner panel" style="border:1px solid #b00;background:rgba(180,0,0,.08);padding:8px;margin:8px 0">
             <b>💉 TRANQUILIZED — OUT COLD</b>
