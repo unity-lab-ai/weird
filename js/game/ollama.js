@@ -172,8 +172,23 @@
     } catch {}
 
     const context = buildContextBlock(girl, girlState, room, recentTurns, memory);
+    // Restructure so Master's action is the FIRST and LAST thing the model sees in the
+    // user message. Recent context goes in the middle as supporting state, but the action
+    // is bookended for prominence. Previous structure buried the action below the long
+    // context block — the model latched onto generic body state and ignored the specific
+    // act, producing replies like "your hands feel real" when the action was "spit in
+    // her mouth". The bookend pattern forces specific reaction.
     const messages = [
-      { role: 'user', content: `${context}\n\n---\n\nMaster: ${userText}` }
+      { role: 'user', content:
+`MASTER JUST DID THIS — react to this EXACT act, name what he did, describe how it lands on YOUR specific body part(s) he touched, how you respond physically + verbally in this moment. Do NOT respond generically. Do NOT recycle body state unrelated to this act.
+
+>>> ${userText} <<<
+
+(supporting context — current body / bond / drugs / location / recent turns):
+${context}
+
+NOW REACT — to the line between >>> <<< above. Your reply names what he did and reacts specifically. End with the <delta> block.`
+      }
     ];
     const result = await chatStream({ system, messages, onChunk });
 
