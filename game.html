@@ -14,6 +14,9 @@
   <!-- Env injection (local dev only; no error if absent) -->
   <script src="js/env.local.js" onerror="console.debug('[env] no env.local.js — normal for deploy')"></script>
 
+  <!-- Age verification + legal acceptance gate — first thing that fires. -->
+  <script src="js/ui/age-gate.js"></script>
+
   <!-- Core config + libs -->
   <script src="js/config.js"></script>
   <script src="js/storage.js"></script>

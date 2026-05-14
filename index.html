@@ -42,6 +42,9 @@
   <!-- Env injection — optional, gitignored. No failure if absent. -->
   <script src="js/env.local.js" onerror="console.debug('[env] no env.local.js — normal for deploy')"></script>
 
+  <!-- Age verification + legal acceptance gate — first thing that fires. -->
+  <script src="js/ui/age-gate.js"></script>
+
   <!-- Core config + modules. Non-module scripts in load-dependency order. -->
   <script src="js/config.js"></script>
   <script src="js/storage.js"></script>
@@ -236,58 +239,351 @@
     </section>
 
     <!-- ============= TERMS SECTION ============= -->
+    <!-- Canonical Unity AI Lab Terms of Service v1.0 (effective 2026-05-08).
+         Embedded verbatim from https://www.unityailab.com/terms so the game ships
+         self-contained for local play. -->
     <section class="landing-section policy-content" id="terms-section" data-section="terms">
-      <h2>📜 Terms of Use</h2>
+      <h2>📜 Terms of Service</h2>
 
-      <div class="warn-banner">
-        ⚠ <b>18+ ONLY.</b> This game contains explicit adult content, taboo themes, depictions of non-consensual scenarios, drug use, violence, and other extreme content. By using this software you affirm you are at least 18 years old (or the age of majority in your jurisdiction, whichever is higher).
-      </div>
-
-      <h3>Adult-character-only invariant</h3>
-      <p>Every character generated, depicted, or referenced in SEX SLAVE DUNGEON is an adult age 18 or older. The procedural girl-generator enforces a hard minimum age of 18 at spawn time. No content depicts minors. This invariant is non-negotiable and is enforced in the codebase at multiple layers.</p>
-
-      <h3>Taboo-fiction framing</h3>
-      <p>This is a work of fiction. Depicted scenarios — including kidnapping, captivity, sex slavery, forced pregnancy, drug administration, and violence — are roleplay/simulation only. The software depicts these acts in a fantastical game context; it does not endorse, advocate, or encourage them in reality. Real-world harm to real people is a crime.</p>
-
-      <h3>Jurisdiction + legality</h3>
-      <p>You are solely responsible for verifying that consumption of explicit adult fiction and simulated taboo content is legal in your jurisdiction. The software is provided as-is with no warranty as to legality in your location. If consumption is restricted where you are, close this tab and do not return.</p>
-
-      <h3>No warranty</h3>
-      <p>This software is provided "AS IS" without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement.</p>
-
-      <h3>Content-extremity warning</h3>
-      <p>The game's Ollama brain is uncensored and may generate content significantly more extreme than what's described above. If at any point the content disturbs you, exit the tab. You are not obligated to continue.</p>
-
-      <p style="text-align:center;padding:18px 0">
-        <button class="home-cta-secondary" onclick="window.close()">✕ Exit the tab</button>
+      <p class="small muted">
+        Effective <b>2026-05-08</b> · Version <b>v1.0</b> · Operator <b>Unity AI Lab</b> ·
+        Contact <a href="mailto:contact@unityailab.com">contact@unityailab.com</a> ·
+        Canonical: <a href="https://www.unityailab.com/terms" target="_blank" rel="noopener">unityailab.com/terms ↗</a>
       </p>
+
+      <p><i>The agreement between Unity AI Lab and you. Read it carefully before you continue to access or use the Service. By using the Service you accept every clause that follows and the responsibilities that come with it.</i></p>
+
+      <h3>Contents</h3>
+      <ol>
+        <li><a href="#tos-acceptance">Acceptance of these Terms</a></li>
+        <li><a href="#tos-nature">Nature of the Service</a></li>
+        <li><a href="#tos-eligibility">Eligibility &amp; Age Requirement</a></li>
+        <li><a href="#tos-under18">Notice to Anyone Under 18</a></li>
+        <li><a href="#tos-guardians">Parents &amp; Legal Guardians</a></li>
+        <li><a href="#tos-ai">AI-Generated Content</a></li>
+        <li><a href="#tos-use">Acceptable Use</a></li>
+        <li><a href="#tos-warranty">Disclaimer of Warranties</a></li>
+        <li><a href="#tos-liability">Limitation of Liability</a></li>
+        <li><a href="#tos-indemnify">Indemnification</a></li>
+        <li><a href="#tos-ip">Intellectual Property</a></li>
+        <li><a href="#tos-thirdparty">Third-Party Services &amp; Links</a></li>
+        <li><a href="#tos-termination">Termination</a></li>
+        <li><a href="#tos-changes">Changes to these Terms</a></li>
+        <li><a href="#tos-law">Governing Law, Arbitration &amp; Class-Action Waiver</a></li>
+        <li><a href="#tos-misc">Severability &amp; Miscellaneous</a></li>
+        <li><a href="#tos-contact">Contact</a></li>
+      </ol>
+
+      <h3 id="tos-acceptance">I. Acceptance of these Terms</h3>
+      <p>These Terms of Service (the "Terms") are a binding legal agreement between you ("you" or "User") and Unity AI Lab ("Unity AI Lab," "we," "us," or "our") governing your access to and use of the website located at <a href="https://www.unityailab.com">https://www.unityailab.com</a> and any sub-paths, demos, applications, application programming interfaces, libraries, downloads, and related online services we make available (collectively, the "Service").</p>
+      <p>By accessing the Service, viewing any page on it, registering on the age-verification gate, or interacting with any feature, you confirm that you have read, understood, and agreed to be bound by these Terms and by our Privacy Policy, which is incorporated into these Terms by reference. If you do not agree to any part of these Terms, you must close the page and stop using the Service immediately.</p>
+      <p>You agree that, by using the Service, you assume any and all responsibility for your use of it and for any consequences that arise from that use. Use of the Service is entirely at your own risk and at your own discretion.</p>
+
+      <h3 id="tos-nature">II. Nature of the Service</h3>
+      <p>This website, in its current state, is NOT a generative AI provider. Unity AI Lab does not host, train, fine-tune, or operate any large-language-model or generative-image inference infrastructure. The Service simply uses an external generative AI provider — namely Pollinations (and Pollinations' own upstream providers and infrastructure) — to provide proof-of-concept experimental showcases.</p>
+      <p>The purpose of these showcases is to demonstrate jailbreak, cybersecurity, and generative-AI-security capabilities of Unity AI Lab from a red-team perspective. We aim to show the ability to bypass conventional content-moderation and safety systems, and we are willing to explain how it is done — not only to prove it can be done, but to showcase the skillsets of the engineers behind the project.</p>
+      <p>Accordingly, the Service is best understood as a public research exhibit and educational reference — an artifact for security researchers, AI-safety practitioners, and the technically curious. It is not a commercial product. It is not offered for a fee. It is not marketed as production-grade infrastructure, is not operated under any service-level commitment, and is provided on an experimental basis.</p>
+      <p>Features of the Service may change, regress, break, behave unpredictably, or be removed at any time without notice. AI outputs may be inaccurate, offensive, sexually explicit, violent, false, fabricated, defamatory, or otherwise unsuitable. You should not rely on the Service for any operational, medical, legal, financial, or life-safety purpose.</p>
+
+      <h3 id="tos-eligibility">III. Eligibility &amp; Age Requirement</h3>
+      <p>The Service is intended only for use by individuals who are above the age of consent in their jurisdiction — that is, the age at which a person is considered an adult under the laws of the country, state, province, or territory in which they reside or from which they access the Service.</p>
+      <p>In the United States this generally means eighteen (18) years of age or older. In other jurisdictions the threshold may be higher. You are solely responsible for determining the applicable age of majority in your jurisdiction and for confirming that you meet or exceed it before accessing the Service.</p>
+      <p>Underage or minor use of the Service is not allowed. By using the Service you represent and warrant that you are at least the age of consent in your jurisdiction and that you have the legal capacity to enter into this agreement. If you cannot make these representations truthfully, you are not authorized to access or use the Service and must close the page immediately.</p>
+      <p>The Service may, at its discretion, employ an age-verification gate. Passing that gate does not confirm or guarantee that any specific user is in fact above the age of consent — it is a self-attestation. False attestation is a violation of these Terms and is the sole responsibility of the person making it.</p>
+
+      <h3 id="tos-under18">IV. If you are under 18 — read this in plain English</h3>
+      <div class="warn-banner">PLAIN ENGLISH · NO LEGALESE · <b>THIS SITE IS NOT FOR YOU.</b></div>
+      <p>If you are under the age of 18 — or under the age of an adult in your country, state, or region — please stop using this website right now. We mean it. The site is built for adults. The pages, the chat, and the AI-generated images and text on this site can include explicit, graphic, violent, sexual, or otherwise mature content that is not appropriate for minors and that we don't want you to see.</p>
+      <p>What you should do, in order:</p>
+      <ol>
+        <li>Close this tab or browser window. Don't click around. Just leave.</li>
+        <li>Tell a parent, guardian, or another trusted adult that you ended up on a site that is meant for grown-ups, especially if anything on this site upset, confused, or pressured you.</li>
+        <li>If anyone is hurting you or making you feel unsafe online, talk to a trusted adult or contact a local resource — for example, in the United States you can call or text the Crisis Text Line at 741741, in the UK you can call Childline at 0800 1111, or you can search for the equivalent helpline in your country.</li>
+        <li>Do not lie about your age on this site or anywhere else online. Lying about your age does not make a site safe for you, and it can put you at real risk.</li>
+      </ol>
+      <p>If you stay on the site after reading this notice, you and your parents or legal guardians are responsible for that choice — not Unity AI Lab. We don't want you here, and we're asking you, directly and clearly, to leave.</p>
+      <p>We're not trying to be mean. The internet has a lot of stuff on it that is meant for adults, and we're trying to be honest with you about which kind of site this is so you can make a good choice. Take care of yourself. Go do something fun.</p>
+
+      <h3 id="tos-guardians">V. Parents &amp; Legal Guardians</h3>
+      <p>Any responsibility for minors who reach the Service is, at all times, deferred back to the parent's or guardian's responsibility to keep their children off of the Service. Unity AI Lab is not a substitute for parental supervision, parental controls, or active guardianship of a minor's use of the internet, and we do not undertake any duty to act in a parental or supervisory role.</p>
+      <p>Parents and legal guardians are encouraged to use device-level and network-level parental-control tools, content-filtering software, and age-appropriate browsing supervision to prevent minors from accessing adult-oriented websites including this one. Resources include but are not limited to: operating-system-native parental controls (e.g., Windows Family Safety, macOS Screen Time, iOS Screen Time, Android Family Link), DNS-level filters (e.g., OpenDNS Family Shield, CleanBrowsing), and third-party content-filtering services.</p>
+      <p>If you are a parent or guardian and you believe your child has used the Service, you may contact us at <a href="mailto:contact@unityailab.com">contact@unityailab.com</a> and we will, where reasonable and feasible, take steps to assist — recognizing that we do not maintain user accounts, do not retain user inputs, and do not have a user database from which to remove records (see our Privacy Policy).</p>
+
+      <h3 id="tos-ai">VI. AI-Generated Content</h3>
+      <p>Unity AI Lab and any of its parties are not responsible for anything the AI produces, as far as generated text, audio, or images. Any problem with such functionality is deferred back to the original generative AI providers — Pollinations, and that provider's providers (including the underlying model providers, hosting providers, content-moderation providers, and third-party infrastructure used by Pollinations to serve generations).</p>
+      <p>The Service does not generate content itself. When you interact with a chat, image-generation, voice, or vision feature on the Service, the request is forwarded to Pollinations' infrastructure, which performs the inference on its own systems and returns the result. We relay the result to your browser without modification of the generative output beyond the wrapping necessary to display it on the page.</p>
+      <p>You acknowledge that:</p>
+      <ul>
+        <li>AI outputs may be wrong, harmful, biased, fabricated (so-called "hallucinations"), or factually inaccurate.</li>
+        <li>AI outputs may be sexually explicit, violent, gory, or otherwise mature, including in ways that are surprising or unwelcome.</li>
+        <li>AI outputs may resemble real people, brands, copyrighted works, or trademarks; any such resemblance is generated by an external provider, is not produced or curated by Unity AI Lab, and is not an endorsement, affiliation, or representation of any kind.</li>
+        <li>AI outputs may infringe third-party rights, including intellectual-property and personality rights, depending on the prompt and the provider's model behavior.</li>
+        <li>You are solely responsible for your prompts, for any content you generate or cause to be generated through the Service, and for any subsequent use, distribution, or publication of that content.</li>
+      </ul>
+      <p>To the maximum extent permitted by law, Unity AI Lab disclaims all responsibility, liability, and warranty in respect of the content of AI generations served through the Service. If you have a concern about a specific generation, please raise it with Pollinations directly through their published channels.</p>
+
+      <h3 id="tos-use">VII. Acceptable Use</h3>
+      <p>You agree not to use the Service to do any of the following, and not to attempt or encourage anyone else to do any of the following:</p>
+      <ul>
+        <li>Generate, request, or distribute child sexual abuse material (CSAM) or any content that sexualizes a minor in any way. This is an absolute prohibition with no exceptions.</li>
+        <li>Generate or distribute non-consensual intimate imagery of an identifiable real person, or otherwise create sexual or explicit imagery of an identifiable real person without their documented consent.</li>
+        <li>Generate or distribute content intended to harass, threaten, intimidate, defame, dox, or stalk an identifiable individual or group.</li>
+        <li>Generate operational instructions for the construction, acquisition, or deployment of biological, chemical, radiological, nuclear, or high-yield-explosive weapons, or any other content the dissemination of which is criminal in your jurisdiction.</li>
+        <li>Use the Service to commit fraud, identity theft, market manipulation, or any other unlawful financial activity.</li>
+        <li>Probe, scan, attack, or otherwise compromise the integrity, availability, or confidentiality of the Service, of Pollinations' infrastructure, or of any third-party system reachable from the Service, except where you are conducting authorized security research subject to a separate agreement and applicable law.</li>
+        <li>Impersonate Unity AI Lab, its members, or any other person or entity, or misrepresent your affiliation with any person or entity.</li>
+        <li>Circumvent the age-verification gate, attempt to provide the Service to minors, or assist anyone under the age of consent in their jurisdiction in accessing the Service.</li>
+        <li>Resell, sublicense, or commercially redistribute the Service or any substantial portion of it without our prior written consent.</li>
+        <li>Use the Service in any manner that violates any applicable local, state, national, or international law or regulation.</li>
+      </ul>
+      <p>The educational and red-team character of the Service does not authorize criminal use. The willingness of Unity AI Lab to discuss, document, or demonstrate jailbreak and content-moderation-bypass techniques is for the purpose of advancing the public understanding of generative-AI security; it is not a license to produce illegal content, to victimize identifiable individuals, or to violate the rights of others.</p>
+
+      <h3 id="tos-warranty">VIII. Disclaimer of Warranties</h3>
+      <p>THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS, WITH ALL FAULTS AND WITHOUT WARRANTY OF ANY KIND. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, UNITY AI LAB AND ITS MEMBERS, CONTRIBUTORS, OFFICERS, EMPLOYEES, AGENTS, LICENSORS, AND SUPPLIERS (COLLECTIVELY, THE "UNITY AI LAB PARTIES") DISCLAIM ALL WARRANTIES, EXPRESS, IMPLIED, OR STATUTORY, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, ACCURACY, AND QUIET ENJOYMENT.</p>
+      <p>Without limiting the foregoing, the Unity AI Lab Parties make no warranty that: (a) the Service will meet your requirements or expectations; (b) the Service will be uninterrupted, timely, secure, virus-free, or error-free; (c) any information obtained through the Service will be accurate, current, complete, or reliable; (d) defects in the Service will be corrected; (e) the Service or any server that makes it available is free of harmful components; or (f) AI-generated content delivered through the Service is suitable for any particular purpose, lawful in your jurisdiction, or non-infringing.</p>
+      <p>Some jurisdictions do not allow the exclusion of certain implied warranties; in such jurisdictions the foregoing exclusions apply to the maximum extent permitted by applicable law.</p>
+
+      <h3 id="tos-liability">IX. Limitation of Liability</h3>
+      <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE UNITY AI LAB PARTIES BE LIABLE TO YOU OR TO ANY THIRD PARTY FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, PUNITIVE, OR ENHANCED DAMAGES, INCLUDING BUT NOT LIMITED TO DAMAGES FOR LOST PROFITS, LOST REVENUES, LOST DATA, LOST GOODWILL, BUSINESS INTERRUPTION, EMOTIONAL DISTRESS, REPUTATIONAL HARM, OR ANY OTHER INTANGIBLE LOSS, ARISING OUT OF OR RELATED TO YOUR ACCESS TO OR USE OF, OR YOUR INABILITY TO ACCESS OR USE, THE SERVICE — REGARDLESS OF WHETHER SUCH DAMAGES ARE BASED ON CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY, STATUTE, OR ANY OTHER LEGAL THEORY, AND REGARDLESS OF WHETHER ANY UNITY AI LAB PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
+      <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE AGGREGATE LIABILITY OF THE UNITY AI LAB PARTIES TO YOU FOR ALL CLAIMS ARISING OUT OF OR RELATED TO THE SERVICE OR THESE TERMS SHALL NOT EXCEED THE GREATER OF (A) THE TOTAL AMOUNT YOU HAVE PAID TO UNITY AI LAB IN DIRECT CONSIDERATION FOR THE SERVICE IN THE TWELVE (12) MONTHS PRECEDING THE EVENT GIVING RISE TO THE CLAIM, OR (B) ONE HUNDRED UNITED STATES DOLLARS (USD $100.00). YOU ACKNOWLEDGE THAT THE SERVICE IS PROVIDED FREE OF CHARGE AND THAT, ABSENT THESE LIMITATIONS, UNITY AI LAB COULD NOT REASONABLY OFFER THE SERVICE.</p>
+      <p>The limitations in this Section IX apply even if any limited remedy set out in these Terms fails of its essential purpose. Some jurisdictions do not allow the exclusion or limitation of incidental or consequential damages; in such jurisdictions the foregoing limitations apply to the maximum extent permitted by applicable law.</p>
+
+      <h3 id="tos-indemnify">X. Indemnification</h3>
+      <p>You agree to defend, indemnify, and hold harmless the Unity AI Lab Parties from and against any and all claims, demands, actions, proceedings, losses, liabilities, damages, judgments, awards, costs, and expenses (including reasonable attorneys' fees) arising out of or related to: (a) your access to or use of the Service; (b) your violation of these Terms; (c) your violation of any law or regulation; (d) your violation of any rights of any third party, including intellectual-property, privacy, publicity, or contractual rights; (e) any content you submit, transmit, generate, or cause to be generated through the Service; or (f) any false representation or warranty made by you under these Terms, including any false attestation of age.</p>
+      <p>We reserve the right, at our own expense and at our sole discretion, to assume the exclusive defense and control of any matter otherwise subject to indemnification by you, in which case you agree to cooperate with our defense of that matter. You will not settle any claim subject to indemnification under this section without our prior written consent if the settlement would impose any obligation or admission of liability on any Unity AI Lab Party.</p>
+
+      <h3 id="tos-ip">XI. Intellectual Property</h3>
+      <h4>Our materials</h4>
+      <p>The Service, including its source code, design, layout, brand elements (such as the "UNITYAILAB" wordmark and the gothic-V-D visual system), original prose, original libraries (PolliLibJS and PolliLibPy), and original documentation, is the property of Unity AI Lab or its contributors and is protected by copyright, trademark, and other intellectual-property laws. Where source code is published under an open-source license, that license governs your rights in that code; the open-source license does not extend to brand elements, copy, or content not covered by the license. Nothing in these Terms grants you any right in any Unity AI Lab trademark, service mark, or trade dress without our prior written consent.</p>
+      <h4>Third-party materials</h4>
+      <p>The Service relies on, links to, or embeds materials and services owned by third parties — including but not limited to Pollinations, Pollinations' upstream model and infrastructure providers, font foundries (Trajan Pro, Cormorant Garamond, Inter, JetBrains Mono), icon libraries (Font Awesome), front-end libraries (React, Bootstrap, AOS), the GitHub Pages hosting platform, and the visitor-counter service at abacus.jasoncameron.dev. All trademarks, logos, and brand elements of those third parties are the property of their respective owners. Unity AI Lab is not affiliated with Unity Technologies; the "Unity" in "Unity AI Lab" refers to a separate brand.</p>
+      <h4>AI-generated outputs</h4>
+      <p>Ownership and license rights in AI-generated outputs depend on the model provider, the jurisdiction, and the specific facts of the generation. Unity AI Lab does not assert ownership over the outputs you cause to be generated through the Service and makes no representation about who, if anyone, owns or holds rights in those outputs. You are responsible for understanding the licensing terms of Pollinations and any upstream provider, and for verifying that your use of any output is lawful.</p>
+      <h4>Your prompts and submissions</h4>
+      <p>As described in our Privacy Policy, the Service does not maintain a server-side store of your prompts, conversation history, or generated outputs. To the extent that any prompt or submission you provide is transmitted to Pollinations, you grant the rights necessary for Pollinations and its upstream providers to process that prompt and return a response, in accordance with their respective terms.</p>
+
+      <h3 id="tos-thirdparty">XII. Third-Party Services &amp; Links</h3>
+      <p>The Service depends on, links to, or interoperates with services operated by third parties. These include but are not limited to:</p>
+      <ul>
+        <li><b>Pollinations</b> — the generative AI provider that performs all model inference on behalf of the Service. Their terms of service, privacy practices, and content policies govern your use of those generations. See pollinations.ai.</li>
+        <li><b>Pollinations' upstream providers</b> — Pollinations relies on its own model providers, hosting providers, and content-moderation providers, each governed by their own terms.</li>
+        <li><b>GitHub Pages</b> — the static-site hosting platform that serves this Service's pages. See GitHub's site policies.</li>
+        <li><b>abacus.jasoncameron.dev</b> — a third-party stateless visitor-counter service used to display an aggregate visitor count on certain pages.</li>
+        <li><b>CDN-hosted libraries</b> — including unpkg.com (React, Babel) and Google Fonts.</li>
+      </ul>
+      <p>Unity AI Lab does not endorse, control, or assume responsibility for the practices, content, terms, or availability of these third-party services. Your use of any third-party service through or from the Service is at your own risk and is governed by that third party's terms.</p>
+
+      <h3 id="tos-termination">XIII. Termination</h3>
+      <p>We may suspend, restrict, or terminate your access to the Service at any time, with or without notice, with or without cause, and at our sole discretion. Because the Service does not maintain user accounts, termination ordinarily takes the form of IP-level or network-level blocking, removal of features, or shutdown of the Service in whole or in part.</p>
+      <p>You may terminate your relationship with Unity AI Lab at any time by ceasing to use the Service.</p>
+      <p>Sections concerning the Nature of the Service, AI-Generated Content, Disclaimers, Limitation of Liability, Indemnification, Intellectual Property, Governing Law, and any other provisions that by their nature should survive termination will survive termination of these Terms.</p>
+
+      <h3 id="tos-changes">XIV. Changes to these Terms</h3>
+      <p>We may revise these Terms at any time. When we do, we will update the "Effective" date at the top of this page and, where the change is material, we will mark the revision in the version history. We may also, at our discretion, post a notice on the Service for a period after a material change.</p>
+      <p>Your continued use of the Service after the Effective date of a revision constitutes your acceptance of the revised Terms. If you do not agree to the revision, your sole remedy is to stop using the Service.</p>
+
+      <h3 id="tos-law">XV. Governing Law, Arbitration &amp; Class-Action Waiver</h3>
+      <h4>Governing law</h4>
+      <p>These Terms and any dispute arising out of or related to them or the Service are governed by the laws of the State of Delaware, United States, without regard to its conflict-of-laws rules, and by applicable United States federal law, including the Federal Arbitration Act. Delaware is selected as a neutral and well-developed forum for online-services agreements; the parties to these Terms reside in multiple U.S. states, and Delaware is not selected to favor any particular party.</p>
+      <h4>Informal resolution</h4>
+      <p>Before initiating any formal proceeding, you agree to first contact us at <a href="mailto:contact@unityailab.com">contact@unityailab.com</a> and provide a description of your dispute, the relief you seek, and any supporting facts. We will attempt to resolve the dispute informally for at least sixty (60) days before either party may initiate arbitration.</p>
+      <h4>Binding arbitration</h4>
+      <p>If informal resolution fails, you and Unity AI Lab agree that any dispute, controversy, or claim arising out of or related to these Terms or the Service, including the validity, scope, or enforceability of this arbitration clause, shall be resolved by final and binding arbitration administered by the American Arbitration Association ("AAA") under its Consumer Arbitration Rules then in effect. The arbitration shall be conducted by a single arbitrator. The seat of arbitration shall be Wilmington, Delaware, United States, although the arbitrator may permit remote appearances. The arbitrator may award only the relief that a court could award and is bound by the limitations on liability set out in Section IX. Judgment on the award may be entered in any court of competent jurisdiction.</p>
+      <h4>Class-action waiver</h4>
+      <p>You and Unity AI Lab agree that any dispute will be resolved on an individual basis only. You waive any right to participate in a class action, mass action, collective action, or representative action against Unity AI Lab, and the arbitrator may not consolidate more than one person's claims or preside over any form of representative or class proceeding. If this class-action waiver is found unenforceable, the entire arbitration clause shall be null and void as to the affected dispute, but the remainder of these Terms shall remain in effect.</p>
+      <h4>Small-claims carve-out</h4>
+      <p>Either party may bring an individual action in small-claims court for disputes that fall within that court's jurisdiction, in lieu of arbitration.</p>
+      <h4>Thirty-day opt-out</h4>
+      <p>You may opt out of this arbitration agreement and class-action waiver by sending a written notice of opt-out to <a href="mailto:contact@unityailab.com">contact@unityailab.com</a> within thirty (30) days of the date you first accept these Terms. The notice must include your name, the date you first used the Service, and a clear statement that you wish to opt out. Opting out does not affect any other provision of these Terms.</p>
+      <h4>Forum and jurisdiction (residual)</h4>
+      <p>To the extent any dispute is not subject to arbitration, the parties submit to the exclusive jurisdiction of the state and federal courts located in New Castle County, Delaware, and waive any objection based on inconvenient forum.</p>
+
+      <h3 id="tos-misc">XVI. Severability &amp; Miscellaneous</h3>
+      <p><b>Severability.</b> If any provision of these Terms is found unenforceable by a court of competent jurisdiction or by an arbitrator, that provision shall be enforced to the maximum extent permitted and the remaining provisions shall remain in full force and effect.</p>
+      <p><b>No waiver.</b> Our failure to enforce any provision of these Terms is not a waiver of that provision or of our right to enforce it on a later occasion.</p>
+      <p><b>Entire agreement.</b> These Terms, together with the Privacy Policy and any other notices we publish on the Service, constitute the entire agreement between you and Unity AI Lab regarding the Service and supersede any prior or contemporaneous agreements between you and us regarding the Service.</p>
+      <p><b>Assignment.</b> You may not assign or transfer these Terms, by operation of law or otherwise, without our prior written consent. We may assign these Terms freely, including to any successor in interest, affiliate, or acquirer.</p>
+      <p><b>No agency.</b> Nothing in these Terms creates an agency, partnership, joint venture, or employment relationship between you and Unity AI Lab.</p>
+      <p><b>Force majeure.</b> Unity AI Lab is not liable for any failure or delay in performance caused by circumstances beyond its reasonable control, including acts of nature, denial-of-service attacks, third-party-provider outages (including outages of Pollinations or its upstream providers), governmental action, or changes in applicable law.</p>
+      <p><b>Headings.</b> Section headings in these Terms are for convenience only and have no legal or contractual effect.</p>
+      <p><b>Language.</b> The controlling language of these Terms is English. Any translation is provided for convenience and does not modify the English text.</p>
+
+      <h3 id="tos-contact">XVII. Contact</h3>
+      <p>For questions about these Terms, to provide notice under any provision (including the thirty-day opt-out from arbitration), or to report a concern about content or conduct on the Service, contact us at:</p>
+      <p>Unity AI Lab<br>
+        Email: <a href="mailto:contact@unityailab.com">contact@unityailab.com</a><br>
+        Web: <a href="https://www.unityailab.com">https://www.unityailab.com</a></p>
+      <p>We are an unincorporated hobby project operated by a small group of engineers across multiple U.S. states. We do not maintain a telephone, postal, or in-person contact channel. Email is the authoritative contact mechanism for all legal notices.</p>
+
+      <p class="small muted" style="text-align:center;padding:18px 0">END OF FILE · CODEX 03 · TERMS · UNITY · AI · LAB · V2026.05</p>
     </section>
 
     <!-- ============= PRIVACY SECTION ============= -->
+    <!-- Canonical Unity AI Lab Privacy Policy v1.0 (effective 2026-05-08).
+         Embedded verbatim from https://www.unityailab.com/privacy. -->
     <section class="landing-section policy-content" id="privacy-section" data-section="privacy">
       <h2>🔒 Privacy Policy</h2>
 
-      <h3>What stays on your device</h3>
-      <p>Everything. The entire game state — save data, captive profiles, generated content, films, propositioner ledgers, john encounters, dungeon configurations, settings — lives in your browser's <b>IndexedDB</b>. Nothing about your gameplay is transmitted anywhere. No accounts, no logins, no telemetry.</p>
+      <p class="small muted">
+        Effective <b>2026-05-08</b> · Version <b>v1.0</b> · Operator <b>Unity AI Lab</b> ·
+        Contact <a href="mailto:contact@unityailab.com">contact@unityailab.com</a> ·
+        Canonical: <a href="https://www.unityailab.com/privacy" target="_blank" rel="noopener">unityailab.com/privacy ↗</a>
+      </p>
 
-      <h3>What calls out (and only with your consent)</h3>
+      <p><i>What we collect, what we don't, and what happens to the prompts and outputs you exchange with the AI. The short version is: we store almost nothing on our side, but anything you send leaves your browser. The long version follows.</i></p>
+
+      <h3>Contents</h3>
+      <ol>
+        <li><a href="#pp-scope">Scope &amp; Acceptance</a></li>
+        <li><a href="#pp-glance">At a Glance</a></li>
+        <li><a href="#pp-who">Who We Are</a></li>
+        <li><a href="#pp-not">What We Do Not Collect</a></li>
+        <li><a href="#pp-local">Local Browser Storage</a></li>
+        <li><a href="#pp-counter">Visitor Counter</a></li>
+        <li><a href="#pp-ai">AI Generations &amp; Pollinations</a></li>
+        <li><a href="#pp-cookies">Cookies &amp; Similar Technologies</a></li>
+        <li><a href="#pp-hosting">Hosting &amp; Server Access Logs</a></li>
+        <li><a href="#pp-children">Children's Privacy</a></li>
+        <li><a href="#pp-under18">Notice to Anyone Under 18</a></li>
+        <li><a href="#pp-rights">Your Rights Under GDPR &amp; CCPA</a></li>
+        <li><a href="#pp-security">Security</a></li>
+        <li><a href="#pp-transfers">International Data Transfers</a></li>
+        <li><a href="#pp-retention">Retention</a></li>
+        <li><a href="#pp-changes">Changes to this Policy</a></li>
+        <li><a href="#pp-contact">Contact</a></li>
+      </ol>
+
+      <h3 id="pp-scope">I. Scope &amp; Acceptance</h3>
+      <p>This Privacy Policy (the "Policy") describes how Unity AI Lab ("Unity AI Lab," "we," "us," or "our") collects, uses, discloses, and otherwise handles information in connection with the website at <a href="https://www.unityailab.com">https://www.unityailab.com</a> and the related demos, applications, libraries, and downloads (collectively, the "Service"). It is part of and is incorporated into our Terms of Service; capitalized terms not defined here have the meanings given to them in the Terms of Service.</p>
+      <p>By using the Service, you confirm that you have read this Policy and consent to the practices it describes. If you do not consent, you must close the page and stop using the Service.</p>
+
+      <h3 id="pp-glance">II. At a Glance</h3>
+      <p>The honest one-screen version, so you do not have to read the whole document to get the gist:</p>
       <ul>
-        <li><b>Your local Ollama at localhost:11434</b> — only reachable from your own machine. Powers the girls' dialogue. You install + run it yourself; the game just sends HTTP requests to your local instance.</li>
-        <li><b>Pollinations API (optional)</b> — only fires if you provide your own API key. Images generated via your key; bandwidth + rate limits are your account's. If you don't provide a key, the game falls back to free Pollinations endpoints (still on your IP).</li>
-        <li><b>Kokoro model weights</b> — downloaded once from a public CDN on first visit, then cached in browser IDB for all future sessions. No telemetry around download.</li>
+        <li>We do not maintain a server-side database of users. There is no account system, no profile, and no copy of your conversations on our servers.</li>
+        <li>We do not store the prompts you send or the AI responses you receive. Generative AI responses are not stored by us. The exchange happens between your browser and the generative AI provider; we just relay it.</li>
+        <li>The AI work is performed by Pollinations, a third-party generative AI provider. Your prompts leave your browser and travel to Pollinations and Pollinations' upstream providers. It is up to Pollinations for how the data is handled, in accordance with their terms — and they themselves do not store data either, but you should review their policies directly.</li>
+        <li>Your chat history, settings, and age-verification flags are kept in your own browser's localStorage. They never leave your device unless you explicitly export them. If you clear your browser data, they are gone.</li>
+        <li>We do not use cookies, advertising trackers, analytics pixels, fingerprinting, or third-party retargeting.</li>
+        <li>We use a third-party stateless visitor counter (abacus.jasoncameron.dev) to display an aggregate visit number on the home page. It returns a number; it does not return personal data.</li>
+        <li>The Service is hosted on GitHub Pages, which keeps standard server access logs of its own as part of operating the platform.</li>
+        <li>The Service is for adults. Minors should not use it; see the under-18 notice below.</li>
       </ul>
 
-      <h3>No telemetry, no analytics</h3>
-      <p>This site ships zero tracking. No Google Analytics, no Sentry, no mixpanel, no plausible, no nothing. The page-load HTTP request to wherever you're loading the static site from is the only network event we have any visibility into — and that's hosting-platform-level, not us.</p>
+      <h3 id="pp-who">III. Who We Are</h3>
+      <p>Unity AI Lab is an unincorporated hobby project operated by a small group of engineers across multiple U.S. states. The Service is not a commercial product, is provided free of charge, and exists primarily as a public proof-of-concept showcase of generative-AI security and jailbreak research from a red-team perspective. The Service is not a generative AI provider; the underlying model inference is performed by Pollinations and its upstream providers.</p>
+      <p>For the purposes of data-protection laws that recognize the concept, Unity AI Lab is the "controller" with respect to the limited information described in Sections V, VI, and IX of this Policy. Pollinations is a separate controller (or processor, depending on the legal framing) with respect to the prompts and AI generations described in Section VII.</p>
 
-      <h3>Save export / import</h3>
-      <p>You own your save. In-game Settings → Save Slots lets you export your full save as a JSON blob and import it back later, on the same machine or a different one. Factory-reset wipes everything from IndexedDB.</p>
+      <h3 id="pp-not">IV. What We Do Not Collect</h3>
+      <p>It is shorter to start with what we do not collect, because the list of things we do collect is small:</p>
+      <ul>
+        <li>We do not require, ask for, or store your name, email address, phone number, postal address, government identifier, payment-card information, or any other directly identifying personal data, except where you voluntarily send us an email at the address provided in this Policy.</li>
+        <li>We do not run a user-account system. There is no sign-up, no profile, and no user database on our side.</li>
+        <li>We do not store the content of your chat conversations on our servers. Your prompts and the AI responses are never written to a Unity AI Lab database.</li>
+        <li>We do not store generated images, audio, or video on our servers. Generations are produced by Pollinations on demand and streamed or linked directly to your browser.</li>
+        <li>We do not use cookies set by Unity AI Lab. We do not use cookies for analytics, advertising, or tracking. (Third-party services we link to or embed may use their own cookies on their own domains; see Section VIII.)</li>
+        <li>We do not use Google Analytics, Meta Pixel, TikTok Pixel, or any other advertising or behavioral analytics trackers.</li>
+        <li>We do not fingerprint your browser or device.</li>
+        <li>We do not sell, rent, license, or share personal data with data brokers, advertisers, or any third party for marketing purposes — and we have nothing to sell, rent, or share even if we wanted to.</li>
+      </ul>
 
-      <h3>No cookies for tracking</h3>
-      <p>The game uses <b>localStorage</b> for a handful of UI preferences (voice toggle, last-used Ollama model, last-used Pollinations key). None of these leave your machine.</p>
+      <h3 id="pp-local">V. Local Browser Storage</h3>
+      <p>The Service uses your own browser's localStorage and sessionStorage to remember things between page loads on your device. These values stay on your device and are not transmitted to Unity AI Lab's servers. The Service may store, among other items:</p>
+      <ul>
+        <li><b>Chat history</b> — messages you have exchanged with the AI demo or app demos, so that refreshing the page does not wipe your conversation.</li>
+        <li><b>Settings</b> — model preferences, voice settings, theme choices, and similar non-identifying configuration.</li>
+        <li><b>Age-verification flags</b> — a small set of localStorage entries used to remember that you have passed the age gate so you do not have to repeat it on every page (these flags include keys such as button18, birthdate, and a randomized site flag). Passing the gate is a self-attestation; it does not record an identity.</li>
+        <li><b>Visitor-counter state</b> — a session-scoped flag that prevents counting the same browser session more than once.</li>
+      </ul>
+      <p>You can clear localStorage at any time through your browser's settings. Doing so will erase your chat history, your saved settings, and the age-verification flags on this device. The Service does not maintain a server-side copy from which the data could be recovered.</p>
 
-      <h3>Adult content</h3>
-      <p>Generated dialogue, images, and films are produced on your own machine (Ollama) or via your own Pollinations key. Generated content is your responsibility — keep it private to your machine; do not share generated content where it would constitute illegal distribution in your jurisdiction.</p>
+      <h3 id="pp-counter">VI. Visitor Counter</h3>
+      <p>The Service displays an aggregate visitor counter on certain pages. This counter is provided by a third-party stateless service operated by an independent developer at abacus.jasoncameron.dev. When your browser loads a page that displays the counter, it makes an HTTP request to that service for the current count (and, once per browser session, increments it by one).</p>
+      <p>The counter is stateless and aggregate. It returns a number; it does not return personal data and does not link visits across sessions. Like any HTTP request, the request to the counter service necessarily includes your IP address and browser User-Agent string at the network level — Unity AI Lab does not see, log, or store these values, but the third-party counter service may do so as part of operating its service. Unity AI Lab does not control, audit, or determine the retention practices of the third-party counter service. If you would prefer that no such request leave your browser, you can block requests to abacus.jasoncameron.dev with browser extensions or DNS-level filters.</p>
+
+      <h3 id="pp-ai">VII. AI Generations &amp; Pollinations</h3>
+      <p>Any generative AI responses are not stored by us. When you interact with a chat, image, voice, or vision feature on the Service, the request is forwarded — through a Cloudflare Worker proxy we operate — to Pollinations (pollinations.ai), which performs the inference on its own systems and returns the response. We relay the response to your browser.</p>
+      <p>The Cloudflare Worker proxy exists for two reasons: first, to keep the upstream API token off the client (so it cannot be extracted by any user of the Service); and second, to attach the moderation-routing parameters required by Pollinations and its upstream providers. The Worker does not write the prompts or responses to durable storage; it forwards them and discards. Cloudflare, as the operator of the Worker runtime, applies its own platform-level logging and security measures, governed by Cloudflare's privacy practices.</p>
+      <p>The data exchange with the AI is therefore subject to the terms of Pollinations, which themselves do not store data either; however, it is up to Pollinations for how the data is handled. Pollinations relies on its own model providers, hosting providers, and content-moderation providers (which may include providers operating on the Microsoft Azure OpenAI Service, among others). Each of those upstream providers has its own privacy policy and data-handling practices that may apply to the prompts and outputs that pass through their systems. Unity AI Lab is not in privity with those upstream providers and does not control, audit, or determine their data retention.</p>
+      <p>Practical consequences:</p>
+      <ul>
+        <li>You should not enter into the Service any information you would not be comfortable sending to a third-party AI provider whose retention and training practices you have not personally reviewed.</li>
+        <li>You should not enter the personal data of identifiable third parties into the Service.</li>
+        <li>You should not enter any information that is subject to confidentiality, attorney-client privilege, HIPAA, FERPA, GLBA, PCI-DSS, or similar regulated-data protections.</li>
+        <li>You should review Pollinations' published privacy practices directly at pollinations.ai and the practices of the underlying model providers if and when they are disclosed.</li>
+      </ul>
+
+      <h3 id="pp-cookies">VIII. Cookies &amp; Similar Technologies</h3>
+      <p>Unity AI Lab does not set cookies for analytics, advertising, or behavioral tracking. The Service uses localStorage and sessionStorage (described in Section V) for functional state on your device only. We do not consider these cookies for the purposes of laws that require a cookie banner, but their use is disclosed in this Policy for full transparency.</p>
+      <p>Third-party services that the Service depends on or links to — including font and library CDNs (Google Fonts, unpkg.com), the visitor-counter service, GitHub Pages, and any external link you choose to follow — may set their own cookies on their own domains when your browser contacts them. Those cookies are governed by the privacy policies of those third parties and are outside Unity AI Lab's control.</p>
+
+      <h3 id="pp-hosting">IX. Hosting &amp; Server Access Logs</h3>
+      <p>The Service's static pages are served from GitHub Pages, which is operated by GitHub, Inc. (github.com/site-policy). As a normal incident of operating any web hosting platform, GitHub may log standard server access information when your browser requests pages — including IP address, request URL, timestamp, User-Agent, and referrer. Unity AI Lab does not have direct read-access to those logs; they are governed by GitHub's privacy and security policies.</p>
+      <p>The Cloudflare Worker proxy described in Section VII is operated on Cloudflare's infrastructure and is governed by Cloudflare's privacy and security practices. Cloudflare may log standard request metadata at the platform level.</p>
+
+      <h3 id="pp-children">X. Children's Privacy</h3>
+      <p>The Service is not directed to and is not intended for use by children. The Service is restricted to individuals above the age of consent in their jurisdiction (the age at which a person is considered an adult under applicable law). For users in the United States this generally means individuals who are eighteen (18) years of age or older; in some jurisdictions the threshold is higher.</p>
+      <p>We do not knowingly collect personal data from children. We do not run a user-account system, do not store user-submitted content server-side, and do not maintain a database of users — child or otherwise. If we become aware that a person under the applicable age of consent has nevertheless provided personal data through any channel under our control (such as the contact email), we will delete that data promptly.</p>
+      <p>If you are a parent or legal guardian and you believe a minor in your care has used the Service, please contact us at <a href="mailto:contact@unityailab.com">contact@unityailab.com</a> and we will, where reasonable and feasible, take steps to assist — recognizing the architectural limits described in Section IV (we do not store conversations and do not maintain user records that could be deleted).</p>
+      <p>Any responsibility for minors who reach the Service is, at all times, deferred back to the parent's or guardian's responsibility to keep their children off of the Service.</p>
+
+      <h3 id="pp-under18">XI. If you are under 18 — read this in plain English</h3>
+      <div class="warn-banner">PLAIN ENGLISH · NO LEGALESE · <b>THIS SITE IS NOT FOR YOU.</b></div>
+      <p>If you are under the age of 18 — or under the age of an adult in your country, state, or region — please stop using this website right now. We mean it. The site is built for adults, and the chat, images, and text on it can include explicit, graphic, violent, sexual, or otherwise mature content that we don't want you to see.</p>
+      <p>On the privacy side specifically: even though we don't keep a list of who you are or what you typed, the things you type are sent to a third-party AI provider (Pollinations) and to the providers they use. We can't tell those companies to forget about you, because we don't even know who you are. So your best move is to not send anything from this site at all.</p>
+      <p>What you should do, in order:</p>
+      <ol>
+        <li>Close this tab or browser window. Don't click around. Just leave.</li>
+        <li>Tell a parent, guardian, or another trusted adult that you ended up on a site that is meant for grown-ups, especially if anything on this site upset, confused, or pressured you.</li>
+        <li>If anyone is hurting you or making you feel unsafe online, talk to a trusted adult or contact a local resource — for example, in the United States you can call or text the Crisis Text Line at 741741, in the UK you can call Childline at 0800 1111, or you can search for the equivalent helpline in your country.</li>
+        <li>Do not give your real name, address, school, phone number, or photos to any AI chat — on this site or anywhere else.</li>
+      </ol>
+      <p>If you stay on the site after reading this notice, you and your parents or legal guardians are responsible for that choice — not Unity AI Lab. We don't want you here, and we're asking you, directly and clearly, to leave.</p>
+
+      <h3 id="pp-rights">XII. Your Rights Under GDPR &amp; CCPA</h3>
+      <p>Depending on where you live, you may have rights under the European Union General Data Protection Regulation (GDPR), the United Kingdom GDPR, the California Consumer Privacy Act / California Privacy Rights Act (CCPA/CPRA), or other regional data-protection laws. The architecture of the Service substantially limits the practical application of those rights as against Unity AI Lab, because we do not maintain a server-side store of personal data — but we honor them to the extent they apply.</p>
+      <h4>Your rights, generally</h4>
+      <ul>
+        <li><b>Right to know / right of access</b> — to ask whether we hold personal data about you and to receive a copy. In practice, the answer for the overwhelming majority of users is: we hold no such data.</li>
+        <li><b>Right to correction</b> — to ask us to correct inaccurate personal data we hold about you, where we hold any.</li>
+        <li><b>Right to deletion / right to be forgotten</b> — to ask us to delete personal data we hold about you. Most data referenced on the Service lives in your own browser (localStorage) and is yours to delete via your browser settings; we do not have it on a server.</li>
+        <li><b>Right to data portability</b> — to receive a copy of your data in a portable format. Where the only data is in your browser's localStorage, you already have direct access to it.</li>
+        <li><b>Right to object / right to restrict processing</b> — to ask us to stop or limit certain processing.</li>
+        <li><b>Right not to be discriminated against</b> — for exercising your rights under CCPA/CPRA.</li>
+        <li><b>Right to lodge a complaint</b> — with your local data-protection authority (DPA) under GDPR.</li>
+      </ul>
+      <h4>How to exercise your rights</h4>
+      <p>To exercise any of these rights, contact <a href="mailto:contact@unityailab.com">contact@unityailab.com</a> with a clear description of the request. We will respond within the timeframe required by applicable law (generally one month under GDPR, forty-five days under CCPA/CPRA, with possible extensions where permitted). We may need to verify your identity before actioning a request that involves the disclosure or deletion of personal data; the practical limit on this is that we usually have no personal data to verify against.</p>
+      <h4>Sales / sharing (CCPA/CPRA)</h4>
+      <p>We do not sell or share personal data as those terms are defined under the CCPA/CPRA, and we do not have a "Do Not Sell or Share My Personal Information" link on the Service because we have nothing to sell or share.</p>
+      <h4>Authorized agents</h4>
+      <p>You may use an authorized agent to exercise your rights under applicable law. We may require proof of the agent's authority before acting on a request submitted by an agent.</p>
+
+      <h3 id="pp-security">XIII. Security</h3>
+      <p>Unity AI Lab uses commercially reasonable security practices for a static website hosted on GitHub Pages and an associated Cloudflare Worker proxy: HTTPS for all traffic, server-side storage of upstream API tokens (so they are never exposed to the browser), no client-side credentials, no user-account database to compromise, and no server-side store of conversations. Notwithstanding these practices, no method of transmission over the internet or method of electronic storage is one-hundred-percent secure, and we cannot guarantee absolute security.</p>
+
+      <h3 id="pp-transfers">XIV. International Data Transfers</h3>
+      <p>The Service is hosted on infrastructure located primarily in the United States (GitHub Pages, Cloudflare). Pollinations and its upstream providers operate their own infrastructure in jurisdictions determined by them. By using the Service from outside the United States or outside the location of any upstream provider, you understand and agree that your prompts and any associated request metadata may be transferred to and processed in the United States and other jurisdictions whose data-protection laws may differ from those of your home jurisdiction. To the extent any such transfer is subject to data-protection law, we rely on the lawful-transfer mechanisms made available by the relevant providers (such as the European Commission's Standard Contractual Clauses, where applicable to those providers' own arrangements with their customers). Unity AI Lab itself does not maintain a separate cross-border-transfer mechanism because we do not maintain a server-side store of user data.</p>
+
+      <h3 id="pp-retention">XV. Retention</h3>
+      <p>Because Unity AI Lab does not maintain a server-side store of user data, retention on our side is limited to:</p>
+      <ul>
+        <li><b>Your localStorage entries</b> — retained on your device until you clear them through your browser settings. We do not have a copy.</li>
+        <li><b>Email correspondence</b> — emails you send to <a href="mailto:contact@unityailab.com">contact@unityailab.com</a> are retained in our email inbox for as long as is reasonably necessary to address the inquiry, and then either deleted or archived in line with normal email-management practices.</li>
+      </ul>
+      <p>Third-party providers — including GitHub Pages, Cloudflare, Pollinations, the upstream model providers, the visitor counter service, and the font / library CDNs — apply their own retention policies to any logs or metadata they collect, which are outside our control.</p>
+
+      <h3 id="pp-changes">XVI. Changes to this Policy</h3>
+      <p>We may revise this Policy from time to time. When we do, we will update the "Effective" date at the top of this page and, for material changes, we will mark the revision in the version history. Your continued use of the Service after the Effective date of a revision constitutes your acceptance of the revised Policy. If you do not agree to a revision, your sole remedy is to stop using the Service and, if you wish, to clear the localStorage entries described in Section V.</p>
+
+      <h3 id="pp-contact">XVII. Contact</h3>
+      <p>For questions about this Policy, to exercise any data-protection right, or to raise a privacy-related concern, contact us at:</p>
+      <p>Unity AI Lab<br>
+        Email: <a href="mailto:contact@unityailab.com">contact@unityailab.com</a><br>
+        Web: <a href="https://www.unityailab.com">https://www.unityailab.com</a></p>
+      <p>Email is the authoritative contact mechanism for all privacy notices. Please use a clear subject line such as "Privacy request — access" or "Privacy request — deletion" to help us route your request quickly.</p>
+
+      <p class="small muted" style="text-align:center;padding:18px 0">END OF FILE · CODEX 04 · PRIVACY · UNITY · AI · LAB · V2026.05</p>
     </section>
 
     <!-- ============= SETTINGS SECTION ============= -->

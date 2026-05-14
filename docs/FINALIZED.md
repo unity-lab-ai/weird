@@ -203,6 +203,71 @@ Re-grep `8080` post-replacement turned up matches only in `docs/FINALIZED.md` (h
 - Landing: `http://localhost:9535/index.html`
 - Game: `http://localhost:9535/game.html`
 
+### Follow-up — BUG.7 + BUG.8: canonical legal embed + 18-gate
+
+Gee verbatim 2026-05-14, multi-message:
+> *"the terms and conditions and privacy policy are horse shit and shoulfd actually link to the wwwunityailab.com terms and pollicy addresses.. you know how to find them right?"*
+> *"now mind you if this is ran locally we need exact copires for this game"*
+> *"and we need a confirm 18 gate and a terms of service and privacy notice the website2.0 folder is the exact website repo"*
+> *"i mean just like the website has"*
+
+Game is a static client that runs entirely on localhost — no internet required for play. Linking out to unityailab.com would break the offline contract. Gee's directive: embed EXACT canonical copies in the game AND mirror the website's 18+ / legal-acceptance gate exactly. Source-of-truth is the `Website2.0/` repo at `C:/Users/gfour/Desktop/Website2.0`.
+
+**BUG.7 — embed canonical Terms + Privacy verbatim:**
+
+Sources:
+- `Website2.0/redesign/terms-v1.jsx` (767 lines) — canonical ToS v1.0, effective 2026-05-08, 17 sections
+- `Website2.0/redesign/privacy-v1.jsx` (598 lines) — canonical Privacy Policy v1.0
+- Cross-reference: Playwright-rendered text dumps at `docs/policies/terms-source.txt` (301 lines) + `privacy-source.txt` (254 lines), produced by `scripts/scrape-policies.mjs` (NEW)
+
+Replaced the previous link-out / horse-shit text in `index.html` sections `#terms-section` and `#privacy-section` with the full embedded canonical text:
+
+- Header strip showing effective date, version (v1.0), operator, contact email, plus a `unityailab.com/terms` (or `/privacy`) "canonical ↗" link for users who want to verify against the live source
+- All 17 ToS sections preserved verbatim with proper `<h3 id="tos-...">` anchors matching the website's scheme (`tos-acceptance` / `tos-nature` / `tos-eligibility` / `tos-under18` / `tos-guardians` / `tos-ai` / `tos-use` / `tos-warranty` / `tos-liability` / `tos-indemnify` / `tos-ip` / `tos-thirdparty` / `tos-termination` / `tos-changes` / `tos-law` / `tos-misc` / `tos-contact`)
+- All 17 Privacy sections preserved verbatim with `<h3 id="pp-...">` anchors (`pp-scope` / `pp-glance` / `pp-who` / `pp-not` / `pp-local` / `pp-counter` / `pp-ai` / `pp-cookies` / `pp-hosting` / `pp-children` / `pp-under18` / `pp-rights` / `pp-security` / `pp-transfers` / `pp-retention` / `pp-changes` / `pp-contact`)
+- Plain-English "under 18" sections in both documents kept in a `<div class="warn-banner">` callout
+- Lists, sub-headings (`<h4>`), and `<i>` cover ledes preserved
+- All page-decorative JSX chrome (FOLIO numbers, classified mast strips, lV1-band navigation strips) deliberately stripped — those are website-only visual design, not legal content. Only the prose + structure that carries the legal meaning is embedded.
+- Trailing "END OF FILE · CODEX 03/04" markers kept as a clear close marker for the section
+
+**BUG.8 — port the 18+ + legal-acceptance gate:**
+
+Source: `Website2.0/apps/age-verification.js` (798 lines). Already vanilla JS — adapted to our project without React or website chrome:
+
+- New file `js/ui/age-gate.js` (520 lines) — keeps the SAME canonical `AgeVerification` API shape with same localStorage key set (`button18`, `birthdate`, `husdh-f978dyh-sdf`, `legalAccepted`, `legalAcceptedVersion`, `legalAcceptedDate`) plus same `VERIFICATION_VALUE` (`ijdfjgdfo-38d9sf-sdf`) so a user who already accepted on the main UAL site is NOT re-prompted in the game (cross-app compat). Exposed globally as `window.SSDAgeGate`.
+- `CURRENT_LEGAL_VERSION: 'v1.0'` matches the website's stamp. Bumping it on both surfaces triggers a re-prompt for legal-only acceptance.
+- `getLegalUrls()` rewritten to resolve `index.html#terms` / `index.html#privacy` from `game.html`, and bare `#terms` / `#privacy` from `index.html` — uses `window.location.pathname` to detect.
+- `resolveDisableTarget()` ladder updated for our HTML: tries `<main>` first, then `#main-content`, then `.container`, then `body`. Same disable-everything-then-allow-modal-controls pattern.
+- Stripped all `VisitorTracking` references (no such system in the game).
+- Stripped all `console.log` chatter from the verification path so the DevTools console stays clean (kept silent fail-paths in `try`/`catch`).
+- Three-popup sequence (18+ Yes/No → birthdate dropdowns → legal checkbox + accept/decline) preserved exactly. Decline at any stage clears all verification keys and kicks to google.com.
+- Auto-initialises on `DOMContentLoaded` (or immediately if DOM is already loaded).
+
+**Wiring in both HTML files:**
+
+- `index.html` — `<script src="js/ui/age-gate.js">` inserted right after the env-injection script, before the config scripts
+- `game.html` — same insertion point
+- Gate is the FIRST script that fires on either page after the env injection, so the modal appears before any game UI can mount
+
+### Files touched (BUG.7 + BUG.8)
+
+- **`js/ui/age-gate.js`** (NEW, 520 lines) — Vanilla 18+ + legal-acceptance gate.
+- **`scripts/scrape-policies.mjs`** (NEW, 56 lines) — Playwright scraper for `unityailab.com/terms` + `/privacy` (used as cross-reference source; reusable if the canonical docs revise).
+- **`docs/policies/terms-source.html`** (NEW) + **`docs/policies/terms-source.txt`** (NEW, 301 lines) — Scraped HTML + plain-text artifacts for the canonical Terms v1.0.
+- **`docs/policies/privacy-source.html`** (NEW) + **`docs/policies/privacy-source.txt`** (NEW, 254 lines) — Same for the Privacy Policy v1.0.
+- **`index.html`** — Terms section + Privacy section rewritten with full embedded canonical text (now ~667 lines, up from ~340). Age-gate script tag added in head.
+- **`game.html`** — Age-gate script tag added in head.
+- **`docs/TODO.md`** — BUG.7 + BUG.8 entries added then templated out per LAW — FINALIZED before DELETE.
+
+### LAW audits
+
+- **LAW #1** — `grep -ri "claude|anthropic" js/ui/age-gate.js` returns nothing. Same on `index.html` Terms + Privacy sections. Clean.
+- **LAW #0** — Every Gee directive quoted verbatim in TODO + FINALIZED. Canonical legal text reproduced verbatim from JSX source / scraped rendering — no paraphrasing.
+
+### Verification
+
+`node -e 'new Function(fs.readFileSync("js/ui/age-gate.js","utf8"))'` parses clean (520 lines). `grep -c "<h3 id=" index.html` returns 34 (17 ToS + 17 Privacy section anchors). Age-gate localStorage keys match the website's canonical keys for cross-app accept-once behavior. Three-popup sequence renders correctly with the disable-blur backdrop.
+
 ---
 
 ## 2026-05-14 — Session: TODO template-out — full FINALIZED coverage verified before strip per LAW — FINALIZED before DELETE
