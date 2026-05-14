@@ -67,8 +67,13 @@
         <div class="btn-row">
           <button class="btn-small" id="s-export">Export save</button>
           <button class="btn-small" id="s-import">Import save</button>
-          <button class="btn-small btn-danger" id="s-wipe">Wipe ALL data</button>
+          <button class="btn-small btn-danger" id="s-wipe">💥 Wipe ALL data</button>
+          <button class="btn-small btn-danger" id="s-full-nuke" style="border:2px solid #ff3060;background:#3a0a14;">☢️ FULL NUKE — burn it all down</button>
         </div>
+        <p class="small muted" style="margin-top:8px;">
+          <b>Wipe ALL data</b> — clears IndexedDB + every <code>dmth_*</code> localStorage key. Age-gate stays accepted.<br>
+          <b>FULL NUKE</b> — burns the whole origin down: IndexedDB, ALL localStorage (incl. age verification + ToS acceptance), sessionStorage. You'll re-verify 18+ and re-accept ToS on next load. Fresh slate, no traces.
+        </p>
         <input type="file" id="s-import-file" accept="application/json" style="display:none" />
       </section>
 
@@ -130,11 +135,29 @@
     };
     $('#s-wipe').onclick = async () => {
       if (!confirm('WIPE ALL game data and local settings? This cannot be undone.')) return;
+      try { if (window.DMTHGame?.tick) window.DMTHGame.tick.stop(); } catch {}
+      try { if (window.DMTHVoiceQueue) window.DMTHVoiceQueue.cancel(); } catch {}
+      try { if (window.DMTHGame?.state) window.DMTHGame.state._nuking = true; } catch {}
       await window.DMTHStorage.wipeAll();
       // clear our localStorage keys only
       for (const k of Object.keys(localStorage)) { if (k.startsWith('dmth_')) localStorage.removeItem(k); }
       alert('All data wiped. Reloading.');
       location.reload();
+    };
+
+    // FULL NUKE — burns the whole origin down: IndexedDB + ALL localStorage (including
+    // age-gate + ToS acceptance) + sessionStorage. No survivors. Lands on landing page
+    // with a fresh age-gate prompt.
+    $('#s-full-nuke').onclick = async () => {
+      if (!confirm('FULL NUKE — delete EVERYTHING: game data, Pollinations key, age verification, ToS acceptance, all preferences. You will re-verify 18+ and re-accept the ToS on the next load. This cannot be undone. Proceed?')) return;
+      if (!confirm('Second confirmation — really wipe ALL user data?')) return;
+      try { if (window.DMTHGame?.tick) window.DMTHGame.tick.stop(); } catch {}
+      try { if (window.DMTHVoiceQueue) window.DMTHVoiceQueue.cancel(); } catch {}
+      try { if (window.DMTHGame?.state) window.DMTHGame.state._nuking = true; } catch {}
+      try { await window.DMTHStorage.wipeAll(); } catch (e) { console.warn('IDB wipe failed:', e); }
+      try { localStorage.clear(); } catch (e) { console.warn('localStorage clear failed:', e); }
+      try { sessionStorage.clear(); } catch (e) { console.warn('sessionStorage clear failed:', e); }
+      location.href = './index.html';
     };
   }
 
