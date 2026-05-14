@@ -197,11 +197,17 @@
         additionalImages: []
       },
 
-      // wardrobe — every girl starts with default + built-in 'nude' (NUDE_PSEUDO) + built-in
-      // 'none' (NO_WARDROBE_PSEUDO, Phase 21.14) so the player can derobe / strip everything
-      // at any time without buying anything.
+      // wardrobe — every girl starts with her captured-at outfit + built-in 'nude'
+      // (NUDE_PSEUDO) + built-in 'none' (NO_WARDROBE_PSEUDO, Phase 21.14) so the player can
+      // derobe / strip everything at any time without buying anything.
+      //
+      // Phase 21.23 (2026-05-14) — the 'default' entry's `description` is the outfit she
+      // was wearing AT CAPTURE (resolved from her archetype's outfitTokens pool), and
+      // `source: 'captured-with'` marks provenance. She keeps this captured-at outfit
+      // until manually changed via wardrobe UI to another outfit, derobed (nude), or
+      // stripped of everything. Re-dress fallback restores this entry specifically.
       wardrobe: [
-        { id: 'default', displayName: 'her default outfit', description: outfit, source: 'born-with' },
+        { id: 'default', displayName: '👗 Captured outfit', description: outfit, source: 'captured-with' },
         { id: 'nude', displayName: 'Nude (fully naked)', description: '', source: 'built-in', nude: 'full', multiplier: 1.4 },
         { id: 'none', displayName: 'No wardrobe (stripped of everything)', description: '', source: 'built-in', nude: 'stripped', multiplier: 1.5 }
       ],

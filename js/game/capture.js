@@ -35,12 +35,15 @@
   // handcuffs, shackles, harness) survive the attempt. Cross-referenced against catalog
   // so adding new tools doesn't break the consumption logic.
   const SINGLE_USE_TOOLS = new Set([
-    'rohypnol', 'chloroform', 'ether', 'ketamine', 'duct-tape', 'rope', 'zip-ties'
+    'rohypnol', 'chloroform', 'ether', 'ketamine', 'tranquilizer',
+    'duct-tape', 'rope', 'zip-ties'
   ]);
 
   // Canonical list of capture-loop tools. UI dropdowns filter inventory against this.
+  // Phase 21.24 — tranquilizer added (Subdue 50 single-use, mirrors ketamine in the capture
+  // path; distinct behavior only in the in-dungeon administered drug path via drug-scheduler).
   const CAPTURE_TOOL_IDS = [
-    'pipe', 'rohypnol', 'chloroform', 'ether', 'ketamine',
+    'pipe', 'rohypnol', 'chloroform', 'ether', 'ketamine', 'tranquilizer',
     'duct-tape', 'rope', 'zip-ties', 'handcuffs', 'shackles', 'harness'
   ];
 

@@ -114,6 +114,13 @@
     if (names.has('ketamine')) {
       out.push(`${intensifier} disconnected vacant stare, half-lidded eyes, fully slack jaw, motionless dissociated posture, body limp and unsteady, awareness distant and elsewhere`);
     }
+    // Phase 21.24 (2026-05-14) — tranquilizer: full unconscious knockout. Front-load
+    // hard markers since "unconscious" overrides nearly every other body-state marker
+    // (no arousal expression possible, no awareness, no movement). Use 'extreme' tone
+    // regardless of intensifier — knockout is binary, not magnitude-scaled.
+    if (names.has('tranquilizer')) {
+      out.push(`completely unconscious, deeply sedated, eyes fully closed with lashes resting on cheekbones, jaw slack and mouth slightly open, head tilted forward or to the side, body limp with no muscle tension, arms dropped slack, posture collapsed and supported only by restraints or surface, breathing slow and shallow, totally unresponsive`);
+    }
     return out.join(', ');
   }
 
@@ -498,6 +505,7 @@ ${nudeStrength ? rulesNude : rulesClothed}
    - acid: fully dilated pupils swallowing the iris, distant unfocused fascinated gaze, slack open-mouthed wonderment, gently swaying posture
    - whiskey/alcohol: alcohol-flushed cheeks and upper chest, glassy unfocused eyes, smudged makeup, swaying posture
    - ketamine: disconnected vacant stare, half-lidded eyes, fully slack jaw, motionless dissociated posture, body limp
+   - tranquilizer: completely unconscious — eyes fully closed, jaw slack, head tilted, body limp with no muscle tension, arms dropped, totally unresponsive, deeply sedated. OVERRIDES other drug markers (closed eyes win over dilated pupils, slack over jaw clench).
    If drugs are 'none' in GIRL CONTEXT, do NOT render any drug effects — keep her eyes/posture sober.
 7. FRAME THE SUBJECT HEAD TO TOE — full body shot. NEVER use portrait, mugshot, headshot, bust, or waist-up framing. Every prompt MUST explicitly include "full body shot, head to toe in frame, complete figure visible" or equivalent language. The subject's feet must be visible in the composition.
 8. All subjects are adults age 18 or older. Use the GIRL CONTEXT 'age' value verbatim (e.g. "age 18", "age 22", "age 27") — NEVER hardcode "20s" or any range that excludes 18-19.

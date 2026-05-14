@@ -180,6 +180,17 @@
 - [ ] **T36.53** 🟠 Update `composePromptViaOllama()` HARD RULES — add rule that the Ollama-as-prompt-writer MUST instruct the image generator to produce full-body framing, never portrait or mugshot. Rule wording: `"Always frame the subject HEAD TO TOE. NEVER produce portrait, mugshot, headshot, bust, or waist-up framing. The prompt must include explicit 'full body shot, head to toe in frame, complete figure visible' language."`
 - [ ] **T36.54** 🟡 Add a `sanitizePrompt()` safety net (`imaging.js` lines 290-301) — if the composed prompt accidentally contains `portrait`, `mugshot`, `headshot`, `bust shot`, `close-up of face` — strip those words and inject `full body shot` instead. Defensive layer in case POSE_LIBRARY or Ollama prompt-writer leaks portrait language.
 
+#### Milestone 21.23 — Captives start in their captured-at outfit (~1h, Gee verbatim 2026-05-14: *"girls have the clothes they were captured with until changes into others or nothing"*) — SHIPPED 2026-05-14
+- [x] **T36.95** 🟠 `girl-gen.js` wardrobe init — starter wardrobe entry's `displayName` is `'👗 Captured outfit'`, `description` is the archetype-pool outfit she was wearing at capture (resolved at gen-time), `source: 'captured-with'` persists provenance. The `id: 'default'` slot retained so existing equip/derobe/re-dress wiring still resolves.
+- [x] **T36.96** 🟠 `wardrobe.js` re-dress semantics — equipping `'default'` (the captured-at entry) restores her actual captured-at outfit since the entry carries the real outfit string in `description`. Re-dress fallback after derobe / strip-everything resolves to the captured-at entry specifically (no regression to a generic placeholder).
+- [x] **T36.97** 🟢 `room.js` + `wardrobe-view.js` UI — room shows "Captured wearing: <outfit>" sub-row under the Wearing stat when the captured-at entry is currently equipped; wardrobe page shows the same provenance banner up top + new Re-dress button labels read "Re-dress (her captured-at outfit)" instead of generic "default outfit". Button tooltips updated in room.js too.
+
+#### Milestone 21.24 — Tranquilizer drug: limp + unconscious with 4-minute timer (~1.5h, Gee verbatim 2026-05-14: *"i want a tranquilizaer drug to make the girls limp and unconsious with a timer like 4 minutes"*) — SHIPPED 2026-05-14
+- [x] **T36.98** 🔴 `js/assets/catalog.js` — `tranquilizer` item shipped (category 'item', subcategory 'sedation', cost $200, tier 3, captureStages `{ subdue: 50 }`). Pollinations product-prompt for the dart + vial. Added to `SINGLE_USE_TOOLS` set + `CAPTURE_TOOL_IDS` list in `js/game/capture.js` so the capture-stage engine consumes one per attempt.
+- [x] **T36.99** 🔴 `js/game/drug-scheduler.js` — `tranquilizer` curve shipped: `onsetMs 5000` (5 sec), `peakMs 10000` (10 sec), `wearOffMs 240000` (4 min total span per Gee verbatim). `highContribution 30` so HUD surfaces the drug. `speechEffect: 'unconscious'`. `stackable: false`. `itemId: 'tranquilizer'` routes inventory consumption through existing `consumeItem` path.
+- [x] **T36.100** 🟠 Body-state effects — `isUnconscious(girl)` + `unconsciousRemainingMs(girl)` helpers exposed on `SSDGame.drugs`. `drugStateTokens(body)` emits the front-loaded unconscious block ("completely unconscious, deeply sedated, eyes fully closed with lashes resting on cheekbones, jaw slack and mouth slightly open, head tilted forward or to the side, body limp with no muscle tension, arms dropped slack, posture collapsed and supported only by restraints or surface, breathing slow and shallow, totally unresponsive"). `composePromptViaOllama()` HARD RULE 6 lists tranquilizer markers + an explicit OVERRIDES note so closed eyes win over dilated pupils + slack wins over jaw clench.
+- [x] **T36.101** 🟠 `js/ui/room.js` — 🎯 Tranquilizer (4-min knockout) button in the Drugs row consumes one tranquilizer from inventory via `SSDGame.drugs.offer`. Red-bordered TRANQUILIZED banner with live mm:ss countdown shows when unconscious. `sendTurn` blocks with "she's tranquilized — out cold" status. Quick-actions / drugs / feed / water / selfie / heal / mode / record / list-sale / derobe / strip-everything / Send / mic / typed input broadly disabled while unconscious. `setInterval` ticker updates the countdown every second; on wake-up fires a NotifyToast + appends a "stirs and groans, regaining consciousness" turn to the log + re-routes to re-render. Cleanup wrapper preserves the original state-onChange unsub.
+
 ### 🧱 PRE-2026-05-14 OPEN EPICS (still open, independent of Phase 21)
 
 - [ ] **PRE.1** 🟡 Pipe starter + tool progression (S) — add `pipe` item to catalog + TOOL_POWER mapping in `hunt.js` + starter inventory
@@ -207,11 +218,11 @@
 - **DOC close-out:** 8 tasks (~20 min)
 - **FINALIZED migration:** 2 tasks (~10 min)
 - **Atomic commit:** 1 task (~2 min)
-- **Phase 21 implementation:** 94 tasks (T36.1-T36.94) across 22 milestones (~34-43h estimated)
+- **Phase 21 implementation:** 101 tasks (T36.1-T36.101) across 24 milestones (~36-45h estimated)
 - **Pre-2026-05-14 open epics:** 14 tasks (PRE.1-PRE.14) (~6-10h estimated)
 - **Deferred:** 2 items (not active backlog)
 
-**GRAND TOTAL ACTIVE BACKLOG: 119 tasks. Estimated ~40-53 hours of focused implementation.** (Phase 21 grew with 7 new milestones added 2026-05-14 mid-session: 21.16 whore-out + 21.17 stamina/health + 21.18 universal tooltips + 21.19 README/SETUP-README split + 21.20 films auto-sell/sell-negatives + 21.21 disposal final-images + 21.22 sexualized body-refs/Stockholm. Plus T36.75 pregnancy image-trait extension on 21.10.)
+**GRAND TOTAL ACTIVE BACKLOG: 126 tasks. Estimated ~42-55 hours of focused implementation.** (Phase 21 grew with 7 new milestones added 2026-05-14 mid-session: 21.16 whore-out + 21.17 stamina/health + 21.18 universal tooltips + 21.19 README/SETUP-README split + 21.20 films auto-sell/sell-negatives + 21.21 disposal final-images + 21.22 sexualized body-refs/Stockholm. Plus T36.75 pregnancy image-trait extension on 21.10. **Plus 2 new milestones added 2026-05-14 post-compact: 21.23 captured-clothes-persist + 21.24 tranquilizer drug 4-min timer.**)
 
 ---
 
@@ -663,6 +674,31 @@ Two parts. (1) Prompt-level: girls explicitly name their sexual body parts in di
   - **High bond (7-9) — inviting / desperate / possessive:** *"my tits ache for you, Master"*, *"fuck my pussy harder"*, *"my ass is yours"*, *"i need your cock in my throat"*
 - [ ] **"Stockholm L{n}" UI surface** — `js/ui/room.js`, `js/ui/roster.js`, `js/ui/dispose-view.js`, `js/ui/dashboard.js`, `js/ui/hunt-view.js`. Every place that currently shows "Bond L{n}" gains a "Stockholm L{n}" alias label. Existing bond-name table (terrified / wary / acclimating / etc.) stays — Stockholm is the rating, the name is the qualitative tier.
 - [ ] **Per-bond-tier prompt reinforcement** — `js/templates/ollama-templates.js` `buildSystemPrompt()`. Reads girl's current bond.bondLevel and selects the right tier emphasis from the SEXUALIZED block (low/mid/high band). So a bond-2 girl sees "low-bond" tier instructions; a bond-8 girl sees "high-bond" tier. Both tiers ship the same body-part lexicon but with different tone.
+
+### Gee's directive (verbatim 2026-05-14, post-compact) — Captives start in their captured-at outfit:
+
+> *"girls have the clothes they were captured with until changes into others or nothing"*
+
+### Epic: Captives start in their captured-at outfit `(S)` — HIGH (Phase 21.23)
+
+Every captive's starter wardrobe entry is the outfit she was wearing at the moment of capture — NOT a generic 'default'. She keeps that captured-at outfit until manually changed via wardrobe UI to another outfit, derobed (nude), or stripped of everything (no wardrobe). Re-dress fallback restores the captured-at outfit specifically, not a generic baseline.
+
+- [ ] **`js/game/girl-gen.js` wardrobe seeding** — starter wardrobe entry's `displayName` + `description` derive from `visualIdentity.defaultOutfitDescription` (the outfit she was wearing in the hunt encounter / spawn). `source: 'captured-with'` marks provenance on the entry. The `id: 'default'` slot stays — we're replacing its description, not its ID, so existing equip / derobe / re-dress wiring still resolves.
+- [ ] **`js/game/wardrobe.js` re-dress semantics** — `derobe(girlId)` and `stripEverything(girlId)`'s re-dress companion (already wired in `room.js` + `wardrobe-view.js` Derobe + Strip-everything toggles) resolves back to the captured-at outfit, not a generic "her default outfit" string.
+- [ ] **`js/ui/room.js` + `js/ui/wardrobe-view.js` UI** — surface "Captured wearing: <outfit description>" labeling on the wardrobe page + a captive's room status panel so the player can see what she was wearing on the street/library/club/etc when taken. Provenance tag (`captured-with`) drives the label.
+
+### Gee's directive (verbatim 2026-05-14, post-compact) — Tranquilizer drug with 4-minute timer:
+
+> *"i want a tranquilizaer drug to make the girls limp and unconsious with a timer like 4 minutes"*
+
+### Epic: Tranquilizer drug — limp + unconscious with 4-minute timer `(M)` — HIGH (Phase 21.24)
+
+New drug item more potent than ketamine. Renders the girl fully unconscious + limp for ~4 minutes (real time, scaled to game-tick if needed). Buyable in shop. Usable both as a capture-stage Subdue tool (single-use heavy) AND as an in-dungeon administered drug to create a temporary unconscious window for the player. While active: no chat lands, no consensual actions resolve, image prompts render her unconscious (closed eyes, slack jaw, limp posture, head tilted, arms dropped, deeply sedated).
+
+- [ ] **Catalog entry** — `tranquilizer` in `js/assets/catalog.js`. `category: 'item'`, `subcategory: 'drug'`, `cost: ~$45`, `tier: 3`. `captureStages: { subdue: 50 }` for the capture-tool path. Pollinations product-prompt (small unmarked syringe / vial). Added to `SINGLE_USE_TOOLS` set in `js/game/capture.js` so the capture-stage engine consumes one per attempt.
+- [ ] **Drug curve** — `js/game/drug-scheduler.js` new substance entry. `onsetMs: ~5000` (5 sec), `peakMs: ~10000` (10 sec), `wearOffMs: ~240000` (4 min total span per Gee verbatim). Tags: `unconscious`, `limp`. Distinct from ketamine (dissociation) — this is full knockout.
+- [ ] **Body-state effects** — while tranquilizer is active: `body.unconscious = true` + `body.limp = true` flags. Ollama text path treats girl as unresponsive — chat input doesn't land, consensual actions blocked. Image path: `drugStateTokens(body)` emits "closed eyes, slack jaw, limp posture, head tilted forward, arms dropped, completely unconscious, deeply sedated" front-loaded near drug-state position 6 in `composePrompt()`.
+- [ ] **UI — administer button + live countdown** — `js/ui/room.js` Administer-tranquilizer action (consumes one from inventory). Live countdown timer (mm:ss) while active. Action gates: when unconscious, talk/feed/water/sex/derobe/strip-everything buttons disabled with hover-tooltip "she's tranquilized — out cold". Auto-wakeup logged in the room log when the timer hits 0. Cross-link with Phase 21.18 tooltip engine.
 
 ### Gee's directive (verbatim 2026-05-14) — README split: gameplay-wiki README + technical SETUP-README:
 

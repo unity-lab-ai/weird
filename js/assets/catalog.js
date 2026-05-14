@@ -163,6 +163,19 @@
       captureStages: { approach: 0, engage: 0, subdue: 50, secure: 0 },
       notes: 'Capture tool. Heavy Subdue 50. Single-use. Requires contacts to acquire.'
     },
+    {
+      // Phase 21.24 (2026-05-14) — Gee verbatim: "i want a tranquilizaer drug to make the
+      // girls limp and unconsious with a timer like 4 minutes". 4-minute wearOffMs in
+      // drug-scheduler.js. Both a capture-stage Subdue 50 tool AND an in-dungeon administered
+      // drug that creates a temporary unconscious window. Distinct from ketamine: ketamine =
+      // dissociation, tranquilizer = full knockout (eyes closed, body limp, deeply sedated).
+      id: 'tranquilizer', displayName: 'Tranquilizer Dart', emoji: '🎯',
+      category: 'item', subcategory: 'sedation',
+      prompt: 'studio product photograph of an unmarked tranquilizer dart with feathered tail and capped needle, lying on a plain dark surface beside a small clear vial of amber liquid, clinical-supply catalog composition, muted lighting',
+      cost: 200, tier: 3,
+      captureStages: { approach: 0, engage: 0, subdue: 50, secure: 0 },
+      notes: 'Capture tool AND in-dungeon administered drug. Heavy Subdue 50. Single-use. 4-minute unconscious window — she goes limp, eyes close, slack jaw, deeply sedated. Distinct from ketamine (which is dissociation, not knockout).'
+    },
 
     // --- BLUNT ---
     {

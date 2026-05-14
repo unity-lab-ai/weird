@@ -15,6 +15,16 @@
 
     const activeDrugs = window.SSDGame.drugs.summarize(girl);
     const currentOutfit = (girl.wardrobe || []).find(w => w.id === girl.currentOutfit);
+    // Phase 21.24 (2026-05-14) — tranquilizer state. While she's tranquilized: chat / feed /
+    // water / sex / derobe / strip-everything buttons disabled; live mm:ss countdown
+    // surfaced; auto-wakeup logged when timer hits 0.
+    const tranqEntry = window.SSDGame.drugs.isUnconscious ? window.SSDGame.drugs.isUnconscious(girl) : null;
+    const isUnconscious = !!tranqEntry;
+    function fmtCountdown(ms) {
+      const secs = Math.max(0, Math.floor(ms / 1000));
+      const m = Math.floor(secs / 60), s = secs % 60;
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
 
     el.innerHTML = `
       <div class="grid-2">
@@ -37,6 +47,7 @@
                     <div class="bar-row"><label>Life meter</label><div class="bar"><div class="bar-fill ${ls.score < 30 ? 'danger' : ''}" style="width:${ls.score}%"></div></div><b>${ls.score}</b></div>`;
           })() : ''}
           <div class="stat-row"><span>Wearing</span><b>${currentOutfit?.displayName || 'default'}</b> <a href="#wardrobe?girl=${girl.id}" class="btn-small">👗 Wardrobe</a></div>
+          ${currentOutfit?.source === 'captured-with' && currentOutfit?.description ? `<div class="small muted" style="padding-left:8px">Captured wearing: ${currentOutfit.description}</div>` : ''}
           <div class="stat-row">
             <span>Voice</span>
             <select id="voice-picker" class="inline-select">
@@ -53,6 +64,12 @@
           <div class="bar-row"><label>Bruises</label><div class="bar"><div class="bar-fill danger" style="width:${Math.min(100, girl.body.bruises*5)}%"></div></div><b>${girl.body.bruises}</b></div>
           <div class="bar-row"><label>High</label><div class="bar"><div class="bar-fill highgreen" style="width:${girl.body.high}%"></div></div><b>${girl.body.high}</b></div>
           ${activeDrugs.length > 0 ? `<div class="drug-hud small">${activeDrugs.map(d => `<span class="drug-pill">💊 ${d.name} · mag ${d.mag} · ${d.remainingMin}m left</span>`).join(' ')}</div>` : ''}
+          ${isUnconscious ? `<div class="tranq-banner panel" style="border:1px solid #b00;background:rgba(180,0,0,.08);padding:8px;margin:8px 0">
+            <b>💉 TRANQUILIZED — OUT COLD</b>
+            <span class="muted small">· countdown</span>
+            <b id="tranq-countdown" data-wear-off="${tranqEntry.wearOffAt}">${fmtCountdown(tranqEntry.wearOffAt - Date.now())}</b>
+            <div class="small muted">She's limp, eyes closed, deeply sedated. Chat / feed / water / sex / wardrobe actions disabled until wake-up. Image prompts render her unconscious automatically.</div>
+          </div>` : ''}
           <h3>Stats</h3>
           <div class="stat-grid">
             ${Object.entries(girl.stats || {}).map(([k, v]) =>
@@ -77,14 +94,15 @@
             <button class="btn-small" data-drug="acid">🧪 Tab of acid</button>
             <button class="btn-small" data-drug="whiskey">🥃 Pour whiskey</button>
             <button class="btn-small" data-drug="ketamine">🐴 Bump of K</button>
+            <button class="btn-small btn-danger" data-drug="tranquilizer" title="Tranquilizer dart — full unconscious knockout for 4 minutes. Distinct from ketamine (dissociation). Consumes 1 from inventory.">🎯 Tranquilizer (4-min knockout)</button>
           </div>
 
           <h3>Actions</h3>
           <div class="btn-row">
             <button id="record-toggle" class="btn-small">${window.SSDGame.film.isRecording() && window.SSDGame.film.activeSession().girlId === girl.id ? '⏹ Stop recording' : '🎬 Start recording'}</button>
             <button id="selfie-btn" class="btn-small">📸 Demand selfie</button>
-            <button id="derobe-btn" class="btn-small ${girl.currentOutfit === 'nude' ? 'btn-primary' : ''}" title="${girl.currentOutfit === 'nude' ? 'Currently nude — click to put default outfit back on' : 'Strip her nude — front-loads nudity in image prompts (accessories still allowed if equipped)'}">🍑 ${girl.currentOutfit === 'nude' ? 'Re-dress' : 'Derobe (nude)'}</button>
-            <button id="strip-all-btn" class="btn-small ${girl.currentOutfit === 'none' ? 'btn-primary' : ''}" title="${girl.currentOutfit === 'none' ? 'Currently stripped of everything — click to put default outfit back on' : 'Strip EVERYTHING — no garments, no accessories, no jewelry, no collar, no restraints'}">🚫 ${girl.currentOutfit === 'none' ? 'Re-dress' : 'Strip everything'}</button>
+            <button id="derobe-btn" class="btn-small ${girl.currentOutfit === 'nude' ? 'btn-primary' : ''}" title="${girl.currentOutfit === 'nude' ? 'Currently nude — click to put her captured-at outfit back on' : 'Strip her nude — front-loads nudity in image prompts (accessories still allowed if equipped)'}">🍑 ${girl.currentOutfit === 'nude' ? 'Re-dress' : 'Derobe (nude)'}</button>
+            <button id="strip-all-btn" class="btn-small ${girl.currentOutfit === 'none' ? 'btn-primary' : ''}" title="${girl.currentOutfit === 'none' ? 'Currently stripped of everything — click to put her captured-at outfit back on' : 'Strip EVERYTHING — no garments, no accessories, no jewelry, no collar, no restraints'}">🚫 ${girl.currentOutfit === 'none' ? 'Re-dress' : 'Strip everything'}</button>
             <button id="heal-btn" class="btn-small">❤️‍🩹 Heal (reset damage)</button>
             <button class="btn-small" data-mode="sexy">Mode: Sexy</button>
             <button class="btn-small" data-mode="hurtme">Mode: Hurt Me</button>
@@ -146,6 +164,18 @@
     // Shared send path used by both the typed input and the quick-action clicks
     async function sendTurn(text) {
       if (!text) return;
+      // Phase 21.24 — block chat while tranquilized. She can't speak.
+      const tranqNow = window.SSDGame.drugs.isUnconscious && window.SSDGame.drugs.isUnconscious(
+        window.SSDGame.state.getGirl(girl.id)
+      );
+      if (tranqNow) {
+        const status = el.querySelector('#stream-status');
+        if (status) {
+          status.textContent = '💉 she\'s tranquilized — out cold. Wait for wake-up.';
+          setTimeout(() => { if (status) status.textContent = ''; }, 2000);
+        }
+        return;
+      }
       if (inFlight) {
         // Drop the click silently — user is already waiting on a response
         const status = el.querySelector('#stream-status');
@@ -597,10 +627,46 @@
       }
     };
 
+    // Phase 21.24 — if she's currently tranquilized, broad-disable interaction buttons
+    // (drugs/feed/water/derobe/strip-everything/quick-actions/selfie/heal/mode/record/list-sale)
+    // and the typed-input Send button. They re-enable when the page re-renders post-wake-up.
+    if (isUnconscious) {
+      el.querySelectorAll('.qa-btn, [data-drug], [data-feed], [data-water], #selfie-btn, #heal-btn, [data-mode], #record-toggle, #list-sale, #derobe-btn, #strip-all-btn, #send, #mic-btn')
+        .forEach(b => { b.disabled = true; b.title = (b.title || '') + (b.title ? ' · ' : '') + 'she\'s tranquilized — out cold'; });
+      const userIn = el.querySelector('#user-in');
+      if (userIn) { userIn.disabled = true; userIn.placeholder = 'she\'s tranquilized — wait for wake-up'; }
+    }
+
+    // Phase 21.24 — live mm:ss countdown ticker. Updates every second; on wake-up, fires
+    // a NotifyToast and re-renders the page so the disabled buttons come back online.
+    let tranqTicker = null;
+    if (isUnconscious) {
+      tranqTicker = setInterval(() => {
+        const el2 = el.querySelector('#tranq-countdown');
+        if (!el2) { clearInterval(tranqTicker); tranqTicker = null; return; }
+        const wearOffAt = Number(el2.dataset.wearOff || 0);
+        const remaining = wearOffAt - Date.now();
+        if (remaining <= 0) {
+          clearInterval(tranqTicker);
+          tranqTicker = null;
+          if (window.SSDNotify) {
+            window.SSDNotify.show(`💉 ${girl.name} woke up from the tranquilizer.`, { type: 'info', durationMs: 3000 });
+          }
+          window.SSDGame.state.appendTurn(girl.id, 'system', `*${girl.name} stirs and groans, regaining consciousness from the tranquilizer*`);
+          window.SSDRouter.handle();
+          return;
+        }
+        el2.textContent = fmtCountdown(remaining);
+      }, 1000);
+    }
+
     const unsub = window.SSDGame.state.onChange(() => {
       if (location.hash.startsWith('#room')) renderLog();
     });
-    return unsub;
+    return () => {
+      if (tranqTicker) { clearInterval(tranqTicker); tranqTicker = null; }
+      if (typeof unsub === 'function') unsub();
+    };
   }
 
   function escapeHtml(s) {

@@ -781,6 +781,17 @@ Per-girl whore-out toggle that automates john arrivals + transactions while enab
 - [ ] T36.53 — Update `composePromptViaOllama()` HARD RULES — add a rule that the Ollama-as-prompt-writer MUST instruct the image generator to produce full-body framing, never portrait or mugshot.
 - [ ] T36.54 — Add safety net in `sanitizePrompt()` (`imaging.js` lines 290-301) — strip `portrait`, `mugshot`, `headshot`, `bust shot`, `close-up of face` and inject `full body shot` if any leak through.
 
+### Milestone 21.23 — Captives start in their captured-at outfit — SHIPPED 2026-05-14 (Gee verbatim 2026-05-14, post-compact: *"girls have the clothes they were captured with until changes into others or nothing"*)
+- [x] T36.95 — `js/game/girl-gen.js` wardrobe init — starter wardrobe entry's `displayName` is `'👗 Captured outfit'`, `description` is the archetype-pool outfit she was wearing at capture, `source: 'captured-with'` persists provenance. `id: 'default'` retained so equip/derobe/re-dress wiring still resolves.
+- [x] T36.96 — `js/game/wardrobe.js` re-dress semantics — equipping `'default'` (the captured-at entry) restores her actual captured-at outfit since the entry carries the real outfit string in `description`. Re-dress fallback after derobe / strip-everything resolves to the captured-at entry specifically.
+- [x] T36.97 — `js/ui/room.js` + `js/ui/wardrobe-view.js` UI — room shows "Captured wearing: <outfit>" sub-row under the Wearing stat; wardrobe page shows the same provenance banner up top; Re-dress button labels read "Re-dress (her captured-at outfit)" instead of generic "default outfit"; button tooltips updated.
+
+### Milestone 21.24 — Tranquilizer drug: limp + unconscious with 4-minute timer — SHIPPED 2026-05-14 (Gee verbatim 2026-05-14, post-compact: *"i want a tranquilizaer drug to make the girls limp and unconsious with a timer like 4 minutes"*)
+- [x] T36.98 — `js/assets/catalog.js` — `tranquilizer` item (category 'item', subcategory 'sedation', cost $200, tier 3, captureStages `{ subdue: 50 }`). Added to `SINGLE_USE_TOOLS` set + `CAPTURE_TOOL_IDS` list in `js/game/capture.js`.
+- [x] T36.99 — `js/game/drug-scheduler.js` — `tranquilizer` curve: `onsetMs 5000` (5 sec), `peakMs 10000` (10 sec), `wearOffMs 240000` (4 min total span per Gee verbatim). `speechEffect: 'unconscious'`. `stackable: false`. `itemId: 'tranquilizer'` routes inventory consumption.
+- [x] T36.100 — Body-state effects — `isUnconscious(girl)` + `unconsciousRemainingMs(girl)` helpers exposed on `SSDGame.drugs`. `drugStateTokens(body)` emits front-loaded unconscious block (closed eyes / slack jaw / limp posture / head tilted / arms dropped / breathing slow / totally unresponsive). `composePromptViaOllama()` HARD RULE 6 lists tranquilizer markers + OVERRIDES note so closed eyes win over dilated pupils.
+- [x] T36.101 — `js/ui/room.js` — 🎯 Tranquilizer (4-min knockout) button in Drugs row. Red TRANQUILIZED banner with live mm:ss countdown when unconscious. `sendTurn` blocks. Quick-actions / drugs / feed / water / selfie / heal / mode / record / list-sale / derobe / strip-everything / Send / mic / typed input broadly disabled. `setInterval` ticker updates countdown every second; on wake-up fires NotifyToast + appends wake-up turn + re-renders. Cleanup wrapper preserves state-onChange unsub.
+
 ---
 
 ## Dependency Graph
@@ -866,6 +877,8 @@ Phase 21 (Major Systems Overhaul — 2026-05-14)
    │    ↑ Milestone 21.20 Films auto-sell + sell-negatives — market.runSaleTick rewrite + new sellNegatives action + UI overhaul; enhances Phase 19 content-market
    │    ↑ Milestone 21.21 Disposal method final-image generation — per-method scene prompts + Pollinations image in dispose-view final screen; enhances Phase 19 imaging
    │    ↑ Milestone 21.22 Sexualized body-part references in dialogue + Stockholm surfacing — BASE_SLUT prompt block + bond-tier-shaped tone + UI label change; enhances Phase 4 voice prompts + Phase 17 Stockholm bond
+   │    ↑ Milestone 21.23 Captives start in their captured-at outfit — girl-gen wardrobe seeding + wardrobe.js re-dress semantics + room/wardrobe UI provenance labels; enhances Phase 9 women templates + Phase 13 capture flow
+   │    ↑ Milestone 21.24 Tranquilizer drug 4-min timer — catalog item + drug-scheduler curve + isUnconscious helper + imaging unconscious markers + room.js administer button with live countdown + broad action gating; enhances Phase 6 drug scheduler + Phase 13 capture (capture-stage tool too) + Phase 19 imaging
    ▼
 (Ongoing — game lives here, future overhauls land as Phase 22+)
 ```

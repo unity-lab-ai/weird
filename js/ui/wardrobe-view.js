@@ -12,19 +12,22 @@
 
     const isNude = girl.currentOutfit === 'nude';
     const isStripped = girl.currentOutfit === 'none';
+    const currentWear = (girl.wardrobe || []).find(w => w.id === girl.currentOutfit);
+    const capturedEntry = (girl.wardrobe || []).find(w => w.source === 'captured-with');
     el.innerHTML = `
       <div class="panel">
         <h2>👗 ${girl.name}'s wardrobe</h2>
-        <p class="small muted">Currently wearing: <b>${(girl.wardrobe || []).find(w => w.id === girl.currentOutfit)?.displayName || 'default'}</b></p>
+        <p class="small muted">Currently wearing: <b>${currentWear?.displayName || 'default'}</b>${currentWear?.source === 'captured-with' ? ' <span class="small">(her captured-at outfit)</span>' : ''}</p>
+        ${capturedEntry?.description ? `<p class="small muted">📸 <b>Captured wearing:</b> ${capturedEntry.description}</p>` : ''}
         <div class="btn-row">
           <a href="#room?girl=${girl.id}" class="btn-small">← back to her hold</a>
-          <button class="btn-small ${isNude ? '' : 'btn-primary'}" data-derobe>${isNude ? '👗 Re-dress (default outfit)' : '🍑 Derobe — strip her fully nude'}</button>
-          <button class="btn-small ${isStripped ? '' : 'btn-danger'}" data-strip-all>${isStripped ? '👗 Re-dress (default outfit)' : '🚫 Strip everything — no accessories'}</button>
+          <button class="btn-small ${isNude ? '' : 'btn-primary'}" data-derobe>${isNude ? '👗 Re-dress (her captured-at outfit)' : '🍑 Derobe — strip her fully nude'}</button>
+          <button class="btn-small ${isStripped ? '' : 'btn-danger'}" data-strip-all>${isStripped ? '👗 Re-dress (her captured-at outfit)' : '🚫 Strip everything — no accessories'}</button>
         </div>
         <p class="small muted" style="margin-top:8px">
           <b>🍑 Derobe</b> puts <code>nude</code> at position 2 of the image prompt — accessories (collars, cuffs, harnesses) still allowed if equipped.<br>
-          <b>🚫 Strip everything</b> (Phase 21.14) is more aggressive — bans accessories, jewelry, collars, restraints. Raw nakedness, no body adornment whatsoever.
-          Both options free, always available.
+          <b>🚫 Strip everything</b> (Phase 21.14) is more aggressive — bans accessories, jewelry, collars, restraints. Raw nakedness, no body adornment whatsoever.<br>
+          <b>👗 Re-dress</b> restores her captured-at outfit (the clothes she was wearing when taken). Both strip options free + always available.
         </p>
       </div>
 

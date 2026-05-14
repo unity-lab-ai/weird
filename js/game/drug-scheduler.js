@@ -14,8 +14,34 @@
     acid:    { onsetMs: 45 * 60_000, peakMs: 4 * 60 * 60_000, wearOffMs: 10 * 60 * 60_000, highContribution: 55, speechEffect: 'curious', stackable: false, itemId: 'acid' },
     whiskey: { onsetMs: 5 * 60_000,  peakMs: 20 * 60_000, wearOffMs: 90 * 60_000, highContribution: 45, speechEffect: 'drunk',     stackable: true,  itemId: 'wine' },  // routed through 'wine'/'whiskey' item
     alcohol: { onsetMs: 5 * 60_000,  peakMs: 20 * 60_000, wearOffMs: 90 * 60_000, highContribution: 45, speechEffect: 'drunk',     stackable: true,  itemId: 'wine' },
-    ketamine:{ onsetMs: 2 * 60_000,  peakMs: 8 * 60_000,  wearOffMs: 40 * 60_000, highContribution: 75, speechEffect: 'broken',    stackable: false, itemId: 'ketamine' }
+    ketamine:{ onsetMs: 2 * 60_000,  peakMs: 8 * 60_000,  wearOffMs: 40 * 60_000, highContribution: 75, speechEffect: 'broken',    stackable: false, itemId: 'ketamine' },
+    // Phase 21.24 (2026-05-14) — Gee verbatim: "i want a tranquilizaer drug to make the
+    // girls limp and unconsious with a timer like 4 minutes". 4-min wearOffMs total span,
+    // 5-sec onset, 10-sec peak. Distinct from ketamine (dissociation) — this is full
+    // knockout. While active, body.unconscious + body.limp resolve true via
+    // isUnconscious(girl) helper, gating chat / consensual actions in room.js.
+    tranquilizer: { onsetMs: 5_000, peakMs: 10_000, wearOffMs: 240_000, highContribution: 30, speechEffect: 'unconscious', stackable: false, itemId: 'tranquilizer' }
   };
+
+  // Phase 21.24 — return the active tranquilizer entry on the girl if she's still within
+  // its wearOffAt window, else null. Used by UI to gate buttons + drive the live mm:ss
+  // countdown, and by image-prompt path to front-load unconscious markers.
+  function isUnconscious(girl) {
+    const now = Date.now();
+    const active = Array.isArray(girl?.body?.activeDrugs) ? girl.body.activeDrugs : [];
+    for (const d of active) {
+      if (typeof d !== 'object') continue;
+      if ((d.name || '') !== 'tranquilizer') continue;
+      if (now < (d.wearOffAt || 0)) return d;
+    }
+    return null;
+  }
+
+  function unconsciousRemainingMs(girl) {
+    const d = isUnconscious(girl);
+    if (!d) return 0;
+    return Math.max(0, (d.wearOffAt || 0) - Date.now());
+  }
 
   // Administer a drug — consumes an inventory item if available, starts a curve on the girl.
   function administer(girlId, drugKey, { forFree = false } = {}) {
@@ -131,6 +157,7 @@
 
   window.SSDGame = window.SSDGame || {};
   window.SSDGame.drugs = Object.freeze({
-    DRUG_CURVES, administer, offer, currentEffect, tickAll, summarize
+    DRUG_CURVES, administer, offer, currentEffect, tickAll, summarize,
+    isUnconscious, unconsciousRemainingMs
   });
 })();
