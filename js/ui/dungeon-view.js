@@ -79,7 +79,8 @@
           displayName: tpl.displayName,
           capacity: tpl.roomSlots,
           holds: Array.from({ length: tpl.roomSlots }, (_, i) => ({
-            id: `${id}_hold_${i}`, captiveGirlId: null, holdType: tpl.holdType, restraintStatus: 'standard'
+            id: `${id}_hold_${i}`, captiveGirlId: null, holdType: tpl.holdType, restraintStatus: 'standard',
+            foodReserve: 0, waterReserve: 0
           })),
           locationDescriptor: locationForTemplate(tpl.id),
           purchasedAt: Date.now()

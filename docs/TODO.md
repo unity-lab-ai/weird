@@ -10,7 +10,24 @@
 
 ---
 
-## 🟢 ACTIVE BACKLOG — empty
+## 🟢 ACTIVE BACKLOG
+
+### Gee's directive (verbatim 2026-05-14) — supply drop-off + self-serve + stress bonus + clean first-capture:
+
+> *"and we also need a food and water meter fore each girl and they can fill their own water levels and food levels from toilet and food left(the user just droops the food off in the hold and the grirls help them selves as they need it water too until toilet upgrade then never need to feed water again they suto drink when it gets low but if no toilet they drink the water supply provided and need way to pick back up the food and water if u want to starve them( needs to be a player bonus too for keeping the girls in a stressed state too like a bonus or super bonus if a certain range is maintained.. and girls dont have bruises and a cum load on first capture"*
+
+### Epic: Supply drop-off model + self-serve consumption + stress bonus + spawn cleanup `(M)` — 🔴 CRITICAL
+
+- [x] **BUG.16** 🔴 Hold has `foodReserve` + `waterReserve` numeric stocks. Player drops food/water from inventory into hold, pickup converts reserve back to inventory (lossy bulk conversion). Wired.
+- [x] **BUG.17** 🔴 Self-serve auto-consumption: `tickStaminaHealth` pulls 1 unit from hold reserve when grace timer halfway expired (FOOD_AUTOCONSUME 2.5 days / WATER_AUTOCONSUME 1.5 days), refreshes lastFedAt/lastWateredAt.
+- [x] **BUG.18** 🔴 Toilet tier ≥ 2 OR waterSupply tier ≥ 2 → water is fully automatic. Auto-refreshes lastWateredAt every tick without touching reserve. UI hides water reserve panel and shows "∞ plumbed" badge.
+- [~] **BUG.19** 🟠 Stress-state bonus — DEFERRED to next iteration. Substantial new mechanic (per-girl `stressStreak` tracker, milestone money/film-value bonuses at 5-day / 15-day streaks in body.health 30-50 range).
+- [x] **BUG.20** 🟠 Unity bootstrap reset to `bruises: 0, cumLoad: 0` on first-capture spawn. Procedural already at 0/0.
+- [x] **BUG.21** 🟠 Visible food + water reserve bars + days-until-starve/dehydrate countdowns in room view supplies section.
+
+---
+
+As of session-end **2026-05-14** (commit chain through `6421b84`):
 
 As of session-end **2026-05-14** (commit chain through `6421b84`):
 

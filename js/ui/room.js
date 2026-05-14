@@ -120,15 +120,56 @@
               `<div class="stat-pill"><span>${k}</span><b>${v}</b></div>`
             ).join('')}
           </div>
-          <h3>Supplies</h3>
-          <div class="stat-row" data-tooltip="Food stock. Hits 0 = mood drop + health decay. Auto-fed once feedAutomation ≥ 2."><span>🍱 Food</span><b>${girl.consumables?.food?.stock ?? '?'}</b>
-            <button class="btn-small" data-feed="basic-meal" data-tooltip="Slop. +3 stock, +1 bondXP. Cheap and keeps her alive.">Feed (basic)</button>
-            <button class="btn-small" data-feed="gourmet-meal" data-tooltip="Fancy meal. +7 stock, +3 bondXP, mood bump. She remembers who fed her.">Feed (gourmet)</button>
-          </div>
-          <div class="stat-row" data-tooltip="Water stock. Hits 0 = dehydration. Plumbed holds (toilet ≥ 2 OR waterSupply ≥ 2) draw automatically."><span>💧 Water</span><b>${girl.consumables?.water?.stock ?? '?'}</b>
-            <button class="btn-small" data-water="bottled-water" data-tooltip="24-pack of bottled water. +6 stock, +1 bondXP. Cheap top-up.">Water (24pk)</button>
-            <button class="btn-small" data-water="filtered-water" data-tooltip="5-gallon filtered jug. +12 stock, +2 bondXP. Better tier.">Water (5gal)</button>
-          </div>
+          <h3>Hold supplies</h3>
+          ${(() => {
+            // BUG.16/17/18/21 (2026-05-14) — supplies live in the HOLD (not the
+            // girl). Player drops food/water into the hold reserve; the captive
+            // self-serves from the reserve on tick when she gets hungry/thirsty.
+            // Player can pickup reserve back into inventory (lossy bulk conversion)
+            // to starve her on purpose. Plumbed holds (toilet ≥ 2 or waterSupply
+            // ≥ 2) auto-supply water — no reserve needed.
+            const dungeon = window.SSDGame.state.getDungeon(girl.assignedDungeonId);
+            const holdIdx = girl.assignedHoldIdx ?? 0;
+            const hold = dungeon?.holds?.[holdIdx];
+            const foodReserve = hold?.foodReserve ?? 0;
+            const waterReserve = hold?.waterReserve ?? 0;
+            const toiletTier = hold?.upgrades?.toilet ?? 0;
+            const waterSupplyTier = hold?.upgrades?.waterSupply ?? 0;
+            const waterPlumbed = toiletTier >= 2 || waterSupplyTier >= 2;
+            const clock = window.SSDGame.gameClock;
+            const dSinceFed = clock ? clock.daysSince(girl.body?.lastFedAt) : 0;
+            const dSinceWat = clock ? clock.daysSince(girl.body?.lastWateredAt) : 0;
+            const daysToStarve = Math.max(0, 5 - dSinceFed);
+            const daysToDehydrate = waterPlumbed ? '∞' : Math.max(0, 3 - dSinceWat).toFixed(1);
+            const inv = window.SSDGame.state.current.inventory || {};
+            const has = id => (inv[id] || 0) > 0;
+            return `
+              <div class="stat-row" data-tooltip="Food units stocked in her hold. She auto-eats one when she gets hungry. Drop more to keep her fed; pick up to starve her.">
+                <span>🍱 Food reserve</span><b>${foodReserve} units</b>
+                <span class="small muted" style="margin-left:8px">· ${daysToStarve.toFixed(1)} game days until starvation</span>
+              </div>
+              <div class="bar-row" data-tooltip="Visual food reserve. Each unit feeds her once."><div class="bar"><div class="bar-fill" style="width:${Math.min(100, foodReserve * 5)}%; background: linear-gradient(90deg, var(--warn), #ffd166);"></div></div></div>
+              <div class="btn-row" style="margin: 4px 0 10px">
+                <button class="btn-small ${has('basic-meal') ? 'btn-primary' : ''}" data-drop-food="basic-meal" ${has('basic-meal') ? '' : 'disabled'} data-tooltip="Drop 1 basic meal in the hold — adds 3 food units to the reserve. She'll eat one when she gets hungry.">+3 (basic-meal)</button>
+                <button class="btn-small ${has('gourmet-meal') ? 'btn-primary' : ''}" data-drop-food="gourmet-meal" ${has('gourmet-meal') ? '' : 'disabled'} data-tooltip="Drop 1 gourmet meal in the hold — adds 7 food units to the reserve.">+7 (gourmet)</button>
+                <button class="btn-small btn-danger" data-pickup-food ${foodReserve >= 3 ? '' : 'disabled'} data-tooltip="Pull 3 food units out of the hold and convert back to 1 basic-meal in inventory. Cruel but useful to starve a captive.">Pickup −3</button>
+              </div>
+
+              <div class="stat-row" data-tooltip="${waterPlumbed ? 'Plumbed hold — water is fully automatic. Reserve no longer needed.' : 'Water units stocked in her hold. She auto-drinks when she gets thirsty.'}">
+                <span>💧 Water reserve</span>
+                ${waterPlumbed ? `<b class="gold">∞ plumbed</b>` : `<b>${waterReserve} units</b>`}
+                <span class="small muted" style="margin-left:8px">· ${daysToDehydrate} game days until dehydration</span>
+              </div>
+              ${waterPlumbed ? '' : `
+                <div class="bar-row" data-tooltip="Visual water reserve. Each unit hydrates her once."><div class="bar"><div class="bar-fill" style="width:${Math.min(100, waterReserve * 3)}%; background: linear-gradient(90deg, #6ad1ff, #aae8ff);"></div></div></div>
+                <div class="btn-row" style="margin: 4px 0 10px">
+                  <button class="btn-small ${has('bottled-water') ? 'btn-primary' : ''}" data-drop-water="bottled-water" ${has('bottled-water') ? '' : 'disabled'} data-tooltip="Drop 1 24-pack in the hold — adds 6 water units to the reserve.">+6 (bottled)</button>
+                  <button class="btn-small ${has('filtered-water') ? 'btn-primary' : ''}" data-drop-water="filtered-water" ${has('filtered-water') ? '' : 'disabled'} data-tooltip="Drop 1 filtered jug — adds 12 water units to the reserve.">+12 (filtered)</button>
+                  <button class="btn-small btn-danger" data-pickup-water ${waterReserve >= 6 ? '' : 'disabled'} data-tooltip="Pull 6 water units out of the hold and convert back to 1 bottled-water in inventory. Useful for dehydrating a captive.">Pickup −6</button>
+                </div>
+              `}
+            `;
+          })()}
 
           ${(() => {
             // Phase 21.16 (2026-05-14) — Whore-out panel. Toggle + rate + condom-required +
@@ -566,6 +607,74 @@
     // Feed buttons
     // POST-REVIEW.1 fix (2026-05-14) — applyAction fires FIRST for spec-driven
     // stamina/health/mood/arousal/bondXP deltas; legacy stock+tier bump follows.
+    // BUG.16/17 (2026-05-14) — drop-into-hold and pickup-from-hold handlers.
+    // Drop: consume 1 inventory item → add N units to hold reserve (per-item ratio).
+    // Pickup: consume N units from hold reserve → add 1 basic-meal / bottled-water
+    // back to inventory (intentionally lossy — bulk gets converted back to the
+    // cheapest stack format, with leftover units forfeit).
+    const DROP_FOOD_RATIOS = { 'basic-meal': 3, 'gourmet-meal': 7 };
+    const DROP_WATER_RATIOS = { 'bottled-water': 6, 'filtered-water': 12 };
+    function holdRef() {
+      const dungeon = window.SSDGame.state.getDungeon(girl.assignedDungeonId);
+      if (!dungeon) return null;
+      const idx = girl.assignedHoldIdx ?? 0;
+      return { dungeon, idx, hold: dungeon.holds[idx] };
+    }
+    function patchHold(patch) {
+      const ref = holdRef();
+      if (!ref) return;
+      const newHolds = ref.dungeon.holds.map((h, i) => i === ref.idx ? { ...h, ...patch } : h);
+      window.SSDGame.state.updateDungeon(ref.dungeon.id, { holds: newHolds });
+    }
+    el.querySelectorAll('[data-drop-food]').forEach(b => {
+      b.onclick = () => {
+        const itemId = b.dataset.dropFood;
+        const units = DROP_FOOD_RATIOS[itemId] || 1;
+        const inv = window.SSDGame.state.current.inventory || {};
+        if (!inv[itemId] || inv[itemId] <= 0) { alert('out of ' + itemId); return; }
+        window.SSDGame.state.consumeItem(itemId, 1);
+        const ref = holdRef();
+        if (!ref) return;
+        patchHold({ foodReserve: (ref.hold.foodReserve || 0) + units });
+        window.SSDRouter.handle();
+      };
+    });
+    el.querySelectorAll('[data-pickup-food]').forEach(b => {
+      b.onclick = () => {
+        const ref = holdRef();
+        if (!ref) return;
+        const reserve = ref.hold.foodReserve || 0;
+        if (reserve < 3) { alert('need at least 3 food units in the reserve to pick up'); return; }
+        patchHold({ foodReserve: reserve - 3 });
+        window.SSDGame.state.addItem('basic-meal', 1);
+        window.SSDRouter.handle();
+      };
+    });
+    el.querySelectorAll('[data-drop-water]').forEach(b => {
+      b.onclick = () => {
+        const itemId = b.dataset.dropWater;
+        const units = DROP_WATER_RATIOS[itemId] || 1;
+        const inv = window.SSDGame.state.current.inventory || {};
+        if (!inv[itemId] || inv[itemId] <= 0) { alert('out of ' + itemId); return; }
+        window.SSDGame.state.consumeItem(itemId, 1);
+        const ref = holdRef();
+        if (!ref) return;
+        patchHold({ waterReserve: (ref.hold.waterReserve || 0) + units });
+        window.SSDRouter.handle();
+      };
+    });
+    el.querySelectorAll('[data-pickup-water]').forEach(b => {
+      b.onclick = () => {
+        const ref = holdRef();
+        if (!ref) return;
+        const reserve = ref.hold.waterReserve || 0;
+        if (reserve < 6) { alert('need at least 6 water units in the reserve to pick up'); return; }
+        patchHold({ waterReserve: reserve - 6 });
+        window.SSDGame.state.addItem('bottled-water', 1);
+        window.SSDRouter.handle();
+      };
+    });
+
     el.querySelectorAll('[data-feed]').forEach(b => {
       b.onclick = () => {
         const itemId = b.dataset.feed;

@@ -302,28 +302,63 @@
   // so a half-dead captive can't run at full stamina even when rested.
   const WATER_GRACE_DAYS = 3;
   const FOOD_GRACE_DAYS = 5;
+  // BUG.17 (2026-05-14) — captives self-serve from the hold's reserve when their
+  // grace timer gets halfway low. Set well before the grace expires so a fresh
+  // captive with reserve in her hold doesn't even approach starvation.
+  const FOOD_AUTOCONSUME_DAYS = 2.5;    // half the 5-day food grace
+  const WATER_AUTOCONSUME_DAYS = 1.5;   // half the 3-day water grace
   function tickStaminaHealth() {
     const s = window.SSDGame.state.current;
     if (!s) return;
     const clock = window.SSDGame.gameClock;
     for (const girl of s.roster) {
       if (girl.encounterState !== 'captive') continue;
-      const body = girl.body || {};
+      const body = { ...(girl.body || {}) };
       const bruises = body.bruises || 0;
 
-      const daysSinceFed = clock ? clock.daysSince(body.lastFedAt) : 0;
-      const daysSinceWatered = clock ? clock.daysSince(body.lastWateredAt) : 0;
-      const starving = daysSinceFed > FOOD_GRACE_DAYS;
+      // Look up the hold once — used for self-serve consumption + plumbing check.
+      const dungeon = window.SSDGame.state.getDungeon(girl.assignedDungeonId);
+      const holdIdx = girl.assignedHoldIdx ?? 0;
+      const hold = dungeon?.holds?.[holdIdx];
+      const toiletTier = hold?.upgrades?.toilet ?? 0;
+      const waterSupplyTier = hold?.upgrades?.waterSupply ?? 0;
+      const waterPlumbed = toiletTier >= 2 || waterSupplyTier >= 2;
 
-      // Plumbed-water override — captive with toilet tier 2+ or waterSupply tier 2+ never dehydrates.
-      let dehydrated = daysSinceWatered > WATER_GRACE_DAYS;
-      if (dehydrated) {
-        const dungeon = window.SSDGame.state.getDungeon(girl.assignedDungeonId);
-        const hold = dungeon?.holds?.[girl.assignedHoldIdx ?? 0];
-        const toiletTier = hold?.upgrades?.toilet ?? 0;
-        const waterSupplyTier = hold?.upgrades?.waterSupply ?? 0;
-        if (toiletTier >= 2 || waterSupplyTier >= 2) dehydrated = false;
+      // ── Self-serve auto-consumption ──────────────────────────────────────
+      // Captive pulls from the hold reserve when she's getting hungry/thirsty.
+      // Plumbed water means she auto-refreshes the water timestamp without
+      // consuming any reserve at all (toilet-fed faucet / drainback supply).
+      let daysSinceFed = clock ? clock.daysSince(body.lastFedAt) : 0;
+      let daysSinceWatered = clock ? clock.daysSince(body.lastWateredAt) : 0;
+      let holdDirty = false;
+      const holdPatch = hold ? { ...hold } : null;
+
+      if (waterPlumbed) {
+        // Auto-drinks from plumbed source — never needs reserve, never dehydrates.
+        if (clock) body.lastWateredAt = clock.now();
+        daysSinceWatered = 0;
+      } else if (holdPatch && daysSinceWatered > WATER_AUTOCONSUME_DAYS && (holdPatch.waterReserve || 0) > 0) {
+        holdPatch.waterReserve = (holdPatch.waterReserve || 0) - 1;
+        if (clock) body.lastWateredAt = clock.now();
+        daysSinceWatered = 0;
+        holdDirty = true;
       }
+
+      if (holdPatch && daysSinceFed > FOOD_AUTOCONSUME_DAYS && (holdPatch.foodReserve || 0) > 0) {
+        holdPatch.foodReserve = (holdPatch.foodReserve || 0) - 1;
+        if (clock) body.lastFedAt = clock.now();
+        daysSinceFed = 0;
+        holdDirty = true;
+      }
+
+      if (holdDirty && dungeon) {
+        const newHolds = dungeon.holds.map((h, i) => i === holdIdx ? holdPatch : h);
+        window.SSDGame.state.updateDungeon(dungeon.id, { holds: newHolds });
+      }
+
+      // ── Drain evaluation ────────────────────────────────────────────────
+      const starving = daysSinceFed > FOOD_GRACE_DAYS;
+      const dehydrated = !waterPlumbed && daysSinceWatered > WATER_GRACE_DAYS;
 
       let staminaDelta = 0;
       let healthDelta = 0;
@@ -351,15 +386,15 @@
         healthDelta += ACTIONS['rest-tick'].health;
       }
 
-      if (staminaDelta !== 0 || healthDelta !== 0) {
-        const newBody = { ...body };
-        const newHealth = clamp((body.health ?? 100) + healthDelta, 0, 100);
-        // Stamina capped by health — low health pulls down the stamina ceiling.
-        const staminaCeiling = newHealth;
-        newBody.health = newHealth;
-        newBody.stamina = clamp((body.stamina ?? 70) + staminaDelta, 0, staminaCeiling);
-        window.SSDGame.state.updateGirl(girl.id, { body: newBody, _lastStaminaReasons: reasons });
-      }
+      // Apply deltas. Note `body` was already shallow-cloned at the top of the
+      // loop and may carry self-serve updates to lastFedAt / lastWateredAt — so
+      // we always persist the body, even if both deltas are zero, so those
+      // timestamp resets aren't lost.
+      const newHealth = clamp((body.health ?? 100) + healthDelta, 0, 100);
+      // Stamina capped by health — low health pulls down the stamina ceiling.
+      body.health = newHealth;
+      body.stamina = clamp((body.stamina ?? 70) + staminaDelta, 0, newHealth);
+      window.SSDGame.state.updateGirl(girl.id, { body, _lastStaminaReasons: reasons });
     }
   }
 

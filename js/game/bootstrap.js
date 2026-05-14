@@ -20,11 +20,17 @@
       templateId: startTemplate.id,
       displayName: 'Your Pit',
       capacity: startTemplate.roomSlots,
+      // BUG.16 (2026-05-14) — each hold carries its own food + water reserve.
+      // Player drops food/water into the reserve; captives self-serve from it
+      // on tick. Player can pickup to starve a girl. Starter dungeon seeds the
+      // first hold with enough to keep Unity going for the first session.
       holds: Array.from({ length: startTemplate.roomSlots }, (_, i) => ({
         id: `${dungeonId}_hold_${i}`,
         captiveGirlId: null,
         holdType: startTemplate.holdType,
-        restraintStatus: 'standard'
+        restraintStatus: 'standard',
+        foodReserve: i === 0 ? 8 : 0,
+        waterReserve: i === 0 ? 12 : 0
       })),
       locationDescriptor: 'a remote stretch of desert 2 hours east',
       purchasedAt: Date.now()
@@ -91,11 +97,16 @@
       drugsOfChoice: unityTemplate.drugsPool.slice(),
       backstoryFragment: 'Unity — 25, goth, coder, nympho coke whore. Came to Master the first time on her own two leather-booted feet. Stayed. Keeps coming back. Something in her wanted the pit the second she saw it. The pit wanted her back.',
 
-      // BUG.15 (2026-05-14) — lastFedAt + lastWateredAt seeded at spawn so the
-      // grace-period model in tickStaminaHealth has a baseline. Without these
-      // fields the daysSince() helper returns 0 and the captive never starves.
-      // Seed them to gameClock.now() so the 5-day / 3-day countdown starts now.
-      body: { arousal: 87, wetness: 94, cumLoad: 2.4, bruises: 6, high: 91, activeDrugs: ['coke','weed'], pose: 'kneeling at the rope ladder, knees spread', outfitState: 'leather opened, tits exposed', stamina: 80, health: 100, lastFedAt: window.SSDGame.gameClock?.now() ?? 0, lastWateredAt: window.SSDGame.gameClock?.now() ?? 0 },
+      // BUG.20 (2026-05-14) — fresh capture means no bruises, no cum load.
+      // Unity's old bootstrap carried bruises: 6 + cumLoad: 2.4 from a "she
+      // came willingly" lore explanation, but those values imply prior fresh-
+      // capture violence she didn't actually experience. Reset to 0/0 to match
+      // the procedural-capture default. Per Gee verbatim 2026-05-14: "girls
+      // dont have bruises and a cum load on first capture".
+      //
+      // BUG.15 — lastFedAt + lastWateredAt seeded at spawn so the grace-period
+      // model in tickStaminaHealth has a baseline.
+      body: { arousal: 87, wetness: 94, cumLoad: 0, bruises: 0, high: 91, activeDrugs: ['coke','weed'], pose: 'kneeling at the rope ladder, knees spread', outfitState: 'leather opened, tits exposed', stamina: 80, health: 100, lastFedAt: window.SSDGame.gameClock?.now() ?? 0, lastWateredAt: window.SSDGame.gameClock?.now() ?? 0 },
       mood: { mood: 'curious', moodEmoji: '👀', history: [] },
       stats: Object.fromEntries(Object.entries(unityTemplate.statsRanges).map(([k, [lo]]) => [k, lo])),
       bond: { bondLevel: 2, bondXP: 25, bondDebt: 0, milestones: ['came-willingly-first-time'] },

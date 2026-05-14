@@ -522,6 +522,53 @@ A captive at health 30 can only reach stamina 30 — the bar visually reflects h
 - Game clock visible in the chrome — player knows what time it is and how many days have passed.
 - Tab closed for hours? Time pauses. No fast-forward on reopen.
 
+### Follow-up — BUG.16 + BUG.17 + BUG.18 + BUG.20 + BUG.21: hold supply drop-off + self-serve + clean first-capture + meters
+
+Gee verbatim 2026-05-14: *"we also need a food and water meter fore each girl and they can fill their own water levels and food levels from toilet and food left(the user just droops the food off in the hold and the grirls help them selves as they need it water too until toilet upgrade then never need to feed water again they suto drink when it gets low but if no toilet they drink the water supply provided and need way to pick back up the food and water if u want to starve them( needs to be a player bonus too for keeping the girls in a stressed state too like a bonus or super bonus if a certain range is maintained.. and girls dont have bruises and a cum load on first capture"*.
+
+**BUG.16 — supplies live in the hold, not the girl.** Each hold now carries its own `foodReserve` + `waterReserve` numeric stocks. Player drops food/water from inventory INTO the hold; player can pickup the reserve back into inventory (intentionally lossy bulk conversion — useful for starving a captive on purpose).
+
+- Bootstrap (Unity): starter hold gets `foodReserve: 8`, `waterReserve: 12`.
+- New holds via dungeon-view purchase: `foodReserve: 0`, `waterReserve: 0` (player must drop in).
+- Old per-girl `consumables.food.stock` / `consumables.water.stock` fields still exist but are no longer the source of truth.
+
+**BUG.17 — self-serve auto-consumption.** `tickStaminaHealth` now pulls 1 unit from the hold reserve when a captive's grace timer is halfway expired:
+
+```
+FOOD_AUTOCONSUME_DAYS = 2.5   (half of 5-day food grace)
+WATER_AUTOCONSUME_DAYS = 1.5  (half of 3-day water grace)
+```
+
+When `daysSinceFed > 2.5` AND `hold.foodReserve > 0`: consume 1 unit, refresh `body.lastFedAt = gameClock.now()`. Same logic for water. Captive stays continuously fed/watered as long as the hold has reserve; runs out → grace resumes ticking down → starvation/dehydration drain after another 2.5 days / 1.5 days.
+
+**BUG.18 — toilet plumbing fully automates water.** `toilet >= 2` OR `waterSupply >= 2` skips water reserve entirely — captive auto-refreshes `lastWateredAt = now` every tick without touching the reserve. The room UI hides the water-reserve bar + drop/pickup buttons and shows a green "∞ plumbed" badge instead.
+
+**BUG.20 — clean first-capture body.** Unity's bootstrap had `bruises: 6, cumLoad: 2.4` from a "she came willingly" lore explanation, but those values implied prior fresh-capture violence she didn't experience. Reset to `bruises: 0, cumLoad: 0` to match the procedural-capture default (girl-gen.js already starts at 0/0 — no change needed there).
+
+**BUG.21 — visible meters + countdowns in room view.** New Hold Supplies section in `js/ui/room.js`:
+
+- 🍱 Food reserve numerical readout + bar visualization (each unit = 5% bar width, capped at 100)
+- Days-until-starvation countdown shown next to the reserve
+- "+3 (basic-meal)" / "+7 (gourmet)" drop buttons, gated by inventory presence
+- Red "Pickup −3" button (disabled until reserve ≥ 3)
+- 💧 Water reserve mirror — when plumbed, shows "∞ plumbed" badge instead of bar/buttons
+- "+6 (bottled)" / "+12 (filtered)" drop buttons, "Pickup −6"
+
+Wiring in room.js init code — 4 new event delegations for `data-drop-food` / `data-pickup-food` / `data-drop-water` / `data-pickup-water` with per-action inventory check + state mutations via `state.updateDungeon` patching only the affected hold.
+
+### BUG.19 — stress-state bonus (DEFERRED)
+
+Gee's "needs to be a player bonus too for keeping the girls in a stressed state too" clause flagged as a substantial new mechanic. Scoping it out for a follow-up session — adds a per-girl `stressStreak` tracker, a "stressed range" definition (e.g., body.health 30-50 maintained for N game days), and a one-time/recurring film-value or money bonus when the streak hits 5-day / 15-day milestones. Left in TODO as `BUG.19` for next iteration.
+
+### Files touched (BUG.16/17/18/20/21)
+
+- **`js/game/action-effects.js`** — `tickStaminaHealth` gets self-serve consumption loop + always-persist body so timestamp resets are saved.
+- **`js/game/bootstrap.js`** — Hold init adds `foodReserve: 8` / `waterReserve: 12` on starter hold; Unity body `bruises: 0` + `cumLoad: 0` (BUG.20).
+- **`js/ui/dungeon-view.js`** — New dungeon hold-creation seeds `foodReserve: 0, waterReserve: 0`.
+- **`js/ui/room.js`** — Supplies section rewritten with reserve bars + countdowns + drop/pickup buttons + handlers.
+- **`docs/FINALIZED.md`** — This addendum.
+- **`docs/TODO.md`** — BUG.16/17/18/20/21 templated out per LAW; BUG.19 kept pending.
+
 ---
 
 ## 2026-05-14 — Session: TODO template-out — full FINALIZED coverage verified before strip per LAW — FINALIZED before DELETE
