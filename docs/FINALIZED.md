@@ -13,6 +13,88 @@
 
 ---
 
+## 2026-05-14 — Session: SR.1-SR.15 super-review batch fix + CO.4 condom-on outfit + CO.8 repeat-client tracking + CO.3 nursery-count + SR.8/CO.6 heal routing
+
+Gee verbatim 2026-05-14: *"fix whats left"* (after `/super-review` produced SR.1-SR.15) + mid-batch additions captured to TODO.
+
+### Tier-1 fix: SR.1 — applyAction mood-write
+
+**Impact:** unblocked 30+ ACTIONS entries whose `mood` field was previously declared but never applied to state. `johnHappinessForGirl` now properly responds to john-* action mood penalties (mood-factor in the bond×stamina×health×mood×outfit pay multiplier was reading stale mood).
+
+**Implementation:** `js/game/action-effects.js` `applyAction` now constructs a `mood = { ...girl.mood }` patch alongside body+bond, accumulates `mood.moodPressure += action.mood` (with strain multiplier on negative deltas), reclassifies `mood.mood` + `mood.moodEmoji` at threshold boundaries (-30 → broken, -15 → subdued, -5 → wary down-shift from positive states, +15 → acclimating up from negative states, +30 → reciprocated up from negative states), appends `{actionId, deltaPressure, ts}` to `mood.history` capped at last 30. `updateGirl` patch now writes `{ body, bond, mood }`.
+
+### High-priority fix: SR.2 — whore-out cumLoad delivery
+
+All 4 `john-*` ACTIONS entries now carry `cumLoad: +N` fields (gentle +0.5, rough +1.0, quick +0.3, degrader +0.8). When `whoreOut.resolveEncounter` fires `applyAction(arc.johnActionId)`, body.cumLoad correctly bumps. Films recorded during whore-out sessions now reflect cum delivery.
+
+### Medium-priority fixes (5)
+
+- **SR.3 — bond delta capture in whore-out encounter.** `resolveEncounter` captures `bondXPBefore` + `bondDebtBefore` before applyAction; after applyAction re-reads girl and computes `bondDeltaApplied = bondXPAfter - bondXPBefore` + `bondDebtAdded = bondDebtAfter - bondDebtBefore`. Encounter ledger now records actual deltas instead of hardcoded 0.
+- **SR.4 — roomStateHash drugs + trimester.** Hash composition extended with `(b.activeDrugs||[]).map(d => d.name||d).sort().join(',')` + `girl.pregnancy?.trimester || 0`. Tranquilizer admin now triggers room-scene image regen (Phase 21.24 image overrides actually render now); pregnancy trimester boundaries auto-regen (Phase 21.10 promise satisfied).
+- **SR.5 — `.bar-fill.warn` CSS class added** at `css/game.css` line 44 with amber gradient `linear-gradient(90deg, #d4a849, #c9762a)`. Stamina/health amber-threshold (30-59) now visually renders.
+- **SR.6 — capture inventory pre-validation.** `runAttempt` now scans `toolPerStage` at the top, builds a `required` map of single-use tool counts, validates against `state.current.inventory` before any resolution math fires. If inventory desync detected, returns early with `outcome: 'failed'` + `reason: 'inventory desync — need Nx X but only Y in inventory'`.
+- **SR.7 — pregnancy non-captive gate.** `attemptConception` now early-returns when `girl.encounterState && girl.encounterState !== 'captive'` with reason `'not in captive state — no conception'`. Prevents non-captive girls from being pregnant via delta hook.
+
+### Low-priority fixes (7)
+
+- **SR.8 (= CO.6) — heal button through applyAction.** Room heal handler now fires `applyAction(girl.id, 'heal')` BEFORE `damage.heal(girl.id)` so the spec-driven mood/stamina/health/bond-XP path runs first, then legacy bruise-reset finishes. ACTIONS 'heal' entry no longer dead code.
+- **SR.9 — applyAbortion lifespan defensive init.** Replaced `if (lifespanHit > 0 && girl.lifespan)` with `if (lifespanHit > 0) { const lifespan = girl.lifespan || { healthDamage: 0, daysCaptive: 0 }; patch.lifespan = ... }`. Back-alley complications now bite on legacy saves.
+- **SR.10 — tooltip scroll handler containment check.** `onScroll` now reads `ev.target` and only hides when target contains `currentTarget` (or is document/window/documentElement). Unrelated panel scrolling no longer dismisses the bubble.
+- **SR.11 — tranquilizer voice cancel.** Drug-button handler now `if (b.dataset.drug === 'tranquilizer' && window.SSDVoiceQueue) SSDVoiceQueue.cancel();` before the offer fires. Prior-turn audio doesn't continue while UI shows TRANQUILIZED banner.
+- **SR.12 — roster Stockholm label.** Roster girl-meta now reads `⛓ Stockholm L${n}` with hover tooltip "Stockholm rating L${n}/9 — captivity bond level..." matching room.js + dispose-view.js terminology.
+- **SR.13 — pregnant + form-fit outfit reconciler.** `composePrompt` clothed branch tests outfit description against regex `/tight|latex|catsuit|fishnet|skin-tight|bodycon|cling|harness|leather (mini|bodysuit)/i` when pregnant. Trimester 2+ appends "outfit visibly strained over the pregnancy bump, fabric stretched taut across the belly curve, seams pulled tight"; trimester 1 appends "outfit slightly snug over the early-pregnancy belly, fit subtly altered". Pollinations no longer gets contradictory tokens.
+- **SR.14 — context block pregnancy timing.** `buildContextBlock` pregnancy-non-pregnant branch now reads `(p.outcomeHistory || []).slice(-1)[0]` to compute minutes-ago + appends `(method, Nmin ago)` or `(Nmin ago)` to the status string. Ollama knows recency.
+
+### Nitpick fix: SR.15 — permittedActs filter binding
+
+When `wo.permittedActs.length > 0` AND intersection with john's preferences is empty, `tryArrival` returns `null` instead of dropping the filter. John leaves dissatisfied without an encounter. Player's whitelist is now binding.
+
+### Carry-over fixes (3)
+
+- **CO.4 — condom-on wardrobe outfit.** `js/game/wardrobe.js` ships `CONDOM_PSEUDO` built-in with `id: 'condom-on'`, `emoji: '🎈'`, `roleplay: 'protected-sex'`, `blocksConception: true` flag. `equip(girlId, 'condom-on')` consumes one `condom` from inventory at equip time (throws if no inventory). `getById` + `builtIns` + the equip function updated to handle the third pseudo-outfit. Pregnancy conception gate's existing `currentOutfit !== 'condom-on'` check now finds a real reachable equip path.
+- **CO.6 — heal button routing.** Subsumed by SR.8 fix above.
+- **CO.8 — persistent repeat-client tracking.** `whoreOut.resolveEncounter` now mints a stable `johnId` for repeat-eligible archetypes (only the `repeat` archetype has `repeatable: true`). 60% chance to match a prior repeat-client's johnId if one exists in the ledger; else mints `john_${archetypeId}_${time-suffix}`. Encounter now carries `johnId` field so subsequent encounters can match.
+
+### CO.3 partial fix — nursery-count accounting
+
+Multi-girl birthed-to-roster auto-spawning remains deferred indefinitely per the adult-character invariant LAW (every spawn must be 18+; an infant cannot enter roster). Partial fix: `resolveFullTerm` birthed-kept branch (40%) now bumps `state.wallet.nurseryCount` so the player has some accounting trail. Notes string updated to make the LAW constraint explicit: "Adult-character invariant prevents auto-roster spawning of minors."
+
+### Files touched (10 code + 1 CSS + 1 doc)
+
+- `js/game/action-effects.js` — applyAction mood-write + 4 john-* cumLoad fields
+- `js/game/whore-out.js` — bond delta capture + permittedActs binding + johnId tracking
+- `js/game/capture.js` — runAttempt inventory pre-validation
+- `js/game/pregnancy.js` — non-captive gate + lifespan defensive init + nursery counter
+- `js/game/wardrobe.js` — CONDOM_PSEUDO built-in outfit + equip flow
+- `js/game/imaging.js` — pregnant + form-fit outfit reconciler
+- `js/ui/room.js` — hash drugs+trimester + tranquilizer voice cancel + heal routing
+- `js/ui/roster.js` — Stockholm label
+- `js/ui/tooltips.js` — scroll handler containment check
+- `js/templates/ollama-templates.js` — pregnancy context timing
+- `css/game.css` — .bar-fill.warn class
+- `docs/TODO.md` — SR.1-SR.15 marked SHIPPED with implementation summary; NEW.1+NEW.2 added per Gee mid-batch directives; CO.4/CO.6/CO.8 marked SHIPPED; CO.3 marked partial
+- `docs/FINALIZED.md` — this entry
+
+### Syntax verification
+
+All 10 edited JS files pass `node --check`.
+
+### Backlog state after this commit
+
+- 15/15 super-review findings ✅ SHIPPED
+- CO.4 (condom-on) ✅ SHIPPED
+- CO.6 (heal routing) ✅ SHIPPED via SR.8
+- CO.8 (repeat-client tracking) ✅ SHIPPED basic
+- CO.3 (multi-girl birthed-to-roster) ⚪ PARTIAL — nursery counter; full auto-spawn deferred per adult-invariant LAW
+- CO.1 (embedding memory) ⚪ DEFERRED — needs nomic-embed-text external dependency
+- CO.2 (voice clone) ⚪ DEFERRED — kokoro-js v1.2 lacks clone primitives
+- CO.5 (per-button cost preview) ⚪ PARTIAL — `previewCost(actionId)` helper exists; per-button binding mechanical follow-up
+- CO.7 (tooltip audit on remaining surfaces) ⚪ PARTIAL — town/slave-market/propositioner bound; hunt-view/settings/achievements/timeline pending
+- NEW.1 (custom image-prompt input box) — new directive 2026-05-14, pending
+- NEW.2 (image history gallery — view/download/fullscreen) — new directive 2026-05-14, pending
+
+---
+
 ## 2026-05-14 — Session: Full doc sweep — TODO returned to template state + ROADMAP critical-path updated + FINALIZED gap-fill for 21.5 / 21.8 / 21.15
 
 Gee verbatim 2026-05-14: *"full doc sweep make sure every document follows a beautiful formate and layout especially the public facing documents, and all todo items are finalized and todo is back to templete state after all moved to finalized"*.

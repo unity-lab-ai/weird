@@ -123,11 +123,19 @@
     const wo = getWhoreOut(girl);
 
     // Pick acts — intersection of john's preferences + player's permittedActs (if non-empty)
+    // SR.15 fix (2026-05-14) — when player has a non-empty permittedActs whitelist and no
+    // john preference matches, the john leaves without service (whitelist is binding now,
+    // not "john gets his preferences anyway"). Prevents the player's whitelist from being
+    // silently ignored.
     let acts = window.SSDJohnArchetypes.rollJohnActs(archetypeId);
     if (wo.permittedActs.length > 0) {
       const filtered = acts.filter(a => wo.permittedActs.includes(a));
-      if (filtered.length > 0) acts = filtered;
-      // else john gets his preferences anyway — player's whitelist couldn't match
+      if (filtered.length === 0) {
+        // Whitelist couldn't match — john leaves dissatisfied. No encounter persisted,
+        // no pay, no stamina drain. Light mood/notoriety blip from declining work.
+        return null;
+      }
+      acts = filtered;
     }
 
     // Condom use — player-requirement overrides john compliance
@@ -144,7 +152,11 @@
     const totalPaid = payment + tip;
 
     // Apply the john action (drains stamina + health + mood per archetype intensity)
+    // SR.3 fix (2026-05-14) — capture bond before+after so encounter ledger records the
+    // ACTUAL bond delta applied, not hardcoded 0.
     const moodBefore = girl.mood?.mood || 'neutral';
+    const bondDebtBefore = girl.bond?.bondDebt || 0;
+    const bondXPBefore = girl.bond?.bondXP || 0;
     if (window.SSDGame.actionEffects?.applyAction) {
       const strain = (girl.body?.stamina ?? 70) <= window.SSDGame.actionEffects.STAMINA_THRESHOLD_FOR_STRAIN;
       window.SSDGame.actionEffects.applyAction(girl.id, arc.johnActionId, { strain });
@@ -152,6 +164,8 @@
     // Re-read girl after applyAction mutations
     const refreshed = window.SSDGame.state.getGirl(girl.id);
     const moodAfter = refreshed?.mood?.mood || moodBefore;
+    const bondDebtAfter = refreshed?.bond?.bondDebt || 0;
+    const bondXPAfter = refreshed?.bond?.bondXP || 0;
 
     // Determine cum delivery: vaginal-cum acts trigger pregnancy hook unless condomUsed
     const hasVaginalCum = acts.some(a => VAGINAL_CUM_ACTS.has(a));
@@ -168,8 +182,25 @@
       }
     }
 
+    // CO.8 fix (2026-05-14) — for repeat-eligible archetypes, persist a stable johnId so
+    // subsequent encounters can match against prior visits. Repeat clients build cumulative
+    // rep + the girl can reference them by name in dialogue ("the regular from Tuesday").
+    const isRepeatable = !!arc.repeatable;
+    let johnId = null;
+    if (isRepeatable) {
+      const refreshedWo = getWhoreOut(girl);
+      const priorRepeats = (refreshedWo.johnLedger || []).filter(e => e.johnArchetype === archetypeId && e.johnId);
+      // 60% chance to match a prior repeat-client if one exists; else mint a new ID
+      if (priorRepeats.length > 0 && Math.random() < 0.6) {
+        johnId = priorRepeats[priorRepeats.length - 1].johnId;
+      } else {
+        johnId = 'john_' + archetypeId + '_' + Date.now().toString(36).slice(-4);
+      }
+    }
+
     const encounter = {
       id: 'enc_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 0xffff).toString(36),
+      johnId,
       ts: Date.now(),
       johnArchetype: archetypeId,
       johnDescription: arc.displayName,
@@ -181,8 +212,8 @@
       condomUsed,
       girlMoodBefore: moodBefore,
       girlMoodAfter: moodAfter,
-      bondDeltaApplied: 0,
-      bondDebtAdded: 0,
+      bondDeltaApplied: bondXPAfter - bondXPBefore,
+      bondDebtAdded: bondDebtAfter - bondDebtBefore,
       bruisesAdded: arc.bruisesAdded || 0,
       cumLoadAdded: hasVaginalCum ? 1.2 : (acts.includes('oral') ? 1.0 : 0),
       staminaDrained: Math.abs(window.SSDGame.actionEffects?.ACTIONS?.[arc.johnActionId]?.stamina || 5),

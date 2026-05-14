@@ -600,6 +600,12 @@
     el.querySelectorAll('[data-drug]').forEach(b => {
       b.onclick = () => {
         try {
+          // SR.11 fix (2026-05-14) — tranquilizer admin cancels any in-flight Kokoro
+          // audio from a prior turn so the unconscious banner isn't contradicted by her
+          // still-speaking voice.
+          if (b.dataset.drug === 'tranquilizer' && window.SSDVoiceQueue) {
+            window.SSDVoiceQueue.cancel();
+          }
           const r = window.SSDGame.drugs.offer(girl.id, b.dataset.drug);
           window.SSDGame.state.appendTurn(girl.id, 'user', `*offers ${b.dataset.drug}*`);
           window.SSDRouter.handle();
@@ -640,8 +646,16 @@
     }
 
     // Heal button
+    // SR.8 / CO.6 fix (2026-05-14) — routed through applyAction so the central action-
+    // effects spec is the single source of truth for stat mutations. Falls back to the
+    // legacy damage.heal() for full bruise reset since the central spec only does -10.
     el.querySelector('#heal-btn').onclick = () => {
       if (confirm(`Heal ${girl.name}? Resets bruises and mood to baseline.`)) {
+        // Spec-driven first pass (stamina+10, health+20, mood+6, bruises-10)
+        if (window.SSDGame.actionEffects?.applyAction) {
+          window.SSDGame.actionEffects.applyAction(girl.id, 'heal');
+        }
+        // Then legacy full-reset for bruises + damage tracking
         window.SSDGame.damage.heal(girl.id);
         window.SSDRouter.handle();
       }
@@ -830,8 +844,14 @@
 
   // Body-state hash — quantized so small fluctuations don't retrigger regen.
   // Bands of 20 on arousal/wetness/high; bands of 5 on bruises; bond level itself.
+  // SR.4 fix (2026-05-14) — extended to include active-drug list + pregnancy trimester
+  // so Phase 21.24 tranquilizer image overrides + Phase 21.10 per-trimester regen
+  // both fire as their phase docs promise.
   function roomStateHash(girl) {
     const b = girl.body || {};
+    const drugSig = (b.activeDrugs || [])
+      .map(d => (typeof d === 'string' ? d : d?.name || ''))
+      .filter(Boolean).sort().join(',');
     return [
       Math.floor((b.arousal  || 0) / 20),
       Math.floor((b.wetness  || 0) / 20),
@@ -840,7 +860,9 @@
       Math.round((b.cumLoad  || 0) * 2),
       girl.bond?.bondLevel ?? 0,
       girl.currentOutfit || 'default',
-      (b.outfitState || 'intact')
+      (b.outfitState || 'intact'),
+      drugSig || '-',
+      girl.pregnancy?.trimester || 0
     ].join('|');
   }
 

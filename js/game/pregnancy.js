@@ -97,6 +97,14 @@
     const girl = window.SSDGame.state.getGirl(girlId);
     if (!girl) return { rolled: false, reason: 'no such girl' };
 
+    // SR.7 fix (2026-05-14) — pregnancy lifecycle assumes captive context. A girl in
+    // 'roster' / 'escaped' / 'listed-on-slave-market' state must not receive a conception
+    // roll, else tick.js gestation advance fires on a non-captive girl creating
+    // downstream weirdness.
+    if (girl.encounterState && girl.encounterState !== 'captive') {
+      return { rolled: false, reason: 'not in captive state — no conception' };
+    }
+
     const preg = getPregnancy(girl);
     if (preg.status === 'pregnant') {
       return { rolled: false, reason: 'already pregnant' };
@@ -265,9 +273,11 @@
     newBond.bondDebt = (newBond.bondDebt || 0) + Math.abs(bondImpact);
     patch.bond = newBond;
 
-    // Lifespan hit (defensive — only if lifespan tracking has the field)
-    if (lifespanHit > 0 && girl.lifespan) {
-      patch.lifespan = { ...girl.lifespan, healthDamage: (girl.lifespan.healthDamage || 0) + lifespanHit };
+    // SR.9 fix (2026-05-14) — defensively initialize girl.lifespan before patching so
+    // back-alley complication health damage still bites on legacy saves missing the field.
+    if (lifespanHit > 0) {
+      const lifespan = girl.lifespan || { healthDamage: 0, daysCaptive: 0 };
+      patch.lifespan = { ...lifespan, healthDamage: (lifespan.healthDamage || 0) + lifespanHit };
     }
 
     window.SSDGame.state.updateGirl(girlId, patch);
@@ -306,7 +316,15 @@
     let outcome, notes, notorietyBump = 0, moneyGain = 0;
     if (r < 0.40) {
       outcome = 'birthed';
-      notes = `${girl.name} delivered. Child placed in dungeon nursery (multi-girl spawning deferred).`;
+      // CO.3 partial fix (2026-05-14) — birthed-kept branch bumps a state counter for
+      // accounting. Auto-roster spawning still deferred indefinitely per the
+      // adult-character invariant LAW (every spawn must be age 18+; an infant cannot
+      // enter roster legally). Future systems may time-skip aging.
+      const s = window.SSDGame.state.current;
+      if (s && s.wallet) {
+        s.wallet.nurseryCount = (s.wallet.nurseryCount || 0) + 1;
+      }
+      notes = `${girl.name} delivered. Child placed in off-screen care (nursery count now ${s?.wallet?.nurseryCount ?? '?'}). Adult-character invariant prevents auto-roster spawning of minors.`;
     } else if (r < 0.75) {
       outcome = 'birthed';
       notes = `${girl.name} delivered. Child sold to black-market broker.`;

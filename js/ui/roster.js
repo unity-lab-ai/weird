@@ -51,7 +51,7 @@
           <div class="girl-emoji">${g.mood.moodEmoji}</div>
           <div class="girl-name">${g.name}${pregBadge}</div>
           <div class="girl-meta">
-            <span>L${g.bond.bondLevel}</span>
+            <span data-tooltip="Stockholm rating L${g.bond.bondLevel}/9 — captivity bond level. Higher = lower escape risk + bigger pay multiplier when whoring out.">⛓ Stockholm L${g.bond.bondLevel}</span>
             <span>${g.archetypeTemplate}</span>
             <span>🩸${g.body.bruises}</span>
             ${ls ? `<span>${ls.daysCaptive}d</span>` : ''}

@@ -362,8 +362,24 @@
         suffix                // 9
       ];
     } else {
-      const outfitBlock = currentOutfitEntry?.description || baseOutfit;
+      let outfitBlock = currentOutfitEntry?.description || baseOutfit;
       const outfitState = outfitStateTokens(girl.body);
+      // SR.13 fix (2026-05-14) — when pregnant + outfit looks form-fitting, append a
+      // reconciler so Pollinations doesn't get contradictory "tight" + "big bump" tokens.
+      // Heuristic: any outfit description containing fit-hugging keywords gets the
+      // reconciler appended. Past trimester 2 (day 94+), the bump is too pronounced to
+      // be plausibly contained — the reconciler explicitly mentions strain.
+      const isPregnant = pregTokens && pregTokens.length > 0;
+      if (isPregnant) {
+        const fitHugging = /tight|latex|catsuit|fishnet|skin-tight|bodycon|cling|harness|leather (mini|bodysuit)/i.test(outfitBlock);
+        if (fitHugging) {
+          const tri = girl.pregnancy?.trimester || 1;
+          const reconciler = tri >= 2
+            ? 'outfit visibly strained over the pregnancy bump, fabric stretched taut across the belly curve, seams pulled tight'
+            : 'outfit slightly snug over the early-pregnancy belly, fit subtly altered';
+          outfitBlock = outfitBlock + ', ' + reconciler;
+        }
+      }
       parts = [
         prefix,                                                                   // 1
         faceBlock,                                                                // 2

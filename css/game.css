@@ -41,6 +41,7 @@
 .bar      { height: 10px; background: #000; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
 .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #ff80b4); transition: width 0.3s; }
 .bar-fill.danger    { background: linear-gradient(90deg, #c72c2c, #e14b3f); }
+.bar-fill.warn      { background: linear-gradient(90deg, #d4a849, #c9762a); }
 .bar-fill.highgreen { background: linear-gradient(90deg, #1f9d55, #53d68a); }
 
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 4px; }

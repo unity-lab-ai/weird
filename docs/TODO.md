@@ -20,6 +20,17 @@ Status as of session-end **2026-05-14** (commit chain through `4b91341`):
 
 Gee directive 2026-05-14 (this turn): *"anything u find not finished re put it in todo"*. Below are the carry-over follow-up items recovered from the previously-deferred list — promoted back to active backlog.
 
+### 🆕 New directives (verbatim 2026-05-14)
+
+> *"we also need a custom image prompt input spot to pose the girls how the user wants so they input their own scens and descriptions that ollama uses to generate a image prompt pose em how ever the user wants to stage them, add to todo"*
+
+> *"and we need a image history of some kind where all past imaGES CAN BE VIEWED AND DOWNLAODED AND OPENED UP IN BIGGER VIEW FULLSCREEN IF WANTED"*
+
+| ID | Priority | Description |
+|---|---|---|
+| **NEW.1** | 🟠 | **Custom image-prompt input box** — UI in room.js (or wardrobe view) accepting free-form user text describing the scene / pose / staging. Ollama-as-prompt-writer (`composePromptViaOllama`) consumes the user input + composes it into a valid image prompt with all the existing guardrails (8-position canonical ordering, adult-floor, full-body framing, nudity front-loading, drug-state markers, pregnancy markers). User gets to stage the girl however they want — Ollama handles the prompt-engineering layer so the user doesn't need to know the prompt grammar. Fire a one-shot image generation with the composed prompt. Result rendered in a slot below the input box with regenerate / save / discard actions. Stash last 5 custom prompts per girl for reuse. |
+| **NEW.2** | 🟠 | **Image history gallery — view + download + fullscreen** — every past generated image (profile / selfie / capture-memorial / room-scene / bond-milestone / disposal-final / film-cover / custom-pose from NEW.1 / town render / dungeon render) viewable in a per-girl gallery view. Each thumbnail clickable to open in lightbox-style fullscreen overlay with prev/next navigation. Download button on each image saves to disk via `<a download>` link. Storage layer: extend `visualIdentity.additionalImages[]` schema to persist `{ ts, prompt, situation, url, situationKey, blob? }`; OR use the existing IDB image cache and surface a query API. Add Gallery link to room actions row + chrome nav. |
+
 ### 🟡 Carry-over polish (8 items)
 
 | ID | Priority | Description |
@@ -33,29 +44,29 @@ Gee directive 2026-05-14 (this turn): *"anything u find not finished re put it i
 | **CO.7** | 🟢 | **Tooltip audit on remaining surfaces** — `data-tooltip` attrs needed on: `js/ui/hunt-view.js` (the most complex surface, 470 lines, capture-stage UI), `js/ui/in-game-settings.js`, `js/ui/achievements-view.js`, `js/ui/timeline-view.js`, `js/ui/escape-recovery-view.js`, `js/ui/upgrade-view.js`, `js/ui/newgame.js`, `index.html` landing anchors. Engine auto-binds — pure mechanical attr-adding. |
 | **CO.8** | 🟡 | **Persistent repeat-client tracking for whore-out** — the `repeat` archetype carries `repeatable: true` but `whoreOut.resolveEncounter` doesn't persist a specific john ID across encounters. Could add `propositioners.repeatClients` style tracking for actual same-john return visits + cumulative-relationship side effects (rep build-up, preferred-acts memory, repeat-discount or repeat-premium). |
 
-### 🔍 Super-review findings 2026-05-14 (15 items)
+### 🔍 Super-review findings 2026-05-14 — ALL 15 SHIPPED
 
-Gee verbatim 2026-05-14: *"find anything we forgot to connect, didnt ,finish, left half done, or is broken or not complete, writing anything left into the todo ultrathink"*.
+Gee verbatim 2026-05-14: *"find anything we forgot to connect, didnt ,finish, left half done, or is broken or not complete, writing anything left into the todo ultrathink"* + follow-up *"fix whats left"*.
 
-Discovered during full super-review sweep after Phase 21 + PRE.* closeout. Each item ties to a specific file + line + measurable defect (not subjective).
+All 15 items shipped in one batched commit. Verbatim Gee mandate satisfied.
 
-| ID | Priority | File | Description |
-|---|---|---|---|
-| **SR.1** | 🔴 | `js/game/action-effects.js` | **`applyAction` never writes the `mood` field** even though 30+ ACTIONS entries declare `mood: ±N`. Phase 21.17 spec promises mood deltas the engine doesn't deliver. Knock-on: `johnHappinessForGirl` reads `girl.mood?.mood` to compute pay multiplier, but mood only mutates via Ollama `moodShift` strings — john-* action mood penalties never reach the multiplier. Fix: add `if (action.mood) { patch.mood = {...girl.mood, moodPressure: (mood.moodPressure||0)+action.mood} }` in `applyAction`. |
-| **SR.2** | 🟠 | `js/game/whore-out.js` | **Whore-out cumLoad never applied to body.** Encounter ledger records `cumLoadAdded: 1.2` for vaginal-cum acts but `john-*` ACTIONS entries don't have a `cumLoad` field, so `applyAction(arc.johnActionId)` doesn't bump `body.cumLoad`. Films recorded during whore-out won't reflect cum delivery; body bar stays at 0 through 50 johns. Fix: either add `cumLoad` fields to all 4 `john-*` ACTIONS entries OR patch `body.cumLoad += encounter.cumLoadAdded` in `resolveEncounter` after `applyAction`. |
-| **SR.3** | 🟡 | `js/game/whore-out.js` | **Encounter `bondDeltaApplied: 0` + `bondDebtAdded: 0` hardcoded** — never computed from `applyAction` result. Ledger lies about bond impact. Fix: capture bond before+after applyAction, write actual delta to encounter. |
-| **SR.4** | 🟡 | `js/ui/room.js` `roomStateHash` | **Auto-regen hash omits `body.activeDrugs` AND `pregnancy.trimester`** — administering tranquilizer doesn't trigger room-scene image regen (Phase 21.24 image overrides are written but never rendered without manual selfie), and per-trimester image regen at week boundaries (Phase 21.10 promise) doesn't fire. Fix: append `(b.activeDrugs||[]).map(d=>d.name||d).sort().join(',')` + `pregnancy.trimester` to hash composition. |
-| **SR.5** | 🟡 | `css/game.css` | **`.bar-fill.warn` class likely undefined** — `js/ui/room.js` stamina/health bars at amber threshold (30-59) use `class="bar-fill warn"` but only `.danger` exists in CSS precedent. Amber-warning fails silently — player sees green bar at stamina 50. Fix: add `.bar-fill.warn { background: linear-gradient(90deg, #d4a849, #c9762a); }`. |
-| **SR.6** | 🟡 | `js/game/capture.js` `runAttempt` | **No inventory pre-validation** — engine consumes single-use tools AFTER stages run, relies on UI `eligibleToolsForStage` filter. If state mutates between UI render and attempt-fire (background tick, another tab) attempt runs with a tool the player no longer has. Fix: pre-validate every assigned tool against inventory at top of `runAttempt` before resolution math. |
-| **SR.7** | 🟡 | `js/game/pregnancy.js` `attemptConception` | **No `encounterState === 'captive'` gate** — non-captive girls (roster / escaped / listed-on-slave-market) could receive a delta firing conception via the `delta.js` hook. Downstream weirdness: tick advances gestation on an escaped girl. Fix: add early-return `if (girl.encounterState && girl.encounterState !== 'captive') return { rolled: false, reason: 'not captive' };`. |
-| **SR.8** | 🟠 | `js/game/action-effects.js` `'heal'` entry | **Dead-code action entry.** Room heal button fires `damage.heal(girl.id)` directly, not `applyAction(girl.id, 'heal')`. Two parallel paths mutate same fields with different semantics (damage.heal resets bruises to 0; ACTIONS says bruises -10 partial). Subsumed by CO.6 promotion. |
-| **SR.9** | 🟢 | `js/game/pregnancy.js` `applyAbortion` | **Lifespan hit silently skipped on legacy saves.** `if (lifespanHit > 0 && girl.lifespan) patch.lifespan = ...` — if `girl.lifespan` is null/undefined on a save pre-dating the lifespan subsystem, the back-alley complication health damage doesn't bite. Fix: defensively initialize `lifespan` before patching. |
-| **SR.10** | 🟢 | `js/ui/tooltips.js` `onScroll` | **Hide-on-any-scroll is too aggressive** — capture-listener fires on every scroll event in the document, even unrelated panels. User can't scroll the page while reading a tooltip. Fix: only hide if scroll target is ancestor of `currentTarget`. |
-| **SR.11** | 🟢 | `js/ui/room.js` data-drug=tranquilizer | **Tranquilizer admin doesn't cancel in-flight Kokoro audio.** `SSDVoiceQueue.cancel()` fires in `sendTurn` top, but the drug-button handler doesn't call it. Cosmetic dissonance: she's unconscious but the prior reply's audio still plays. Fix: `if (drug === 'tranquilizer' && window.SSDVoiceQueue) SSDVoiceQueue.cancel();` in the handler. |
-| **SR.12** | 🟢 | `js/ui/roster.js` line 46 | **Roster cards show bare `L${bondLevel}`** without "Stockholm" label. Phase 21.22 relabeled bond as Stockholm rating in room.js + dispose-view.js but missed roster. Fix: change meta line to `<span data-tooltip="Stockholm rating L${n}/9">⛓ L${n}</span>`. |
-| **SR.13** | 🟢 | `js/game/imaging.js` `composePrompt` | **Pregnant + form-fitting outfit creates contradictory image tokens.** Position 4 says "tight latex catsuit clinging to every curve", position 2.5 says "pronounced heavy round pregnancy bump". Pollinations reconciles awkwardly — image quality dips. Fix: when pregnant AND form-fit (flag in catalog), append "outfit stretched to accommodate pregnancy bump, fabric strained over the visible curve" OR suppress form-fit past trimester 2 + force `nude` or `loose-maternity`. |
-| **SR.14** | ⚪ | `js/templates/ollama-templates.js` `buildContextBlock` | **Pregnancy context line omits abortion timing.** When status is `aborted` / `miscarried`, model gets "Pregnancy status: aborted" without temporal context — could be talking about it the morning after or 200 ticks later. Fix: append `(${p.lastAbortMethod}, ${minutes_ago}min ago)` when relevant. Nitpick. |
-| **SR.15** | ⚪ | `js/game/whore-out.js` permittedActs filter | **Empty-intersection silently ignored.** When `wo.permittedActs` is non-empty but no john preference matches, filter is dropped and john gets his preferences anyway — player whitelist promise is non-binding. Fix: return `null` from `tryArrival` (john leaves) OR warn the player at toggle time. Nitpick. |
+| ID | File | Fix shipped |
+|---|---|---|
+| **SR.1** ✅ | `js/game/action-effects.js` | applyAction now patches `mood` with cumulative `moodPressure` + mood-name reclassification at threshold boundaries. Mood field in 30+ ACTIONS entries no longer dead code. |
+| **SR.2** ✅ | `js/game/action-effects.js` | All 4 `john-*` ACTIONS entries now have `cumLoad` fields (gentle +0.5, rough +1.0, quick +0.3, degrader +0.8). `body.cumLoad` now mutates correctly from whore-out via the shared applyAction path. |
+| **SR.3** ✅ | `js/game/whore-out.js` | `resolveEncounter` captures bond.bondXP + bond.bondDebt before+after applyAction; encounter now records the ACTUAL deltas (`bondDeltaApplied` + `bondDebtAdded`) instead of hardcoded 0. |
+| **SR.4** ✅ | `js/ui/room.js` `roomStateHash` | Hash now includes sorted activeDrugs signature + pregnancy.trimester so tranquilizer + trimester boundary regens fire. |
+| **SR.5** ✅ | `css/game.css` | `.bar-fill.warn` added at line 44 with amber gradient. Stamina/health amber threshold (30-59) now visually renders. |
+| **SR.6** ✅ | `js/game/capture.js` `runAttempt` | Pre-validates every single-use tool against inventory at top of `runAttempt`. Returns `outcome: 'failed'` with `reason: 'inventory desync'` if state mutates between UI render and fire. |
+| **SR.7** ✅ | `js/game/pregnancy.js` `attemptConception` | Early-return when `girl.encounterState !== 'captive'`. Non-captive girls can't fire conception via delta hook. |
+| **SR.8** ✅ | `js/ui/room.js` heal button | Now fires `applyAction(girl.id, 'heal')` BEFORE `damage.heal()` for spec-driven body update + legacy full-bruise reset. Closes CO.6 simultaneously (heal path was the dead one). |
+| **SR.9** ✅ | `js/game/pregnancy.js` `applyAbortion` | Defensively initializes `girl.lifespan` to default shape before patching `lifespan.healthDamage`. Back-alley complications now bite on legacy saves missing the field. |
+| **SR.10** ✅ | `js/ui/tooltips.js` `onScroll` | Now only hides when scroll target contains the current tooltip anchor. Unrelated panel scrolling doesn't dismiss the bubble. |
+| **SR.11** ✅ | `js/ui/room.js` data-drug=tranquilizer | Tranquilizer admin now calls `SSDVoiceQueue.cancel()` before the offer, so prior-turn audio doesn't continue while UI shows TRANQUILIZED banner. |
+| **SR.12** ✅ | `js/ui/roster.js` | Roster cards now show `⛓ Stockholm L${n}` with hover tooltip explaining the rating, matching room.js + dispose-view.js terminology. |
+| **SR.13** ✅ | `js/game/imaging.js` `composePrompt` | When pregnant + form-fit outfit (regex match on tight/latex/catsuit/fishnet/skin-tight/bodycon/cling/harness keywords), appends reconciler: trimester 2+ → "outfit visibly strained over the pregnancy bump"; trimester 1 → "slightly snug over the early-pregnancy belly". |
+| **SR.14** ✅ | `js/templates/ollama-templates.js` `buildContextBlock` | Pregnancy status line now includes `(method, Nmin ago)` for aborted/miscarried/birthed states so Ollama knows recency. |
+| **SR.15** ✅ | `js/game/whore-out.js` permittedActs filter | When player's whitelist is non-empty AND no john preference matches, `tryArrival` returns `null` (john leaves). Whitelist is now binding instead of silently ignored. |
 
 ---
 
@@ -137,4 +148,4 @@ For complete per-session detail, files touched, verbatim Gee directives, and ver
 
 ---
 
-*Active backlog: 8 carry-over polish + 15 super-review findings = 23 tasks. Phase 21 + pre-super-review epics complete; cross-system integration gaps + tier-1 bug surfaced by /super-review 2026-05-14.* 🖤
+*Active backlog: 2 new directives (NEW.1 custom image-prompt + NEW.2 image history gallery) + 6 carry-over polish (CO.1+2 deferred external-dep, CO.3 deferred adult-invariant, CO.5+CO.7 partial — engine in place, mechanical attr-adding remains). 15 super-review findings ALL SHIPPED in commit batch 2026-05-14.* 🖤

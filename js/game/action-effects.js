@@ -160,19 +160,19 @@
     // WHORE-OUT — johns drain stamina per encounter (Phase 21.16 hook)
     // -----------------------------------------------------------------
     'john-gentle': {
-      stamina: -5, health: 0, mood: -2, bondDebt: +2,
+      stamina: -5, health: 0, mood: -2, cumLoad: +0.5, bondDebt: +2,
       notes: 'Gentle john — moderate stamina cost, light bond debt.'
     },
     'john-rough': {
-      stamina: -15, health: -3, mood: -8, bruises: +1, bondDebt: +5,
+      stamina: -15, health: -3, mood: -8, cumLoad: +1.0, bruises: +1, bondDebt: +5,
       notes: 'Rough john — heavy stamina cost + health hit + bond debt.'
     },
     'john-quick': {
-      stamina: -3, health: 0, mood: -1, bondDebt: +1,
+      stamina: -3, health: 0, mood: -1, cumLoad: +0.3, bondDebt: +1,
       notes: 'Quick john — minimal stamina cost, premium per-minute pay (Phase 21.16).'
     },
     'john-degrader': {
-      stamina: -10, health: -2, mood: -15, bondDebt: +8,
+      stamina: -10, health: -2, mood: -15, cumLoad: +0.8, bondDebt: +8,
       notes: 'Degrader john — mood and bond destruction.'
     }
   });
@@ -196,6 +196,7 @@
     const strainMul = opts.strain ? 1.5 : 1.0;
     const body = { ...girl.body };
     const bond = { ...girl.bond };
+    const mood = { ...girl.mood };
 
     if (action.stamina) {
       const d = action.stamina < 0 ? action.stamina * strainMul : action.stamina;
@@ -210,6 +211,30 @@
     if (action.bruises) body.bruises = clamp((body.bruises ?? 0) + (action.bruises < 0 ? action.bruises : action.bruises * strainMul), 0, 99);
     if (action.cumLoad) body.cumLoad = Math.max(0, (body.cumLoad ?? 0) + action.cumLoad);
 
+    // SR.1 fix (2026-05-14) — mood was previously declared in 30+ ACTIONS entries but
+    // never applied. Track moodPressure (cumulative drift) so the model name reclassifies
+    // at threshold boundaries. johnHappinessForGirl already reads mood.mood; this gives
+    // the action-effects layer a way to push mood meaningfully.
+    if (action.mood) {
+      const moodDelta = action.mood < 0 ? action.mood * strainMul : action.mood;
+      mood.moodPressure = (mood.moodPressure || 0) + moodDelta;
+      // Reclassify mood.mood at major threshold boundaries — keep mood-string in sync
+      // with cumulative pressure so johnHappinessForGirl + UI mood-name read correct.
+      const p = mood.moodPressure;
+      if (p <= -30 && mood.mood !== 'broken') { mood.mood = 'broken'; mood.moodEmoji = '😵'; }
+      else if (p <= -15 && !['broken','traumatized'].includes(mood.mood)) { mood.mood = 'subdued'; mood.moodEmoji = '😔'; }
+      else if (p <= -5 && ['ambivalent','curious','reciprocated','dependent','partner','devoted','fully-bonded'].includes(mood.mood)) {
+        mood.mood = 'wary'; mood.moodEmoji = '😐';
+      }
+      else if (p >= 30 && ['terrified','wary','broken','catatonic','subdued','traumatized'].includes(mood.mood)) {
+        mood.mood = 'reciprocated'; mood.moodEmoji = '😏';
+      }
+      else if (p >= 15 && ['terrified','wary','broken','catatonic'].includes(mood.mood)) {
+        mood.mood = 'acclimating'; mood.moodEmoji = '😶';
+      }
+      mood.history = [...(mood.history || []), { actionId, deltaPressure: moodDelta, ts: Date.now() }].slice(-30);
+    }
+
     if (action.bondXP) bond.bondXP = Math.max(0, (bond.bondXP ?? 0) + action.bondXP);
     if (action.bondDebt) {
       const d = action.bondDebt < 0 ? action.bondDebt : action.bondDebt * strainMul;
@@ -220,7 +245,7 @@
       window.SSDGame.state.addNotoriety(action.notoriety);
     }
 
-    window.SSDGame.state.updateGirl(girlId, { body, bond });
+    window.SSDGame.state.updateGirl(girlId, { body, bond, mood });
     return { ok: true, action, strain: !!opts.strain };
   }
 

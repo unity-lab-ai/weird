@@ -154,6 +154,33 @@
     const playerSkill = getPlayerSkill();
     const witness = rollWitness({ locationId });
 
+    // SR.6 fix (2026-05-14) — pre-validate every assigned single-use tool against
+    // inventory BEFORE resolution math fires. Guards against UI-engine desync race
+    // (state mutated between render and attempt-fire). For non-single-use tools the
+    // engine relies on UI eligibleToolsForStage filtering, which is render-time-only.
+    const inv = window.SSDGame.state.current?.inventory || {};
+    const required = {};
+    for (const stageKey of STAGES) {
+      const tid = toolPerStage?.[stageKey];
+      if (tid && SINGLE_USE_TOOLS.has(tid)) {
+        required[tid] = (required[tid] || 0) + 1;
+      }
+    }
+    for (const [tid, count] of Object.entries(required)) {
+      if ((inv[tid] || 0) < count) {
+        return {
+          outcome: 'failed',
+          failedAtStage: STAGES.find(s => toolPerStage?.[s] === tid) || 'approach',
+          witness: false,
+          playerSkill,
+          stages: [],
+          consumed: [],
+          consequences: { suspicionDelta: 0, notorietyDelta: 0, warinessDelta: 0 },
+          reason: `inventory desync — need ${count}× ${tid} but only ${inv[tid] || 0} in inventory`
+        };
+      }
+    }
+
     const stages = [];
     let failedAtStage = null;
 

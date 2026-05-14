@@ -260,12 +260,17 @@ End with the delta block.`,
       if (johnText) parts.push(johnText);
     }
     // Phase 21.10 (2026-05-14) — surface pregnancy state so Ollama can speak about it.
+    // SR.14 fix (2026-05-14) — abortion / miscarriage / birth lines now include timing
+    // so the model knows "this morning" vs "weeks ago" when she references the event.
     if (girl?.pregnancy?.status && girl.pregnancy.status !== 'none') {
       const p = girl.pregnancy;
       if (p.status === 'pregnant') {
         parts.push(`Pregnancy: PREGNANT — gestation day ${p.gestationDays || 0}/280, trimester ${p.trimester || 1}. Source: ${p.conceptionSource || 'organic'}.`);
       } else {
-        parts.push(`Pregnancy status: ${p.status}${p.lastAbortMethod ? ` (last abortion method: ${p.lastAbortMethod})` : ''}.`);
+        const lastEvent = (p.outcomeHistory || []).slice(-1)[0];
+        const ago = lastEvent?.ts ? Math.max(0, Math.round((Date.now() - lastEvent.ts) / 60000)) : null;
+        const agoStr = ago != null ? `, ${ago}min ago` : '';
+        parts.push(`Pregnancy status: ${p.status}${p.lastAbortMethod ? ` (${p.lastAbortMethod}${agoStr})` : agoStr ? ` (${agoStr.slice(2)})` : ''}.`);
       }
     }
     return parts.join('\n\n');

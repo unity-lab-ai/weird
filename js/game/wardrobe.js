@@ -41,6 +41,25 @@
     builtIn: true                            // always available, no purchase
   };
 
+  // CO.4 fix (2026-05-14) — condom-on wardrobe pseudo-outfit. When equipped, pregnancy
+  // conception gate suppresses the conception roll (matches the existing `currentOutfit
+  // !== 'condom-on'` check in pregnancy.js attemptConception). Free + always available.
+  // Doesn't change image-prompt rendering (it's "wearing a condom" — invisible).
+  // Consumes one `condom` from inventory when equipped to enforce supply economy.
+  const CONDOM_PSEUDO_ID = 'condom-on';
+  const CONDOM_PSEUDO = {
+    id: CONDOM_PSEUDO_ID,
+    displayName: 'Condom equipped',
+    emoji: '🎈',
+    price: 0,
+    tier: 1,
+    description: 'wearing a condom (not visible in image)',  // invisible — imaging.js renders her in her PREVIOUS outfit; this is a state flag for the pregnancy gate
+    multiplier: 1.0,
+    roleplay: 'protected-sex',
+    builtIn: true,
+    blocksConception: true                    // pregnancy.js reads this flag
+  };
+
   // Outfit catalog — these become item catalog entries too, but the descriptions live here
   // (so we can have detailed prompt blocks per outfit). The shop reads from this catalog when
   // user browses the 'outfits' subcategory.
@@ -297,12 +316,13 @@
   function getById(id) {
     if (id === NUDE_PSEUDO_ID) return NUDE_PSEUDO;
     if (id === NO_WARDROBE_PSEUDO_ID) return NO_WARDROBE_PSEUDO;
+    if (id === CONDOM_PSEUDO_ID) return CONDOM_PSEUDO;
     return OUTFITS.find(o => o.id === id);
   }
 
-  // Built-in outfits every girl can equip without buying (NUDE_PSEUDO + NO_WARDROBE_PSEUDO).
+  // Built-in outfits every girl can equip without buying (NUDE_PSEUDO + NO_WARDROBE_PSEUDO + CONDOM_PSEUDO).
   function builtIns() {
-    return [NUDE_PSEUDO, NO_WARDROBE_PSEUDO];
+    return [NUDE_PSEUDO, NO_WARDROBE_PSEUDO, CONDOM_PSEUDO];
   }
 
   // Is this outfit a nude variant?  Returns 'full' | 'accessories' | 'stripped' | false.
@@ -339,15 +359,26 @@
   function equip(girlId, outfitId) {
     const girl = window.SSDGame.state.getGirl(girlId);
     if (!girl) throw new Error('no such girl');
-    // Built-in pseudo-outfits (NUDE_PSEUDO + NO_WARDROBE_PSEUDO) are always equippable
-    // without buying. Auto-add to wardrobe array if missing so legacy saves get the option.
-    const isBuiltIn = outfitId === NUDE_PSEUDO_ID || outfitId === NO_WARDROBE_PSEUDO_ID;
+    // Built-in pseudo-outfits (NUDE_PSEUDO + NO_WARDROBE_PSEUDO + CONDOM_PSEUDO) are
+    // always equippable without buying. Auto-add to wardrobe array if missing so legacy
+    // saves get the option.
+    const isBuiltIn = outfitId === NUDE_PSEUDO_ID
+      || outfitId === NO_WARDROBE_PSEUDO_ID
+      || outfitId === CONDOM_PSEUDO_ID;
     if (!isBuiltIn && !(girl.wardrobe || []).some(w => w.id === outfitId)) {
       throw new Error('outfit not in her wardrobe');
     }
+    // CO.4 — condom-on requires consuming one `condom` from inventory at equip time so
+    // the catalog item drives a real supply economy. Without a condom in inventory, fail.
+    if (outfitId === CONDOM_PSEUDO_ID) {
+      const ok = window.SSDGame.state.consumeItem('condom', 1);
+      if (!ok) throw new Error('no condom in inventory — buy from shop');
+    }
     let wardrobe = girl.wardrobe || [];
     if (isBuiltIn && !wardrobe.some(w => w.id === outfitId)) {
-      const builtIn = outfitId === NUDE_PSEUDO_ID ? NUDE_PSEUDO : NO_WARDROBE_PSEUDO;
+      const builtIn = outfitId === NUDE_PSEUDO_ID ? NUDE_PSEUDO
+        : outfitId === NO_WARDROBE_PSEUDO_ID ? NO_WARDROBE_PSEUDO
+        : CONDOM_PSEUDO;
       wardrobe = [...wardrobe, { ...builtIn, source: 'built-in' }];
     }
     window.SSDGame.state.updateGirl(girlId, { currentOutfit: outfitId, wardrobe });
@@ -376,6 +407,7 @@
     OUTFITS, catalog, getById, buyForGirl, equip, derobe, stripEverything,
     currentMultiplier, builtIns, isNude,
     NUDE_PSEUDO_ID, NUDE_PSEUDO,
-    NO_WARDROBE_PSEUDO_ID, NO_WARDROBE_PSEUDO
+    NO_WARDROBE_PSEUDO_ID, NO_WARDROBE_PSEUDO,
+    CONDOM_PSEUDO_ID, CONDOM_PSEUDO
   });
 })();

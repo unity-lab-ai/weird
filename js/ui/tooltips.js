@@ -162,10 +162,18 @@
     setTimeout(hide, 1500);
   }
 
-  function onScroll() {
-    // Hide on scroll — bubble position would otherwise lag
-    clearTimers();
-    hide();
+  function onScroll(ev) {
+    // SR.10 fix (2026-05-14) — only hide if the scroll target actually contains the
+    // current tooltip target (i.e., the bubble's anchor element moved). Scrolling an
+    // unrelated panel should not dismiss the tooltip.
+    if (!currentTarget) return;
+    const target = ev.target;
+    const isRelevant = target === document || target === window || target === document.documentElement
+      || (target && typeof target.contains === 'function' && target.contains(currentTarget));
+    if (isRelevant) {
+      clearTimers();
+      hide();
+    }
   }
 
   function init() {
