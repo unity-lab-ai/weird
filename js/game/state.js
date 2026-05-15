@@ -18,7 +18,14 @@
       // Player satisfaction meter (0-100). Sex acts with captives raise it; slow per-tick
       // decay drops it without intimacy. High satisfaction grants a hunting bonus —
       // capture odds get easier the more satisfied the player is.
-      playerSatisfaction: 50
+      playerSatisfaction: 50,
+      // BUZZ meter (0-100). Underground word-of-mouth about the operator's dungeons —
+      // distinct from `notoriety` which is cop-heat. Bumped by film sales, successful
+      // john completions, high-bond captives in the roster, stress-band streaks. Drained
+      // by time-decay between income events, failed encounters, captive deaths. Drives
+      // a buzzMul = 1 + (buzz/100) on whore-out john arrival rate — BUZZ 100 doubles
+      // the johns coming through. Visible as chrome-bar 🐝 BUZZ badge.
+      buzz: 0
     },
 
     inventory: {},                 // { [itemId]: qty }
@@ -123,6 +130,14 @@
     });
   }
   function getSatisfaction() { return typeof state?.wallet?.playerSatisfaction === 'number' ? state.wallet.playerSatisfaction : 50; }
+  function addBuzz(delta, reason) {
+    mutate(s => {
+      const cur = typeof s.wallet.buzz === 'number' ? s.wallet.buzz : 0;
+      s.wallet.buzz = Math.max(0, Math.min(100, cur + delta));
+      s.wallet._lastBuzzEvent = { delta, reason, at: Date.now() };
+    });
+  }
+  function getBuzz() { return typeof state?.wallet?.buzz === 'number' ? state.wallet.buzz : 0; }
 
   // inventory
   function addItem(itemId, qty = 1) {
@@ -261,6 +276,7 @@
     load, save, initNew, onChange,
     addMoney, spendMoney, addNotoriety,
     addSatisfaction, getSatisfaction,
+    addBuzz, getBuzz,
     addItem, consumeItem,
     addDungeon, updateDungeon, getDungeon,
     addGirl, updateGirl, getGirl, removeGirl,

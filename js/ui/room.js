@@ -49,6 +49,12 @@
     // surfaced; auto-wakeup logged when timer hits 0.
     const tranqEntry = window.DMTHGame.drugs.isUnconscious ? window.DMTHGame.drugs.isUnconscious(girl) : null;
     const isUnconscious = !!tranqEntry;
+    // Postmortem state — encounterState === 'dead' means body persists in the hold for
+    // postmortem use. Chat stays available (Ollama returns narration-only output per
+    // room_postmortem scene), sex acts continue, drugs/feed/water/heal are disabled.
+    const isDead = girl.encounterState === 'dead';
+    const decayMinutes = girl.body?.decayedMinutes || 0;
+    const decayDays = decayMinutes / 1440;
     function fmtCountdown(ms) {
       const secs = Math.max(0, Math.floor(ms / 1000));
       const m = Math.floor(secs / 60), s = secs % 60;
@@ -104,6 +110,29 @@
             <b id="tranq-countdown" data-wear-off="${tranqNow.wearOffAt}">${fmtCountdown(tranqNow.wearOffAt - Date.now())}</b>
             <div class="small muted">She's limp, eyes closed, deeply sedated. Chat / feed / water / sex / wardrobe actions disabled until wake-up. Image prompts render her unconscious automatically.</div>
           </div>` : ''}
+          ${(() => {
+            // Postmortem (dead) banner. Replaces normal Body display intent — body is
+            // inert, decay tracked in game days since death, forced disposal threshold
+            // at POSTMORTEM_DECAY_LIMIT (7 game days). Chat still works (narration-only
+            // via room_postmortem scene); drugs/feed/water/heal disabled in main render
+            // flow. Sex acts continue and accrue cumLoad.
+            if (g.encounterState !== 'dead') return '';
+            const dMin = g.body?.decayedMinutes || 0;
+            const dDays = (dMin / 1440).toFixed(1);
+            const limit = window.DMTHGame.lifespan?.POSTMORTEM_DECAY_LIMIT || 10080;
+            const limitDays = limit / 1440;
+            const overdue = dMin >= limit;
+            return `<div class="dead-banner panel" style="border:1px solid #444;background:rgba(80,80,80,.25);padding:8px;margin:8px 0">
+              <b>☠️ DECEASED — POSTMORTEM USE</b>
+              <span class="muted small">· decay</span>
+              <b>${dDays} / ${limitDays.toFixed(0)} game days</b>
+              ${overdue ? '<span class="danger" style="margin-left:8px"><b>· OVERDUE — DISPOSE NOW</b></span>' : ''}
+              <div class="small muted">Body preserved in the hold. Chat returns narration-only (no spoken dialogue — she can\\'t speak). Sex acts still apply and accrue cumLoad. Drugs / feed / water / heal disabled. Whore-out continues with postmortem-john archetype (premium niche pay, declining as decay advances). Forced disposal nudge at ${limitDays.toFixed(0)} game days.</div>
+              <div class="btn-row" style="margin-top:6px">
+                <a class="btn-small btn-danger" href="#dispose?girl=${g.id}" data-tooltip="Dispose of the body. Bury / lose-at-sea / incinerate / finalization-film — frees the hold and removes her from the dungeon.">⚱️ Dispose now</a>
+              </div>
+            </div>`;
+          })()}
       `;
     }
 
@@ -213,16 +242,33 @@
                 <b>${wo.enabled ? '✅ ON' : '⛔ off'}</b>
                 <button class="btn-small ${wo.enabled ? 'btn-danger' : 'btn-primary'}" data-whore-toggle data-tooltip="${wo.enabled ? 'Stop john arrivals.' : 'Open her up to john arrivals. Each tick rolls per the rate setting.'}">${wo.enabled ? 'Disable' : 'Enable'}</button>
               </div>
-              ${wo.enabled ? `
-                <div class="stat-row" data-tooltip="Arrival rate per tick. low = 10% / 1 max. standard = 25% / 2. premium = 40% / 3. all-comers = 60% / 4."><span>Rate</span>
+              ${wo.enabled ? (() => {
+                // Game-time cadence. Replaces the old low/standard/premium/all-comers
+                // %-per-tick enum — explicit "1 john / Nm game time" options + a visible
+                // countdown so the player always knows when the next one's coming.
+                const minutesToNext = window.DMTHGame.whoreOut.gameMinutesToNextArrival(window.DMTHGame.state.getGirl(girl.id));
+                const perTick = window.DMTHGame.whoreOut.expectedArrivalsPerTick(wo.rate);
+                const buzzMul = window.DMTHGame.whoreOut.buzzMultiplier();
+                const countdownTxt = (wo.rate === 'off' || !Number.isFinite(minutesToNext))
+                  ? '— no arrivals while off'
+                  : window.DMTHGame.gameClock.formatDuration(minutesToNext);
+                const buzzNow = Math.round((window.DMTHGame.state.getBuzz?.() || 0));
+                return `
+                <div class="stat-row" data-tooltip="Cadence of john arrivals in GAME time. rapid = 1 every 10 game min · steady = 1 every 30 game min · casual = 1 every 60 game min · trickle = 1 every 120 game min · off = none. Each tick is 30 game min. BUZZ multiplier folds in on top — at BUZZ 100, arrivals double.">
+                  <span>Cadence</span>
                   <select id="whore-rate" class="inline-select">
-                    ${['low','standard','premium','all-comers'].map(r => `<option value="${r}" ${wo.rate === r ? 'selected' : ''}>${r}</option>`).join('')}
+                    ${['off','trickle','casual','steady','rapid'].map(r => {
+                      const params = window.DMTHGame.whoreOut.RATE_PARAMS[r];
+                      return `<option value="${r}" ${wo.rate === r ? 'selected' : ''}>${r} (${params.displayName})</option>`;
+                    }).join('')}
                   </select>
                 </div>
+                <div class="stat-row" data-tooltip="Countdown to the next expected john arrival, in GAME time. Cadence × BUZZ multiplier determines this. Fractional arrivals carry forward — at 'rapid' BUZZ 100 you'll see ~6 johns per real-time tick (30 game min)."><span>Next john in</span><b>${countdownTxt}</b><span class="muted small" style="margin-left:8px">· ~${perTick.toFixed(2)} johns/tick · BUZZ×${buzzMul.toFixed(2)} (🐝 ${buzzNow})</span></div>
                 <div class="stat-row" data-tooltip="If on, every john MUST use a condom (override their compliance rate). Blocks pregnancy conception via this path.">
                   <span>Condom required</span>
                   <label><input type="checkbox" id="whore-condom" ${wo.condomRequired ? 'checked' : ''}/> enforce</label>
-                </div>
+                </div>`;
+              })() + `
                 <div class="stat-row" data-tooltip="Pay multiplier from her current stats (bond × stamina × health × mood × outfit). Higher = bigger payouts per john. Better-trained girls earn more.">
                   <span>John happiness multiplier</span>
                   <b class="${happyPct > 110 ? 'gold' : happyPct < 80 ? 'danger' : ''}">${(happy?.multiplier || 1).toFixed(2)}×</b>
@@ -298,13 +344,25 @@
 
           <h3>Drugs</h3>
           <div class="btn-row">
-            <button class="btn-small" data-drug="coke" data-tooltip="Line of coke. Rapid-fire chatter, jaw clench, dilated pupils. 45-min curve.">❄️ Line of coke</button>
-            <button class="btn-small" data-drug="weed" data-tooltip="Roll her a joint. Slow blinks, drifty word choice, relaxed posture. 2-hour curve.">🌿 Roll a joint</button>
-            <button class="btn-small" data-drug="mdma" data-tooltip="Share a molly. Emotional flooding, 'i love you' leak, glowing skin. 4-hour curve.">💊 Share molly</button>
-            <button class="btn-small" data-drug="acid" data-tooltip="Tab of acid. Things-aren't-real perception, blown pupils, time dilation. 10-hour curve.">🧪 Tab of acid</button>
-            <button class="btn-small" data-drug="whiskey" data-tooltip="Pour whiskey. Slurred, looser-tongued, more honest. 90-min curve.">🥃 Pour whiskey</button>
-            <button class="btn-small" data-drug="ketamine" data-tooltip="Bump of K. Dissociated stare, slack jaw, limp posture. 40-min curve. NOT a knockout.">🐴 Bump of K</button>
-            <button class="btn-small btn-danger" data-drug="tranquilizer" data-tooltip="Tranquilizer dart. FULL knockout — eyes closed, limp, unresponsive. 4-min unconscious window. Consumes 1 from inventory.">🎯 Tranquilizer (4-min knockout)</button>
+            ${(() => {
+              // Drug buttons. Tooltip = descriptive text + compact stat preview from
+              // action-effects ACTIONS spec so the player sees what the drug
+              // does to stamina/health/mood/arousal before clicking.
+              const pc = window.DMTHGame.actionEffects?.previewCost || (() => '');
+              const dt = (id, label) => {
+                const c = pc(id);
+                return c ? `${label}\n📊 ${c}` : label;
+              };
+              return `
+                <button class="btn-small" data-drug="coke" data-tooltip="${escapeHtml(dt('drug-coke', 'Line of coke. Rapid-fire chatter, jaw clench, dilated pupils. 45-min curve.'))}">❄️ Line of coke</button>
+                <button class="btn-small" data-drug="weed" data-tooltip="${escapeHtml(dt('drug-weed', 'Roll her a joint. Slow blinks, drifty word choice, relaxed posture. 2-hour curve.'))}">🌿 Roll a joint</button>
+                <button class="btn-small" data-drug="mdma" data-tooltip="${escapeHtml(dt('drug-mdma', 'Share a molly. Emotional flooding, \\'i love you\\' leak, glowing skin. 4-hour curve.'))}">💊 Share molly</button>
+                <button class="btn-small" data-drug="acid" data-tooltip="${escapeHtml(dt('drug-acid', 'Tab of acid. Things-aren\\'t-real perception, blown pupils, time dilation. 10-hour curve.'))}">🧪 Tab of acid</button>
+                <button class="btn-small" data-drug="whiskey" data-tooltip="${escapeHtml(dt('drug-whiskey', 'Pour whiskey. Slurred, looser-tongued, more honest. 90-min curve.'))}">🥃 Pour whiskey</button>
+                <button class="btn-small" data-drug="ketamine" data-tooltip="${escapeHtml(dt('drug-ketamine', 'Bump of K. Dissociated stare, slack jaw, limp posture. 40-min curve. NOT a knockout.'))}">🐴 Bump of K</button>
+                <button class="btn-small btn-danger" data-drug="tranquilizer" data-tooltip="${escapeHtml(dt('drug-tranquilizer', 'Tranquilizer dart. FULL knockout — eyes closed, limp, unresponsive. 4-min unconscious window. Consumes 1 from inventory.'))}">🎯 Tranquilizer (4-min knockout)</button>
+              `;
+            })()}
           </div>
 
           <h3>Actions</h3>
@@ -529,8 +587,21 @@
 
       try {
         const mode = window.DMTHGame.state.current.settings.mode || 'sexy';
-        const sceneKey = 'room_regular';
-        const sceneVars = {
+        // Postmortem branch — dead captive uses the narration-only scene so the model
+        // emits asterisk-action only (no spoken dialogue, no mood, no bond). TTS still
+        // plays the narration aloud per the asterisk-strip path established in BUG.22.
+        const isDead = girl.encounterState === 'dead';
+        const sceneKey = isDead ? 'room_postmortem' : 'room_regular';
+        const decayMinutes = girl.body?.decayedMinutes || 0;
+        const decayDays = (decayMinutes / 1440).toFixed(1);
+        const sceneVars = isDead ? {
+          ROOM_AMBIENCE: `${dungeonTpl?.displayName || 'hideout'}, ${dungeonTpl?.plotTokens || 'bare'}`,
+          DECAY_DAYS: decayDays,
+          BOND_LEVEL: girl.bond.bondLevel,
+          BOND_NAME: 'deceased',
+          BODY_SUMMARY: `deceased — ${decayDays} game days since death`,
+          MOOD: 'deceased'
+        } : {
           ROOM_AMBIENCE: `${dungeonTpl?.displayName || 'hideout'}, ${dungeonTpl?.plotTokens || 'bare'}`,
           BOND_LEVEL: girl.bond.bondLevel,
           BOND_NAME: ['terrified','wary','acclimating','curious','ambivalent','reciprocated','dependent','partner','devoted','fully-bonded'][girl.bond.bondLevel],
@@ -1176,6 +1247,15 @@
       if (userIn) { userIn.disabled = true; userIn.placeholder = 'she\'s tranquilized — wait for wake-up'; }
     }
 
+    // Postmortem (dead) state gating. Disable drugs/feed/water/heal/abortion/mode/list-
+    // sale — none of those make sense on a corpse. KEEP quick-actions (sex acts still
+    // apply + accrue cumLoad), KEEP chat send (room_postmortem scene returns narration
+    // only), KEEP selfie/derobe/strip/record (still pose + record the body).
+    if (isDead) {
+      el.querySelectorAll('[data-drug], [data-feed], [data-water], [data-drop-food], [data-drop-water], [data-pickup-food], [data-pickup-water], #heal-btn, [data-mode], #list-sale, [data-abort]')
+        .forEach(b => { b.disabled = true; b.title = (b.title || '') + (b.title ? ' · ' : '') + 'she\'s deceased — body cannot metabolize / heal / sell'; });
+    }
+
     // Live mm:ss countdown ticker. Updates every second; on wake-up, fires
     // a NotifyToast and re-renders the page so the disabled buttons come back online.
     let tranqTicker = null;
@@ -1240,7 +1320,12 @@
       (b.outfitState || 'intact'),
       drugSig || '-',
       girl.pregnancy?.trimester || 0,
-      b.activeBondage || '-'
+      b.activeBondage || '-',
+      // Encounter state — alive vs dead transitions trigger image regen so postmortem
+      // markers + corpse pose land. Decay bucketed at 1-day granularity so the marker
+      // tier (fresh / early / mid / late) changes trigger a fresh image too.
+      girl.encounterState || 'captive',
+      Math.floor((b.decayedMinutes || 0) / 1440)
     ].join('|');
   }
 

@@ -145,6 +145,35 @@
     return 'HEAVILY BONDAGED, ropes and restraints visible, forcibly bound and immobilized';
   }
 
+  // Postmortem markers — front-loaded high-priority block for deceased captives.
+  // Scales by decay days since death (game time): fresh body (< 1 day) is "sleeping-cold",
+  // 1-3 day body adds pallor + livor mortis, 3-7 day body adds cool gray tones + slack
+  // jaw + sunken features. Beyond the POSTMORTEM_DECAY_LIMIT the description gets
+  // explicitly advanced-decay (the game forces disposal at that point anyway). Pose
+  // override in composePrompt swaps to a "sleeping" pose family when no userStaging.
+  function postmortemTokens(girl) {
+    if (!girl || girl.encounterState !== 'dead') return '';
+    const decayMin = girl.body?.decayedMinutes || 0;
+    const decayDays = decayMin / 1440;
+    // Common base — applies at every stage.
+    const base = 'DECEASED adult body, lifeless, eyes closed, slack jaw with lips parted, no muscle tension, no facial expression, no breath, no movement, body entirely inert';
+    if (decayDays < 1) {
+      // Fresh — could pass for deep sleep. Cool pallor only, no advanced markers.
+      return `${base}, fresh-postmortem appearance, pale skin with cooled flesh tone, peaceful sleeping-cold pose, head turned to one side, limbs slack and arranged where they fell, hair fanned across the surface beneath the head, no flush, no goosebumps, no involuntary twitch`;
+    }
+    if (decayDays < 3) {
+      // Early decay — pallor + livor mortis settling in.
+      return `${base}, early-postmortem appearance, marked pallor across the face and torso, gray-cool undertone to the skin, faint livor-mortis darkening at the lowest points of the body where blood has pooled, lips and fingertips slightly bluish, hair limp and unkempt, eyes sunken faintly, jaw slack with mouth fallen partly open, body cold to touch`;
+    }
+    if (decayDays < 7) {
+      // Mid decay — visible gray tones, sunken features, stiffness present then released.
+      return `${base}, advanced-postmortem appearance, cool gray-blue skin tone across face and limbs, lips darkened bluish-purple, fingertips and toes mottled, sunken cheekbones and eye sockets, jaw slack and locked open, body limp again after rigor passed, hair flat and lifeless across the surface, no muscle tone whatsoever, skin appears waxy and dulled`;
+    }
+    // Past forced-disposal threshold — extreme decay (this shouldn't normally render; game
+    // surfaces a forced-disposal nudge well before this point).
+    return `${base}, late-postmortem appearance, deeply gray-mottled skin with marked discoloration, dramatically sunken features, eyes deeply hollow, jaw locked open at unnatural angle, lips drawn back, hair brittle and detached in places, body in advanced visible decay`;
+  }
+
   // Per-trimester visible pregnancy markers, front-loaded near nudity/face
   // slot so the model doesn't bury the pregnancy in tail tokens. Three tiers map to
   // pregnancy.trimester (1/2/3) plus a separate full-term band at day >= 250 for the
@@ -405,11 +434,21 @@
 
     const nudeStrength = nudeStateOf(girl);
 
-    const stateTokens = bodyStateTokens(girl.body);
-    const drugTokens  = drugStateTokens(girl.body);
-    const pregTokens  = pregnancyTokens(girl.pregnancy);
+    // Postmortem state suppresses live-body marker emissions — no arousal flush, no drug-
+    // glow, no pregnancy bump emphasis, no involuntary signs of life. The postmortem
+    // block carries everything the model needs about the body's state.
+    const isPostmortem = girl.encounterState === 'dead';
+    const stateTokens = isPostmortem ? '' : bodyStateTokens(girl.body);
+    const drugTokens  = isPostmortem ? '' : drugStateTokens(girl.body);
+    const pregTokens  = isPostmortem ? '' : pregnancyTokens(girl.pregnancy);
     const bondTokens  = bondageTokens(girl.body);
-    const pose = effectivePose || POSE_LIBRARY[situation] || POSE_LIBRARY.profile;
+    const postmortem  = postmortemTokens(girl);
+    // Pose: explicit user staging > situation-default > sleeping/corpse pose when dead.
+    // The "sleeping" pose family family puts the body lying flat with limbs in resting
+    // positions so the postmortem token block lands consistently.
+    const defaultPose = POSE_LIBRARY[situation] || POSE_LIBRARY.profile;
+    const corpsePose = 'lying flat on the back on a hard surface, head turned to one side, eyes closed, arms slack at sides with palms up, legs straight and slightly parted, body completely still, hair fanned across the surface beneath the head';
+    const pose = effectivePose || (isPostmortem ? corpsePose : defaultPose);
     const env = envTokens({
       situation,
       dungeonId: girl.assignedDungeonId,
@@ -439,6 +478,7 @@
         prefix,               // 1
         nudeBlock,            // 2 — aggressive nudity front-load (replaces face slot)
         bondTokens,           // 2.3 — bondage transforms posture, front-loaded
+        postmortem,           // 2.4 — postmortem markers (suppresses live-body markers below)
         pregTokens,           // 2.5 — pregnancy markers front-loaded so the bump isn't buried at tail
         env,                  // 3 — hold-specific environment, promoted from old pos 7
         faceBlock,            // 4 — face moves to 4 when nude (nude is at 2)
@@ -471,6 +511,7 @@
         prefix,                                                                   // 1
         faceBlock,                                                                // 2
         bondTokens,                                                               // 2.3 — bondage transforms posture, front-loaded
+        postmortem,                                                               // 2.4 — postmortem markers (suppresses live-body markers below)
         pregTokens,                                                               // 2.5 — pregnancy markers front-loaded so the bump isn't buried at tail
         env,                                                                      // 3 — hold-specific environment, promoted from old pos 7
         outfitBlock + (outfitState ? ', ' + outfitState : ''),                    // 4
