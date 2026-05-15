@@ -13,6 +13,269 @@
 
 ---
 
+## 2026-05-14 — Session: `feature/BUGStwo` branch backfill — 15 shipped fixes documented retroactively
+
+### Drift note
+
+These 15 commits shipped on `feature/BUGStwo` over prior work passes without FINALIZED entries bundled into the same atomic commit per **LAW — DOCS BEFORE PUSH**. This entry is corrective doc-only backfill — code and commits are unchanged, only the archive is catching up. Branch sat clean at origin with the working tree clean before this session started. Subsections are listed newest-commit-first; every subsection title preserves the verbatim commit subject as it lives in git.
+
+### `ccacbe7` fix(chat): anchor Unity's reply to the specific act, not generic body state
+
+**Symptom:** Master chose "spit in open mouth" and Unity replied about hands on ass + pussy. Master chose "call her cum dump" and Unity replied about throat gag + standing up. Reactions were generic-body-state-driven, not anchored to the action just performed.
+
+**Root cause:** In `js/game/ollama.js` `runTurn`, the user message was structured `<long context block> --- Master: <action text>`. The action got buried under the context; the model latched onto dominant body-state tokens (cum, wet, gag, bruises) and ignored the latest turn.
+
+**Fix — 3 layers:**
+
+1. `ollama.js` `runTurn` — restructured the user message so the action is bookended between `>>>…<<<` markers and explicitly labeled as "react to this EXACT act". Context block moves below as supporting state. Reply must reference the line between markers.
+2. `ollama-templates.js` `room_regular` scene — rewrote with per-act direction (spit → react to saliva/swallowing NOT pussy; fuck → react to penetration NOT wax burns; slap → react to cheek sting NOT cum; verbal slur → react to WORDS NOT physical acts; bondage → react to ropes/cuffs NOT sex). Each act type produces a different reaction shape.
+3. `BASE_SLUT` — new **ACT ANCHOR** section above CAPTOR FRAME that universalizes the rule across every archetype + scene: every reply names what he did THIS turn and reacts specifically, never generic body state from earlier.
+
+Reply word-count and Stockholm-tier rules unchanged.
+
+**Files:** `js/game/ollama.js` (+17/-1), `js/templates/ollama-templates.js` (+18/-2).
+
+---
+
+### `b7c42c3` fix(stats+pregnancy+cumLoad): applyId wired on every quick-action, always-visible pregnancy panel with tooltips, cumLoad drain + bonus
+
+**Quick-actions stat-update path:**
+- Old flow relied on Ollama's emitted delta block to bump stamina/health/mood/arousal/wetness/cumLoad/bruises/bondXP. The model is unreliable — a turn without a parseable delta block left every stat frozen, so "I keep cumming inside her but cumLoad doesn't change".
+- Wired `action.applyId` on EVERY relevant quick-action (FORCE / POSITIONS / ORAL / ANAL / PAIN / VIOLENCE / PUNISHMENT / BONDAGE / DRUGS / LOVE / COMMANDS). Click routes through `window.DMTHGame.actionEffects.applyAction(girl.id, applyId)` for deterministic stat mutation. The Ollama delta still applies if parsed, but `applyAction` is now source-of-truth so stats move every click.
+- Routing examples:
+  - "force cum inside" / "breed her" → `sex-cum-inside` (cumLoad +1.2)
+  - "force vag entry" / "doggy rough" → `sex-rough` (cumLoad +0.9)
+  - "force anal" / "cream her ass" → `sex-anal` (cumLoad +0.7)
+  - oral acts → `sex-oral` (cumLoad +0.5)
+  - punch/slap/choke/whip variants → matching ACTIONS spec entries
+  - bondage → `restrain` spec
+  - drugs → `drug-*` spec (fires curve via in-game drug buttons too)
+
+**CumLoad lowering:**
+- `love-bathe-her` gets `cumLoad: -3` (primary cleanup option — drain in the bath).
+- New `wipe-down` action: cumLoad −2, stamina +2, health +1, mood +3, bondXP +1, bondDebt −1, satisfaction +1. Added to Love tab as `🚿 wipe her down`.
+
+**High cumLoad film bonus:**
+- `film.js` `stopRecording` adds a `cumLoadMultiplier` when `body.cumLoad` is high:
+  - cumLoad ≥ 2.0 → "used" × 1.10
+  - cumLoad ≥ 3.5 → "well-used" × 1.20
+  - cumLoad ≥ 5.0 → "ruined" × 1.35
+- Stacks multiplicatively with wardrobe + stress-state bonuses. Recording her heavily used pays out a premium — visible signs of recent use sell.
+
+**Pregnancy panel:**
+- Always rendered, never hidden when status=none. Status emoji + label both carry `data-tooltip` with per-state explanation (NOT PREGNANT: conception mechanics; PREGNANT: gestation pace; etc.). h3 + Status row both tooltip-ed so the player can hover anywhere on the row.
+
+**Files:** `js/game/action-effects.js` (+8), `js/game/film.js` (+19), `js/ui/quick-actions.js` (+135/-136), `js/ui/room.js` (+18/-3).
+
+---
+
+### `3b7a93e` feat(capture): simple one-tool flow with escalating wrangle attempts
+
+Old 4-stage capture (Approach / Engage / Subdue / Secure with dropdowns per stage, witness rolls, archetype resistance math) was too fiddly. Replaced with a single-tool picker + per-tool flat success chance + escalation system giving the player multiple attempts as the struggle gets wilder.
+
+**Per-tool capture chances (`capture.js` `SIMPLE_CAPTURE_CHANCE`):**
+- duct-tape 50% · zip-ties 55% · rope 55% · pipe 60% · handcuffs 70% · shackles 75% · harness 80% · rohypnol 85% · chloroform 90% · tranquilizer 95% · ether 95% · ketamine 100% (guaranteed).
+
+**Wrangle escalation (multi-attempt per encounter):**
+- tier 0 calm — first attempt, no penalty
+- tier 1 suspicious — after 1 miss, chance × 0.85
+- tier 2 fighting — after 2 misses, chance × 0.70 (fists flying, scrambling)
+- tier 3 screaming — after 3 misses, chance × 0.55 (kicking, crying for help)
+- tier 4 running — after 4 misses, she bolts. Encounter ends. +2 notoriety.
+
+**UI (`hunt-view` `renderApproach`):**
+- Replaced multi-stage dropdown grid with a single tool-picker column. Each row shows item emoji + name + inventory count + adjusted-for-tier success percentage. Color-coded (green ≥90, neutral ≥70, warn ≥60, danger below).
+- New status line: `Her state: 😐 CALM · chance × 100%` → shifts to `😟 SUSPICIOUS · × 85%` / `😠 FIGHTING · × 70%` / `😱 SCREAMING · × 55%` as misses accumulate.
+- Miss history shown below the picker per encounter.
+- On miss: result panel shows roll + her new state + narrated line, then picker re-renders with updated odds.
+- On escape (tier 4): result panel locks the encounter, +2 notoriety, back-to-map link.
+
+`simpleAttempt({ girl, toolId, locationId, escalationTier })` returns `{ outcome, toolId, baseChance, chance, roll, escalationTier, escort?, suspicionDelta? }`. Legacy `runAttempt` + 4-stage code paths remain exported for back-compat, just not wired into the active UI.
+
+**Files:** `js/game/capture.js` (+90/-25), `js/ui/hunt-view.js` (+155/-218).
+
+---
+
+### `965538f` fix(tts): move Kokoro synthesis to a Web Worker — keeps main thread responsive
+
+The browser's "Page Unresponsive" detector can't be configured by web pages — it fires when the main thread blocks for ~5+ seconds on a single callstack. Kokoro's ONNX inference (`state.tts.generate`) was running on the main thread, blocking it for the duration of synthesis. On slower hardware or longer prompts, this tripped the popup before audio was ready.
+
+**Real fix — move synthesis off the main thread.**
+
+New file `js/setup/kokoro-worker.js` — module worker that imports `kokoro-js`, loads the model, responds to `speak` messages with audio bytes (PCM Float32 or encoded Blob bytes, whichever Kokoro returns). Audio buffers are **transferred** (not copied) for zero-cost handoff back to the main thread.
+
+`js/setup/kokoro.js` rewritten as thin proxy:
+- `ensureLoaded()` spawns the worker, sends `init`, waits for `ready`.
+- `speak()` posts a `speak` request with a unique id, awaits the matching `speakResult` reply, decodes to a Blob URL.
+- Worker spawn failure (file:// origin, strict CSP, ancient browser) falls back transparently to main-thread synthesis — game still works.
+- `onStateChange` / `getProgress` / `isReady` API unchanged so existing callers keep working without modification.
+
+Net result: page stays clickable and scrollable while Kokoro is rendering, no more unresponsive-popup interruptions.
+
+**Files:** `js/setup/kokoro-worker.js` (+69 new), `js/setup/kokoro.js` (+155/-52).
+
+---
+
+### `9a0a308` fix(image): drop 'non-pregnant' negation, keep positive body-shape only
+
+"non-pregnant body shape" is a negation prompt — image models pattern-match the embedded `pregnant` token and render exactly what the prompt is trying to exclude. Replaced with pure positive body description: `flat toned belly, slim flat midsection, slim waist, defined abdominal lines`.
+
+**Files:** `js/game/imaging.js` (+5/-4).
+
+---
+
+### `1bfa69e` fix(tts+pregnancy): speak asterisk actions aloud + always-visible pregnancy panel + non-pregnant body marker
+
+**TTS:**
+- Old strip pattern wiped the entire asterisk block: `\*[^*]*\*` → `''`. Action narration was silent. Short replies like `Yes Master.` `*trembling at the chain*` played as just "yes master" — 2 words, ~1 second of audio.
+- New pattern strips only the wrapping asterisks: `\*([^*]+)\*` → `$1`. Action text reads aloud as narration. Each turn becomes one longer continuous Kokoro clip with the action filling the audible space between spoken bits.
+
+**Pregnancy panel:**
+- Was hidden entirely when `status === 'none'` AND no `outcomeHistory`. Player had no way to confirm a captive's current reproductive state.
+- Now always renders. Shows `NOT PREGNANT` explicitly for status=none, plus status emojis for every outcome (stillbirth-trash / firestation-drop / sold-to-black-market / abandoned-trash / lost-to-authorities). Hyphens in status labels rendered as spaces for legibility.
+
+**Non-pregnant body image marker (initial form, later refined in `9a0a308`):**
+- `imaging.js` `pregnancyTokens` returned empty string when not pregnant, leaving the image model free to drift toward a baby bump on its own (major source of "why is Unity rendered pregnant when she's not?" confusion).
+- First fix: emits positive non-pregnant body signal `flat toned belly, slim flat midsection, slim waist, non-pregnant body shape`. Subsequent commit `9a0a308` then removed the trailing `non-pregnant body shape` negation tail, keeping only the positive descriptors.
+
+**Files:** `js/game/imaging.js` (+6/-1), `js/ui/room.js` (+16/-8).
+
+---
+
+### `237d581` fix(chat): stop truncating Unity's response after stream completes
+
+`chatStream()` in `ollama.js` was applying `truncateResponse` (3 sentences / 50 words cap) AFTER the stream finished. The user saw the live stream arrive with the full reply, then the bubble snapped to a shortened version when parsing landed. Looked like the response got "force-changed" by something downstream — but it was just our own length cap.
+
+Removed the post-stream truncation entirely. `extractDelta` still scrubs system-prompt rule-leakage + third-person Master-action narration, but no longer trims for length. The model chooses its own reply length; what streams in is what stays.
+
+**Files:** `js/game/ollama.js` (+9/-10).
+
+---
+
+### `f756442` fix(tranq): flat hard knockout for full 4 real minutes (= 4 game hours)
+
+`isUnconscious()` already gated chat/actions for the full 4-min window via `now < wearOffAt`. BUT the bell-curve magnitude faded from peak (10sec mark) to 0 by `wearOffAt`, so the captive's voice/image rendering "partially woke up" over the 4-minute window — voice picker could shift away from "unconscious" as magnitude tapered, image drug-state markers could weaken.
+
+Special-cased tranquilizer in `curveMagnitude` to return `highContribution` flat from `administeredAt` to `wearOffAt`. Hard binary on/off. Combined with `isUnconscious` this delivers a full 4 real-minute total knockout, which in game-time is 4 game hours (1 real sec = 1 game min). Bumped `highContribution` 30 → 100 so the flat magnitude is unambiguously the strongest effect even if she's also coked or stoned.
+
+**Files:** `js/game/drug-scheduler.js` (+16/-7).
+
+---
+
+### `b41ede4` fix(image): trim sex-lock to non-conflicting minimal female-positive marker
+
+Previous sex-lock listed anatomy (`breasts, vulva, hips`) and forced solo framing (`alone in the frame, only one woman in the entire image`). Both conflicted with the rest of the pipeline:
+- Anatomy tokens leaked through clothed outfits — model partially undressed fully-clothed captives to satisfy the front-loaded `breasts/vulva` signal.
+- Solo framing broke every multi-person scene — johns, sex with Master, group scenes all need a second figure in frame.
+
+New sex-lock is short and conflict-free: `female adult woman, female subject, female body, feminine frame`. Just hard-state female. Downstream blocks add their own context: face (positive female facial features), nudity (anatomy when appropriate), outfit (clothing), drugs (face state), body-state (arousal etc.), pose, location. Each layer carries its own positive signal — no need to overload the prefix.
+
+**Files:** `js/game/imaging.js` (+9/-7).
+
+---
+
+### `aff62ef` fix(image): sex-lock is positive-only, no negation prompting
+
+Listing `no male anatomy / no penis / no man in frame` makes image models pattern-match the forbidden tokens and render them. Rewrote both the hardcoded prefix and the Ollama prompt-writer **HARD RULE 0** to describe only what IS in frame: `SINGLE FEMALE WOMAN, solo female adult, alone in the frame, only one woman in the entire image, female face, female body, female anatomy, soft feminine features, feminine curves, breasts, vulva, hips`.
+
+(Later refined again in `b41ede4` after this version proved to leak anatomy / break group scenes.)
+
+**Files:** `js/game/imaging.js` (+6/-4).
+
+---
+
+### `7e04092` fix(voice+image): louder bond-driven emotions + female-only sex-lock in image prompts
+
+**Voice — emotions were too whispery across the board:**
+- Old terrified / scared / broken / devoted profiles all skewed slow + soft. Low-bond captives ended up whispering when they should be PANICKED LOUD, and high-bond captives sounded sleepy-devoted when they should be EAGER LOUD demanding it harder.
+- New emotion catalog uses `speed >= 1.0` + ALLCAPS scared/lust words + double-bang punctuation to push Kokoro toward louder prosody:
+  - L0–1 **panicked** (1.08, ALLCAPS NO/STOP/PLEASE, !!)
+  - L1–2 **scared** (1.02, please!/no!)
+  - L2–3 **shaken** (0.98, mild stutter)
+  - L3 **curious** (1.02, neutral)
+  - L4–5 **aroused** (1.05, moans woven in)
+  - L6 **eager** (1.08, YES/HARDER/MORE)
+  - L7–8 **excited_devoted** (1.10, YES/MASTER/HARDER, !!)
+  - L9 **feral_devoted** (1.12, HARDER/RAPE/BREAK/MORE/!!)
+- `BOND_TO_EMOTION` rewired to this arc — timid/scared → ambivalent → aroused → excited devoted → feral devoted wanting violence. Loud at both ends.
+- `broken` / `catatonic` kept as mood-overrides only (not bond defaults).
+- `pickEmotion` priority changed: at bond ≥ 7, lust-profile beats drug calm. High-Stockholm captives on weed/whiskey still sound EAGER, not muted.
+
+**Image — Pollinations was occasionally rendering male subjects:**
+- Front-loaded SEX LOCK block in the hard-coded `composePrompt` prefix at position 1 (NB: this initial wording was iterated further in `aff62ef` then `b41ede4`).
+- Added matching **HARD RULE 0 (SEX LOCK)** in the Ollama prompt-writer system prompt — rule 0 takes precedence over every aesthetic preference.
+- Updated the position-1 PREFIX description in the canonical 8-slot ordering comment to reference the SEX LOCK block.
+
+**Files:** `js/game/imaging.js` (+8/-1), `js/voices/catalog.js` (+150/-55).
+
+---
+
+### `d997784` fix(chat+tts): kill duplicate Unity bubble + single-shot TTS for short replies
+
+**Duplicate response bubble:**
+- `streamOllamaResponse` manually appended a `streamDiv` to `logEl`, then on completion called `state.appendTurn` which fired `state.onChange` → `renderLog` appended ANOTHER `.log-entry` for the same turn. Result: two identical bubbles.
+- Now `streamDiv.remove()` runs in the success path BEFORE `appendTurn`, so `renderLog` draws the canonical entry exactly once. Error path still keeps `streamDiv` to display the error + repair button.
+
+**TTS sentence-splitting making short replies take 20-30 sec to play back:**
+- `voice-queue.js` split EVERY response into sentences regardless of length, then pipelined a Kokoro generation per sentence. Network + render latency stacked.
+- Added `SINGLE_SHOT_MAX_CHARS = 280`. Under that, the whole text goes to Kokoro as one fast generation. Long paragraphs (rare in chat) still get split. Typical Unity response (60–150 chars) now plays in one shot instead of 5–6 stitched clips.
+
+**Files:** `js/ui/room.js` (+6/-9), `js/ui/voice-queue.js` (+14/-3).
+
+---
+
+### `98e978b` fix(landing-settings): write into #settings-body-inline (was only writing #settings-body slide-out)
+
+The landing page's Settings section uses `<div id="settings-body-inline">`, but `settings.js` was only populating `#settings-body` (the legacy slide-out aside). The inline section stayed empty so users saw only the wrapper heading + "Go to Setup" fallback line. Now prefers the inline container, falls back to slide-out only if inline isn't present. Avoids duplicate-ID rendering across both.
+
+**Files:** `js/ui/settings.js` (+15/-2).
+
+---
+
+### `856ffea` fix(landing-settings): add FULL NUKE button to landing-page settings panel
+
+The landing page (`index.html`) uses `js/ui/settings.js`, which had "Wipe ALL" but no FULL NUKE. The in-game Settings page (`js/ui/in-game-settings.js`, route `#settings` in `game.html`) had FULL NUKE but the landing page's settings slide-out did not. Both panels now expose the same nuke option with identical semantics: IDB + ALL localStorage (incl. age-gate + ToS) + sessionStorage, then redirect to `index.html` for a fresh age-gate prompt.
+
+**Files:** `js/ui/settings.js` (+24/-1).
+
+---
+
+### `5c9a8e2` fix(settings): try/catch around render + cache-control meta tags
+
+If a future code change throws inside the settings render, the user will now see a visible error panel with stack trace instead of a blank/stale page. The most common cause of "settings looks wrong" is browser cache after a JS update.
+
+Also adds HTML `<meta>` cache-control headers to `game.html` + `index.html` as defense in depth against bfcache. `serve.py` already sends `Cache-Control: no-store` on every response, but bfcache + same-tab back/forward navigation can bypass server headers. The meta tags close that gap.
+
+Diagnostic flow now:
+- If the user reports "Settings looks wrong / button missing", the error panel surfaces the actual JS exception with stack trace.
+- If the page is empty: still a render failure, but visible via the panel.
+- If the page is stale-but-not-erroring: hard-refresh (Ctrl+Shift+R) clears it, and the meta tags make sure subsequent loads stay fresh.
+
+**Files:** `game.html` (+3), `index.html` (+3), `js/ui/in-game-settings.js` (+21).
+
+---
+
+### Verification gates (whole batch)
+
+- Chat reply names the act just performed → no more generic-body-state drift. Spit → reacts to saliva. Choke → reacts to throat. Slap → reacts to cheek.
+- Every quick-action click bumps the relevant stat deterministically (no Ollama-delta dependency). cumLoad goes up on sex actions and drops on bath/wipe-down.
+- Hunt single-tool picker shows live success-percentage per tool, escalation tier label visible, miss history accumulates, tier-4 = girl bolts + +2 notoriety + encounter ends.
+- Page stays scrollable/clickable during Kokoro synthesis; no "Page Unresponsive" popup.
+- Tranquilized captive stays fully unconscious for 4 real minutes (4 game hours) — voice picker doesn't shift, image drug markers don't fade.
+- Pollinations renders female-only subjects across every situation; group/john/Master-with-girl scenes still render two figures correctly.
+- Voice profile is LOUD at L0–1 panicked AND at L7–9 excited/feral devoted, not whispery.
+- Streamed reply shows the model's full text — no post-stream truncation snap.
+- Asterisk actions audible in TTS — the wrapping asterisks strip but the inner text stays.
+- Pregnancy panel always visible with NOT PREGNANT explicit state, every outcome has its own emoji + tooltip.
+- Landing settings panel renders into the inline container with the FULL NUKE button present + functional.
+- Settings render failure surfaces an error panel instead of going blank; cache-control meta tags suppress bfcache stale loads.
+
+### Backfill rationale
+
+LAW — DOCS BEFORE PUSH was violated when these 15 commits shipped without bundled FINALIZED entries. This entry repairs that drift atomically (one doc-only commit). Going forward, every new code-shipping commit gets its FINALIZED entry inline per the LAW.
+
+---
+
 ## 2026-05-14 — Session: full rebrand — "SEX SLAVE DUNGEON" → "DUNGEON MASTER: THE HUNT"
 
 ### Verbatim 2026-05-14:
