@@ -467,7 +467,15 @@
     // Face / outfit / body-state / pose / location / drugs blocks downstream all add their
     // own context and don't fight this.
     const sexLock = 'female adult woman, female subject, female body, feminine frame';
-    const prefix = `editorial photograph, 35mm film aesthetic, ${sexLock}, ${ageStr}, full body shot, head to toe in frame, complete figure visible from hair to feet, wide framing, no portrait cropping, no mugshot framing, no headshot, no bust shot`;
+    // Positive-only framing tokens. Previously the prefix carried negation phrases
+    // ("no portrait cropping, no mugshot framing, no headshot, no bust shot") to prevent
+    // tight crops. enforceFullBody() down the pipeline does naive find-replace on
+    // portrait/mugshot/headshot/bust → full body shot, which transformed those
+    // negations into garbage like "no full body shot cropping, no full body framing,
+    // no full body shot, no full body shot". The affirmative framing tokens already
+    // present (full body shot / head to toe / complete figure / wide framing) carry
+    // the intent without leaking words that downstream replace passes will mangle.
+    const prefix = `editorial photograph, 35mm film aesthetic, ${sexLock}, ${ageStr}, full body shot, head to toe in frame, complete figure visible from hair to feet, wide framing`;
     const suffix = 'shallow depth of field, cinematic lighting, color-graded, high-detail, no text, no watermark';
 
     let parts;
@@ -496,7 +504,13 @@
       // Heuristic: any outfit description containing fit-hugging keywords gets the
       // reconciler appended. Past trimester 2 (day 94+), the bump is too pronounced to
       // be plausibly contained — the reconciler explicitly mentions strain.
-      const isPregnant = pregTokens && pregTokens.length > 0;
+      // Real pregnancy check — must read girl.pregnancy.status, NOT pregTokens.length
+      // (the token function returns positive "flat belly" markers when she's NOT
+      // pregnant, so its length is always > 0 — making the outfit reconciler fire
+      // for every captive regardless of state). Result: every Unity render included
+      // "outfit slightly snug over the early-pregnancy belly" even though she wasn't
+      // pregnant.
+      const isPregnant = girl.pregnancy?.status === 'pregnant';
       if (isPregnant) {
         const fitHugging = /tight|latex|catsuit|fishnet|skin-tight|bodycon|cling|harness|leather (mini|bodysuit)/i.test(outfitBlock);
         if (fitHugging) {
@@ -560,9 +574,26 @@
     console.warn('[imaging] clampSeed called without seed AND without fallbackKey — using fresh random; facial persistence will not hold');
     return Math.floor(Math.random() * 0x7FFFFFFF) & 0x7FFFFFFF;
   }
+  // Safely truncate a URL-encoded prompt so the cut never lands inside a percent-escape
+  // sequence. Previous `encodeURIComponent(prompt).slice(0, 1800)` could leave a trailing
+  // `%` or `%X` (incomplete percent-escape) — Cloudflare's URL parser rejects those with
+  // 400 Bad Request, which broke image gen entirely when the prompt was long enough.
+  function safeEncodedPrompt(prompt, maxLen) {
+    let enc = encodeURIComponent(prompt);
+    if (enc.length <= maxLen) return enc;
+    enc = enc.slice(0, maxLen);
+    // Rewind past any partial %XX at the tail. % is escape opener; if it's in the last
+    // 2 chars, the cut split a percent-escape — drop everything from that % onward.
+    const tail = enc.lastIndexOf('%');
+    if (tail >= 0 && tail >= enc.length - 2) {
+      enc = enc.slice(0, tail);
+    }
+    return enc;
+  }
+
   function buildUrl(prompt, seed, opts = {}) {
     const p = cfg();
-    const encoded = encodeURIComponent(prompt).slice(0, 1800);
+    const encoded = safeEncodedPrompt(prompt, 1800);
     const baseParams = {
       model: opts.model || p.imageModel,
       width: String(opts.width  || p.width),
