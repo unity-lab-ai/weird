@@ -274,6 +274,30 @@
   }
 
   function renderPollinationsSetup(s) {
+    // Unity AI Lab Worker mode — when running on unityailab.com / unity-lab-ai.github.io /
+    // localhost, image gen routes through the shared Cloudflare Worker which holds the
+    // operator's sk_ key server-side. Browser sends no key. Same routing pattern as the
+    // other website2.0 apps (Unity Chat / Persona Chat / Slideshow / etc.) — keeps the
+    // Pollinations auth flow uniform across the site.
+    const workerMode = !!(window.DMTHConfig?.POLLINATIONS?.useUnityLabWorker);
+    if (workerMode) {
+      $('#polly-setup').innerHTML = `
+        <h3>4. Pollinations (auto-routed through Unity AI Lab)</h3>
+        <div style="background:#1a2a1a;border:1px solid #2f5d3a;border-left:4px solid #53d68a;border-radius:6px;padding:10px 12px;margin:10px 0;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:1.15rem;color:#53d68a;font-weight:600;">✓ ROUTED THROUGH WORKER</span>
+            <code style="background:#0e1a0e;padding:3px 8px;border-radius:3px;color:#9fefb5;font-size:0.85rem;">websiteunityailab.gfourteen7525.workers.dev/image/</code>
+          </div>
+          <p class="small muted" style="margin:6px 0 0;">
+            No key needed in your browser. The Unity AI Lab Cloudflare Worker injects the operator's <code>sk_</code> token server-side. Same routing the rest of the site uses for image gen — uniform Pollinations auth across every app.
+          </p>
+        </div>
+        <p class="small muted">
+          Want to use your own Pollinations key instead? Run the game standalone (not on unityailab.com / unity-lab-ai.github.io) and the manual <code>pk_</code> paste box returns.
+        </p>
+      `;
+      return;
+    }
     const hasKey = s.pollinations.present;
     // Effective key resolved by config — respects precedence: localStorage > __DEV_ENV (env.local.js from .env) > default.
     const effectiveKey = (window.DMTHConfig && window.DMTHConfig.POLLINATIONS && window.DMTHConfig.POLLINATIONS.apiKey) || '';

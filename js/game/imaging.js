@@ -570,8 +570,15 @@
       nologo: String(p.nologo),
       seed: String(clampSeed(seed)),
       safe: 'false',
-      referrer: 'sex-slave-dungeon'
+      referrer: 'dungeon-master-the-hunt'
     };
+    // Unity AI Lab Worker route — uniform with the rest of the website2.0 apps.
+    // When active, the Worker injects the operator's sk_ token server-side; the browser
+    // sends NO key. Detection is in config.js detectUnityLabWorker() (hostname-based).
+    if (p.useUnityLabWorker && p.imageEndpointWorker) {
+      const params = new URLSearchParams(baseParams);
+      return `${p.imageEndpointWorker}${encoded}?${params.toString()}`;
+    }
     if (hasKey()) {
       const params = new URLSearchParams({ ...baseParams, key: p.apiKey });
       return `${p.imageEndpointAuth}${encoded}?${params.toString()}`;
