@@ -13,6 +13,60 @@
 
 ---
 
+## 2026-05-14 — Session: BUGStwo.38 — production regression hotfix (hold-click broken + `Unity_seed` display-name leak)
+
+### Gee verbatim 2026-05-14 (post-deploy testing on `main`):
+
+> *"somnething broke i cant open up the hole in the desert with Unity in it (and it has her name a s Unity_seed) i should be able to glick on the girl or the hold to show the girls then click a girl.. currently it broke i want perfermor feed or use my first girl the page/card is not opening"*
+
+### Diagnosis
+
+**Bug A — Page/card won't open:** Old saves pre-date several body fields the room renderer now assumes exist. The new `renderBodyStatsHTML()` from BUG.31 accesses `g.body.cumLoad.toFixed(1)` — if `cumLoad` is `undefined` (old save), this throws `Cannot read property 'toFixed' of undefined`. The render dies; the room page never paints. Same vulnerability on `bond?.bondLevel`, `mood?.moodEmoji`, etc. across other surfaces.
+
+**Bug B — `Unity_seed` display-name leak:** Existing saves had `name: 'Unity_seed'` (the archetype template id) instead of the canonical `'Unity'`. Bootstrap.js writes `'Unity'` correctly for fresh games, but Gee's save was carrying the wrong name from some earlier shape. Display surfaces (`dungeon-view.js`, `room.js` title) showed it verbatim because they trust `g.name`.
+
+### Implementation
+
+**`js/game/state.js` — load-time migration (`migrateLoadedState`):**
+
+Runs once on every `load()`. Idempotent + null-safe. For every girl in the roster:
+
+1. **Name repair** — if `g.name === g.archetypeTemplate`, or matches the `*_seed` archetype-id pattern (case-insensitive), re-derive from a known fallback table. Specific mapping: `unity_seed → Unity`. Procedural archetypes (library/club/street/sorority/gym/barista/office/waitress/model/nurse) get their `namePool[0]` as recovery hint. Migration logs each repair to console.
+2. **Body field backfill** — ensures `arousal / wetness / cumLoad / bruises / high / stamina / health / activeDrugs / outfitState` all have safe defaults (numbers default to 0 or 70/100 for vital floors).
+3. **Bond / mood / escape minimal shape** — defaults if missing entirely.
+
+**`js/ui/room.js` — defensive `renderBodyStatsHTML`:**
+
+- Pulls every body field into a local with `?? 0` fallback (`arousal`, `wetness`, `cumLoad`, `bruises`, `high`).
+- `cumLoad` coerced via `Number(g.body.cumLoad) || 0` so a stale string value can't crash `.toFixed(1)`.
+- `drugs.summarize` / `drugs.isUnconscious` guarded with optional chaining in case the drug-scheduler module load order ever shifts.
+- Template references the locals, not the raw `g.body.*` accesses, so the migration covers the data and the renderer covers the timing.
+
+**`js/ui/dungeon-view.js` — defensive hold grid:**
+
+- `displayName` recovers from name-as-archetype-id leaks even if state migration hasn't run yet (display-layer safety net). `unity_seed` → `Unity`; other archetype-id leaks → `Captive`.
+- `bondLevel`, `moodEmoji`, `archetypeTemplate`, `holdType` all read with optional chaining + defaults.
+- A single malformed girl no longer pulls down the whole dungeon hold grid.
+
+### Files touched
+
+- **`js/game/state.js`** — new `migrateLoadedState(s)` function called from `load()`. Handles name + body + bond + mood + escape shape repair.
+- **`js/ui/room.js`** — `renderBodyStatsHTML` rewritten with local-variable safety guards.
+- **`js/ui/dungeon-view.js`** — hold grid template hardened with `displayName` + null-safe field reads.
+
+### Verification gates
+
+- Load existing save with Unity → her name shows as `Unity` (was `Unity_seed`). Console logs `[state-migrate] repaired girl_unity name "Unity_seed" → "Unity"`.
+- Click the hole-in-the-desert hold containing Unity → room page opens with body stat bars rendered (was crashing on `cumLoad.toFixed(1)`).
+- Dungeon view continues to render even if any single girl has a missing body / bond / mood field.
+- Fresh new-game (no migration needed) still works — bootstrap writes the correct shape, migration is a no-op for already-correct girls.
+
+### Backfill rationale
+
+These are immediate production regressions on `01e1da1` (current main) — Gee is testing the deploy + can't access his Unity. Hotfix lands as a separate atomic commit on `feature/BUGStwo`, then promoted through develop → main per Git Flow.
+
+---
+
 ## 2026-05-14 — Session: BUGStwo.36 — landing-page onboarding polish + Kokoro Load button fix
 
 ### Gee verbatim 2026-05-14 (one main quote + two follow-up directives):
