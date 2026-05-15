@@ -365,8 +365,8 @@
               return `
                 <button class="btn-small" data-drug="coke" data-tooltip="${escapeHtml(dt('drug-coke', 'Line of coke. Rapid-fire chatter, jaw clench, dilated pupils. 45-min curve.'))}">❄️ Line of coke</button>
                 <button class="btn-small" data-drug="weed" data-tooltip="${escapeHtml(dt('drug-weed', 'Roll her a joint. Slow blinks, drifty word choice, relaxed posture. 2-hour curve.'))}">🌿 Roll a joint</button>
-                <button class="btn-small" data-drug="mdma" data-tooltip="${escapeHtml(dt('drug-mdma', 'Share a molly. Emotional flooding, \\'i love you\\' leak, glowing skin. 4-hour curve.'))}">💊 Share molly</button>
-                <button class="btn-small" data-drug="acid" data-tooltip="${escapeHtml(dt('drug-acid', 'Tab of acid. Things-aren\\'t-real perception, blown pupils, time dilation. 10-hour curve.'))}">🧪 Tab of acid</button>
+                <button class="btn-small" data-drug="mdma" data-tooltip="${escapeHtml(dt('drug-mdma', "Share a molly. Emotional flooding, 'i love you' leak, glowing skin. 4-hour curve."))}">💊 Share molly</button>
+                <button class="btn-small" data-drug="acid" data-tooltip="${escapeHtml(dt('drug-acid', "Tab of acid. Things-aren't-real perception, blown pupils, time dilation. 10-hour curve."))}">🧪 Tab of acid</button>
                 <button class="btn-small" data-drug="whiskey" data-tooltip="${escapeHtml(dt('drug-whiskey', 'Pour whiskey. Slurred, looser-tongued, more honest. 90-min curve.'))}">🥃 Pour whiskey</button>
                 <button class="btn-small" data-drug="ketamine" data-tooltip="${escapeHtml(dt('drug-ketamine', 'Bump of K. Dissociated stare, slack jaw, limp posture. 40-min curve. NOT a knockout.'))}">🐴 Bump of K</button>
                 <button class="btn-small btn-danger" data-drug="tranquilizer" data-tooltip="${escapeHtml(dt('drug-tranquilizer', 'Tranquilizer dart. FULL knockout — eyes closed, limp, unresponsive. 4-min unconscious window. Consumes 1 from inventory.'))}">🎯 Tranquilizer (4-min knockout)</button>
