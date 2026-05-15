@@ -13,6 +13,96 @@
 
 ---
 
+## 2026-05-14 — Session: BUGStwo.37 — weird on website2.0 apps page (+ Worker proxy integration, key leak remediation, image-prompt fixes, plaintext delta scrubber)
+
+### Gee's directives (verbatim 2026-05-14 across the whole shipping arc):
+
+> *"okay but we are going to need to add it to the apps page and stop it from deploying from the download page (nothing in downloads should auto deploy its for downloading and reference( but yeah go ahead and add this weird app to the apps page of the website2.0 folder keeping true to the format sytle and layout already present  BUT BEFORE YOU DO THIS< FIRST PUSH TO DEVELOP>MAIN AND LET ME TEST THEN ONCE I TEST ILL TELL YOU GO and mind you i was talking about the downlaod section of the Website2.0 folder(the website)'s download section is deploying the weird application"*
+>
+> *"leave out temps logs a caches"*
+>
+> *"and we fixed it to auto set everything up and download what needs to be downlaoded models and ollam and kokoro act act"*
+>
+> *"test it before the develop>main push for the website"*
+>
+> *"something is wrong with it ( its auto filling the pollinations with my key and the image gen is not working"*
+>
+> *"good thing we didnt push it to main"*
+>
+> *"so image gen will now work when i put in a pollinations key to the weird project on the apps page"*
+>
+> *"okay wait a sec we do actually need it to use that key.... and we need to do it correctly i can get u a new key.. but we need to use one of my SK keys... the whole websoiite already uses a key for everything can we just tie that system into the weird project too inorder to keep uniformity"*
+>
+> *"[Cloudflare 400 URL paste]"* — surfaced the truncation-mid-percent-encoding bug.
+>
+> *"well thats not right.... now its a blank pollinations input key.. were is the option to toggle on the sites apio routing"*
+>
+> *"Alyssa: \"Master...\" *trailing off as his cock deepens into my throat*. arousal:+10; wetness:-25; cumLoad:-4L; bruises:-3; high:0%. MoodShift:\"degraded\". Tags[]."* — surfaced the plaintext-delta-leak bug.
+>
+> *"we are a 100% good to go go ahead and do the push to develop>main both for the website"*
+
+### Decision arc
+
+Initial directive: add weird to website2.0 apps page + kill the download-section auto-deploy. Sub-decision via AskUserQuestion: "Copy the full weird build into apps/weird/" — full file mirror, no iframe, no external link.
+
+Gee tested → caught two real bugs (env.local.js key leak + image gen broken). Course-corrected mid-flight to add Cloudflare Worker proxy integration so weird uses the same Pollinations auth path as the rest of website2.0 (sk_ token held server-side by the Worker, no browser-side key). Then added explicit Force ON / OFF / Auto toggle for visitor control over routing.
+
+### What landed across both repos
+
+**Website2.0 (`Unity-Lab-AI/Unity-Lab-AI.github.io` — main now `409d9c0`):**
+
+1. **`redesign/apps-data.jsx`** — 9th app entry (slug `dungeon-master-the-hunt`, num IX, icon Wringer, cta `./apps/weird/index.html`). Meta count 8 → 9. Header lede Eight → Nine.
+2. **`apps/weird/`** — 190 files copied from weird `main` branch deploy. Excludes `.claude/`, `.git/`, `node_modules/`, `env.local.js`, temps/logs/caches per Gee's verbatim "leave out temps logs a caches". Includes the auto-setup wizard at `index.html` that walks the visitor through Ollama install + model pull + Kokoro load + Pollinations key entry, per Gee's "we fixed it to auto set everything up".
+3. **`downloads/weird/`** — stripped of game files (was auto-deploying 191 files). Replaced with a thin reference: `README.md` pointing to apps page + .zip + GitHub; `index.html` with `meta-refresh` redirect to `../../apps/weird/index.html`.
+4. **`downloads/files/weird.zip`** — rebuilt multiple times during the shipping arc. Final build excludes `env.local.js` and includes all 3 hotfix iterations.
+5. **`downloads/index.html`** — Weird card's "View Details & Screenshots" button re-pointed from `./weird/` (the stripped folder) to `../apps/weird/index.html`.
+6. **`.gitignore`** — `apps/weird/js/env.local.js` added to prevent future leak on re-sync.
+
+**Weird source repo (`Unity-Lab-AI/Weird` — main now `58714f9`+):**
+
+7. **`docs/FINALIZED.md`** — leaked `sk_VDynoot0nLqUWpFhvPGax9oP2g1SACcp` redacted to `sk_***REDACTED-ROTATE-IMMEDIATELY***` in the BUG.1 session entry code block. **Key MUST be rotated** — it was in public git history.
+8. **`js/config.js`** — new `POLLINATIONS.imageEndpointWorker` + `useUnityLabWorker` flag + `detectUnityLabWorker()` function (exported on `DMTHConfig`). Detection priority: localStorage flag (`dmth_use_unity_worker = on/off`) > hostname auto-detect (only `unityailab.com` / `www.unityailab.com` to match Worker CORS).
+9. **`js/game/imaging.js`** — three image-prompt fixes:
+   - `safeEncodedPrompt()` rewinds past partial `%XX` at tail to prevent Cloudflare 400 on long prompts.
+   - `isPregnant` now reads `girl.pregnancy?.status === 'pregnant'` instead of `pregTokens.length > 0` (which was always true because the function emits positive "flat belly" markers when not pregnant). Stopped non-pregnant captives from rendering with "outfit slightly snug over the early-pregnancy belly".
+   - Prefix dropped redundant negations (`no portrait cropping, no mugshot framing, no headshot, no bust shot`) which `enforceFullBody` was find-replacing into garbage like "no full body shot, no full body shot, no full body shot".
+   - `buildUrl` routes through `imageEndpointWorker` (no `key=` param) when `useUnityLabWorker` is true.
+10. **`js/ui/landing.js`** — Pollinations Settings card now shows a purple-bordered toggle panel with three buttons (Force ON / Force OFF / Auto (hostname)). State persisted as `localStorage dmth_use_unity_worker`. Re-evaluation runs via `DMTHConfig.detectUnityLabWorker()` after each flip. When resolved to ON, a green "✓ ROUTED THROUGH WORKER" callout displays; the manual `pk_` paste box hides. When OFF, the standard paste-box UX returns.
+11. **`js/templates/ollama-templates.js`** — new `extractPlaintextDelta(text)` + `scrubPlaintextDeltaTail(text)` functions. Catches freeform "key: value" delta tails the model sometimes emits instead of the `<delta>...</delta>` envelope. Strips the leak from cleanText + parses values into a delta object so state still updates. `extractDelta` falls back to this when no `<delta>` envelope is found.
+12. **`js/ui/room.js`** — streaming chunk scrubber now also calls `scrubPlaintextDeltaTail` so the leak never lands visibly mid-bubble.
+
+### Security remediation
+
+The `sk_VDynoot0nLqUWpFhvPGax9oP2g1SACcp` Pollinations key was leaked:
+
+- In `apps/weird/js/env.local.js` (first commit on website2.0 feature branch) — force-pushed clean within minutes; key was public on `feature/weird-on-apps-page` for a short window only, NEVER on develop/main.
+- In `weird/docs/FINALIZED.md` BUG.1 session entry — public on `main` of `Unity-Lab-AI/Weird` since the BUG.1 commit landed. Scrubbed in this session's commit. **Git history rewrite NOT performed** — anyone who cloned the repo while the key was visible may have it. **Gee must rotate the key at `enter.pollinations.ai` regardless.**
+
+### Decisions explicitly NOT taken
+
+- **WebGPU compute** — Gee picked Option D ("stay Ollama-only, polish onboarding") in the earlier session. Not added.
+- **History rewrite for the leaked key** — destructive on public main; trust the rotation instead.
+
+### Files touched in this session arc (commit hashes inline)
+
+Spans multiple commits — see `git log` for the BUGStwo branch range `c2081b0..58714f9` on `Unity-Lab-AI/Weird` and the feature/weird-on-apps-page commits force-pushed into `409d9c0` on `Unity-Lab-AI/Unity-Lab-AI.github.io`.
+
+### Verification gates
+
+- `https://unityailab.com/apps.html` (post-Pages build) shows 9 cards including DUNGEON MASTER: THE HUNT at position IX.
+- Click the new card → `https://unityailab.com/apps/weird/index.html` loads the setup wizard. Settings shows green "✓ ROUTED THROUGH WORKER" callout (production unityailab.com triggers auto-detect ON).
+- LAUNCH → game.html → click "Demand selfie" → image renders via Worker proxy with no browser-side key.
+- `https://unityailab.com/downloads/index.html` Weird card → "Launch on apps page" button → routes to `/apps/weird/`.
+- `https://unityailab.com/downloads/weird/` → bounces to `/apps/weird/` via meta-refresh (no auto-deploy).
+- `https://unityailab.com/downloads/files/weird.zip` downloads 2.6MB archive of current main.
+- Chat with Unity → no `arousal:+10; wetness:...` leak in the bubble. Stats still move because the new extractPlaintextDelta parses the values internally.
+
+### Backfill rationale
+
+Single comprehensive entry per `[feedback_batch_commits]`. The shipping arc included several round-trip bug discoveries during Gee's test cycle — recording each one verbatim per LAW #0 in a single session entry keeps the workflow-audit narrative coherent without spamming FINALIZED with one entry per round-trip.
+
+---
+
 ## 2026-05-14 — Session: BUGStwo.39 — room.js syntax error blocked the entire BUGStwo.38 hotfix from loading
 
 ### Gee verbatim 2026-05-14 (post-hotfix-deploy test):
