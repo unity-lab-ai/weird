@@ -274,30 +274,49 @@
   }
 
   function renderPollinationsSetup(s) {
-    // Unity AI Lab Worker mode — when running on unityailab.com / unity-lab-ai.github.io /
-    // localhost, image gen routes through the shared Cloudflare Worker which holds the
-    // operator's sk_ key server-side. Browser sends no key. Same routing pattern as the
-    // other website2.0 apps (Unity Chat / Persona Chat / Slideshow / etc.) — keeps the
-    // Pollinations auth flow uniform across the site.
+    // Worker-route toggle — explicit on/off control. Persists in localStorage as
+    // dmth_use_unity_worker = 'on' / 'off' / unset. When unset, config.js falls back to
+    // hostname auto-detect (unityailab.com → on, everywhere else → off).
     const workerMode = !!(window.DMTHConfig?.POLLINATIONS?.useUnityLabWorker);
+    const flagRaw = (() => { try { return window.localStorage.getItem('dmth_use_unity_worker'); } catch { return null; } })();
+    const flagState = flagRaw === 'on' ? 'on' : flagRaw === 'off' ? 'off' : 'auto';
+    const flagLabel = flagState === 'on' ? 'forced ON' : flagState === 'off' ? 'forced OFF' : `auto (hostname → ${workerMode ? 'on' : 'off'})`;
+
+    const toggleHTML = `
+      <div style="background:#1c1a2a;border:1px solid #3a3458;border-left:4px solid #7e6bc4;border-radius:6px;padding:10px 12px;margin:10px 0;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="font-weight:600;color:#c9bef0">🔀 Unity AI Lab Worker (shared Pollinations proxy)</span>
+          <span class="small muted">Current: <b>${flagLabel}</b> · resolved: <b>${workerMode ? 'ROUTED THROUGH WORKER' : 'direct Pollinations + your pk_ key'}</b></span>
+        </div>
+        <p class="small muted" style="margin:6px 0 8px">
+          When ON, image gen routes through <code>websiteunityailab.gfourteen7525.workers.dev/image/</code> and the Worker injects the operator's <code>sk_</code> token server-side. No key needed in your browser. Same routing as the rest of the website2.0 apps. <b>CORS note:</b> the Worker only allows <code>https://unityailab.com</code> origins — forcing it ON elsewhere will trigger CORS failures until you update the Worker's allowed-origins list.
+        </p>
+        <div class="btn-row">
+          <button class="btn-small ${flagState === 'on' ? 'btn-primary' : ''}" data-worker-toggle="on">Force ON</button>
+          <button class="btn-small ${flagState === 'off' ? 'btn-primary' : ''}" data-worker-toggle="off">Force OFF</button>
+          <button class="btn-small ${flagState === 'auto' ? 'btn-primary' : ''}" data-worker-toggle="auto">Auto (hostname)</button>
+        </div>
+      </div>
+    `;
+
     if (workerMode) {
       $('#polly-setup').innerHTML = `
-        <h3>4. Pollinations (auto-routed through Unity AI Lab)</h3>
+        <h3>4. Pollinations (routed through Unity AI Lab Worker)</h3>
+        ${toggleHTML}
         <div style="background:#1a2a1a;border:1px solid #2f5d3a;border-left:4px solid #53d68a;border-radius:6px;padding:10px 12px;margin:10px 0;">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <span style="font-size:1.15rem;color:#53d68a;font-weight:600;">✓ ROUTED THROUGH WORKER</span>
             <code style="background:#0e1a0e;padding:3px 8px;border-radius:3px;color:#9fefb5;font-size:0.85rem;">websiteunityailab.gfourteen7525.workers.dev/image/</code>
           </div>
           <p class="small muted" style="margin:6px 0 0;">
-            No key needed in your browser. The Unity AI Lab Cloudflare Worker injects the operator's <code>sk_</code> token server-side. Same routing the rest of the site uses for image gen — uniform Pollinations auth across every app.
+            No key needed in your browser. The Worker injects the operator's <code>sk_</code> token server-side. Uniform Pollinations auth across every app on the site.
           </p>
         </div>
-        <p class="small muted">
-          Want to use your own Pollinations key instead? Run the game standalone (not on unityailab.com / unity-lab-ai.github.io) and the manual <code>pk_</code> paste box returns.
-        </p>
       `;
+      wireWorkerToggle();
       return;
     }
+    // Below: standard pk_ paste-box flow when Worker mode is off.
     const hasKey = s.pollinations.present;
     // Effective key resolved by config — respects precedence: localStorage > __DEV_ENV (env.local.js from .env) > default.
     const effectiveKey = (window.DMTHConfig && window.DMTHConfig.POLLINATIONS && window.DMTHConfig.POLLINATIONS.apiKey) || '';
@@ -316,6 +335,7 @@
 
     $('#polly-setup').innerHTML = `
       <h3>4. Pollinations API key (optional — for images)</h3>
+      ${toggleHTML}
       <p class="small">Used for whole-body profile images + on-demand selfies. Skip it — the game plays fully as text+emoji.</p>
       ${hasKey ? `
         <div style="background:#1a2a1a;border:1px solid #2f5d3a;border-left:4px solid #53d68a;border-radius:6px;padding:10px 12px;margin:10px 0;">
@@ -336,6 +356,7 @@
         ${lsKey ? `<button class="btn-small btn-danger" id="polly-clear">Clear localStorage key</button>` : ''}
       </div>
     `;
+    wireWorkerToggle();
     // Wipe the dot-mask on first focus/keypress so the user can paste a new key cleanly.
     const keyInput = $('#polly-key');
     if (keyInput && keyInput.dataset.masked === '1') {
@@ -354,6 +375,43 @@
     };
     const clearBtn = $('#polly-clear');
     if (clearBtn) clearBtn.onclick = () => { localStorage.removeItem('dmth_pollinations_key'); refresh(); };
+  }
+
+  // Wire the Worker-routing toggle buttons (Force ON / Force OFF / Auto). Mutates the
+  // localStorage flag, then re-reads config.js's detector and forces a refresh so the
+  // current resolved state + correct UX (callout vs paste box) appear immediately.
+  function wireWorkerToggle() {
+    document.querySelectorAll('[data-worker-toggle]').forEach(b => {
+      b.onclick = () => {
+        const mode = b.dataset.workerToggle;
+        try {
+          if (mode === 'auto') {
+            window.localStorage.removeItem('dmth_use_unity_worker');
+          } else {
+            window.localStorage.setItem('dmth_use_unity_worker', mode);
+          }
+        } catch (e) { console.warn('[worker-toggle] localStorage write failed:', e); }
+        // Re-evaluate the flag via config.js's detector + push the new value back into
+        // the POLLINATIONS block so the next renderPollinationsSetup picks it up.
+        try {
+          const p = window.DMTHConfig?.POLLINATIONS;
+          if (p && typeof window.DMTHConfig.detectUnityLabWorker === 'function') {
+            p.useUnityLabWorker = window.DMTHConfig.detectUnityLabWorker();
+          } else if (p) {
+            // detectUnityLabWorker isn't exported on DMTHConfig in this build — inline the
+            // priority logic: explicit flag overrides, otherwise hostname auto.
+            const flag = window.localStorage.getItem('dmth_use_unity_worker');
+            if (flag === 'on') p.useUnityLabWorker = true;
+            else if (flag === 'off') p.useUnityLabWorker = false;
+            else {
+              const h = (window.location.hostname || '').toLowerCase();
+              p.useUnityLabWorker = (h === 'unityailab.com' || h === 'www.unityailab.com');
+            }
+          }
+        } catch (e) { console.warn('[worker-toggle] flag re-evaluation failed:', e); }
+        refresh();
+      };
+    });
   }
 
   async function pullModel(modelId) {
