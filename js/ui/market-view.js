@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — content market page (films).
+// DUNGEON MASTER: THE HUNT — content market page (films).
 //
 // Films auto-sell on the tick.js schedule (no manual "sales pass" button).
 // Per-film passive-earnings ticker + "Sell negatives" premium button.
@@ -9,13 +9,13 @@
   'use strict';
 
   function render(el) {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     const listed = s.films.filter(f => f.status === 'listed');
     const sold = s.films.filter(f => f.status === 'sold').slice(-20).reverse();
     const destroyed = s.films.filter(f => f.status === 'destroyed').slice(-20).reverse();
     const archived = s.films.filter(f => f.status === 'archived');
 
-    const totalPerTick = listed.reduce((t, f) => t + window.SSDGame.market.estimatePerTick(f), 0);
+    const totalPerTick = listed.reduce((t, f) => t + window.DMTHGame.market.estimatePerTick(f), 0);
     const totalLifetimePassive = listed.reduce((t, f) => t + (f.passiveEarnings || 0), 0);
 
     el.innerHTML = `
@@ -24,7 +24,7 @@
         <p class="small muted">Films auto-sell every tick — passive infinite-copies model. Destroy a master via "💣 Sell negatives" for a one-time premium payout (much bigger than passive lifetime, but the film stops earning).</p>
         <div class="stat-row"><span>🔄 Auto-selling on tick</span><b class="ok">~$${totalPerTick.toLocaleString()} / tick (${listed.length} listed)</b></div>
         <div class="stat-row"><span>Lifetime passive earnings (still-listed)</span><b>$${totalLifetimePassive.toLocaleString()}</b></div>
-        <div class="stat-row"><span>Demand multiplier</span><b>${window.SSDGame.market.getDemand().overallBase.toFixed(2)}×</b></div>
+        <div class="stat-row"><span>Demand multiplier</span><b>${window.DMTHGame.market.getDemand().overallBase.toFixed(2)}×</b></div>
       </div>
 
       <div class="panel">
@@ -82,28 +82,28 @@
       </div>
     `;
 
-    el.querySelectorAll('[data-unlist]').forEach(b => { b.onclick = () => { window.SSDGame.market.unlist(b.dataset.unlist); window.SSDRouter.handle(); }; });
-    el.querySelectorAll('[data-relist]').forEach(a => { a.onclick = e => { e.preventDefault(); window.SSDGame.market.relist(a.dataset.relist); window.SSDRouter.handle(); }; });
+    el.querySelectorAll('[data-unlist]').forEach(b => { b.onclick = () => { window.DMTHGame.market.unlist(b.dataset.unlist); window.DMTHRouter.handle(); }; });
+    el.querySelectorAll('[data-relist]').forEach(a => { a.onclick = e => { e.preventDefault(); window.DMTHGame.market.relist(a.dataset.relist); window.DMTHRouter.handle(); }; });
     el.querySelectorAll('[data-sell-negatives]').forEach(b => {
       b.onclick = () => {
         const filmId = b.dataset.sellNegatives;
         const film = s.films.find(f => f.id === filmId);
-        const estimate = window.SSDGame.market.estimateNegativesPayout(film);
+        const estimate = window.DMTHGame.market.estimateNegativesPayout(film);
         if (!confirm(`Sell the negatives for "${film.title}"?\n\nDestroys the master copy. One-time payout ≈ $${estimate.toLocaleString()}.\nThe film stops generating passive income forever.`)) return;
         try {
-          const r = window.SSDGame.market.sellNegatives(filmId);
+          const r = window.DMTHGame.market.sellNegatives(filmId);
           alert(`💣 Negatives sold for $${r.premiumPayout.toLocaleString()}.`);
-          window.SSDRouter.handle();
+          window.DMTHRouter.handle();
         } catch (err) { alert(err.message); }
       };
     });
   }
 
   function renderListedRow(f) {
-    const perTick = window.SSDGame.market.estimatePerTick(f);
+    const perTick = window.DMTHGame.market.estimatePerTick(f);
     const lifetime = f.passiveEarnings || 0;
     const lastTick = f.lastTickEarnings || 0;
-    const premium = window.SSDGame.market.estimateNegativesPayout(f);
+    const premium = window.DMTHGame.market.estimateNegativesPayout(f);
     return `
       <li class="film-item">
         <div>
@@ -134,5 +134,5 @@
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
 
-  window.SSDRouter.register('market', render);
+  window.DMTHRouter.register('market', render);
 })();

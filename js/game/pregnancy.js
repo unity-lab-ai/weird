@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — pregnancy subsystem.
+// DUNGEON MASTER: THE HUNT — pregnancy subsystem.
 // Captives can be knocked up; abortion methods are shop-purchasable; outcomes branch
 // based on which method (or no method) is used.
 //
@@ -94,7 +94,7 @@
   //   { rolled: true, conceived: bool, chance: number, reason?: string }
   //   { rolled: false, reason: '...' }   — gate failed
   function attemptConception(girlId, opts) {
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) return { rolled: false, reason: 'no such girl' };
 
     // Pregnancy lifecycle assumes captive context. A girl in
@@ -155,9 +155,9 @@
       ],
       lastAbortMethod: null
     };
-    window.SSDGame.state.updateGirl(girlId, { pregnancy: newPreg });
-    if (window.SSDNotify) {
-      window.SSDNotify.show(`🤰 ${girl.name} is pregnant.`, { type: 'warn', durationMs: 3500 });
+    window.DMTHGame.state.updateGirl(girlId, { pregnancy: newPreg });
+    if (window.DMTHNotify) {
+      window.DMTHNotify.show(`🤰 ${girl.name} is pregnant.`, { type: 'warn', durationMs: 3500 });
     }
     return { rolled: true, conceived: true, chance, roll };
   }
@@ -219,7 +219,7 @@
   //   { ok: true, status: 'aborted'|'miscarried-from-complication', notesAdded, complicationRolled }
   //   { ok: false, reason: '...' }
   function applyAbortion(girlId, methodId) {
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) return { ok: false, reason: 'no such girl' };
     const preg = getPregnancy(girl);
     if (preg.status !== 'pregnant') return { ok: false, reason: 'not pregnant' };
@@ -232,7 +232,7 @@
     }
 
     // Consume the item from inventory.
-    const consumed = window.SSDGame.state.consumeItem(method.itemId, 1);
+    const consumed = window.DMTHGame.state.consumeItem(method.itemId, 1);
     if (!consumed) return { ok: false, reason: `no ${method.itemId} in inventory` };
 
     const complicationRolled = Math.random() < method.complications;
@@ -280,15 +280,15 @@
       patch.lifespan = { ...lifespan, healthDamage: (lifespan.healthDamage || 0) + lifespanHit };
     }
 
-    window.SSDGame.state.updateGirl(girlId, patch);
+    window.DMTHGame.state.updateGirl(girlId, patch);
 
     // Notoriety bump
-    if (method.notorietyHit > 0 && window.SSDGame.state.addNotoriety) {
-      window.SSDGame.state.addNotoriety(method.notorietyHit);
+    if (method.notorietyHit > 0 && window.DMTHGame.state.addNotoriety) {
+      window.DMTHGame.state.addNotoriety(method.notorietyHit);
     }
 
-    if (window.SSDNotify) {
-      window.SSDNotify.show(
+    if (window.DMTHNotify) {
+      window.DMTHNotify.show(
         complicationRolled
           ? `🩸 Complication during ${method.label} — ${girl.name} miscarried with damage.`
           : `${method.emoji} ${girl.name}'s pregnancy ended via ${method.label}.`,
@@ -305,7 +305,7 @@
 
   // Day 280 — roll the outcome.
   function resolveFullTerm(girlId) {
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) return { ok: false, reason: 'no such girl' };
     const preg = getPregnancy(girl);
     if (preg.status !== 'pregnant' || preg.gestationDays < 280) {
@@ -330,7 +330,7 @@
       notes = `${girl.name}'s baby was stillborn. The body is wrapped and disposed of quietly.`;
       notorietyBump = 1;
       const newBond = { ...girl.bond, bondDebt: (girl.bond?.bondDebt || 0) + 4 };
-      window.SSDGame.state.updateGirl(girlId, { bond: newBond });
+      window.DMTHGame.state.updateGirl(girlId, { bond: newBond });
     } else if (r < 0.40) {
       outcome = 'firestation-drop';
       notes = `${girl.name}'s newborn was dropped off anonymously at a firestation. No questions asked.`;
@@ -340,7 +340,7 @@
       notes = `${girl.name} delivered. Child sold to black-market broker.`;
       moneyGain = 800 + Math.floor(Math.random() * 1200);
       notorietyBump = 3;
-      window.SSDGame.state.addMoney(moneyGain, `pregnancy:broker-sale:${girl.id}`);
+      window.DMTHGame.state.addMoney(moneyGain, `pregnancy:broker-sale:${girl.id}`);
     } else if (r < 0.88) {
       outcome = 'abandoned-trash';
       notes = `${girl.name}'s newborn was disposed of with the trash. No paper trail.`;
@@ -351,8 +351,8 @@
       notorietyBump = 8;
     }
 
-    if (notorietyBump && window.SSDGame.state.addNotoriety) {
-      window.SSDGame.state.addNotoriety(notorietyBump);
+    if (notorietyBump && window.DMTHGame.state.addNotoriety) {
+      window.DMTHGame.state.addNotoriety(notorietyBump);
     }
 
     const newPreg = {
@@ -368,10 +368,10 @@
       ],
       lastAbortMethod: preg.lastAbortMethod
     };
-    window.SSDGame.state.updateGirl(girlId, { pregnancy: newPreg });
+    window.DMTHGame.state.updateGirl(girlId, { pregnancy: newPreg });
 
-    if (window.SSDNotify) {
-      window.SSDNotify.show(`🍼 ${girl.name}: ${notes}`, { type: outcome === 'lost' ? 'error' : 'success', durationMs: 5000 });
+    if (window.DMTHNotify) {
+      window.DMTHNotify.show(`🍼 ${girl.name}: ${notes}`, { type: outcome === 'lost' ? 'error' : 'success', durationMs: 5000 });
     }
 
     return { ok: true, outcome, notes, notorietyBump, moneyGain };
@@ -392,7 +392,7 @@
   // Called from tick.js once per engine tick. Advances gestation by GESTATION_DAYS_PER_TICK.
   // For each pregnant girl: increment gestationDays; recompute trimester; auto-resolve at 280.
   function tickPregnancies() {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     if (!s) return;
     for (const girl of s.roster) {
       if (girl.encounterState !== 'captive') continue;
@@ -402,7 +402,7 @@
       const newDays = (preg.gestationDays || 0) + GESTATION_DAYS_PER_TICK;
       const newTrimester = trimesterFromDays(newDays);
 
-      window.SSDGame.state.updateGirl(girl.id, {
+      window.DMTHGame.state.updateGirl(girl.id, {
         pregnancy: { ...preg, gestationDays: newDays, trimester: newTrimester }
       });
 
@@ -435,7 +435,7 @@
   function eligibleAbortionMethods(girl) {
     const preg = getPregnancy(girl);
     if (preg.status !== 'pregnant') return [];
-    const inv = window.SSDGame.state.current?.inventory || {};
+    const inv = window.DMTHGame.state.current?.inventory || {};
     return Object.entries(ABORT_METHODS)
       .filter(([id, m]) => {
         if (!inv[id] || inv[id] < 1) return false;
@@ -447,7 +447,7 @@
 
   function allAbortionMethodsForDisplay(girl) {
     const preg = getPregnancy(girl);
-    const inv = window.SSDGame.state.current?.inventory || {};
+    const inv = window.DMTHGame.state.current?.inventory || {};
     return Object.entries(ABORT_METHODS).map(([id, m]) => {
       const [minD, maxD] = m.windowDays;
       const inWindow = preg.status === 'pregnant' && preg.gestationDays >= minD && preg.gestationDays <= maxD;
@@ -456,8 +456,8 @@
     });
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.pregnancy = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.pregnancy = Object.freeze({
     DEFAULT_PREGNANCY,
     ABORT_METHODS,
     BASE_CONCEPTION_CHANCE,

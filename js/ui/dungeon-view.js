@@ -1,10 +1,10 @@
-// SEX SLAVE DUNGEON — dungeon portfolio view. All owned hideouts + holds.
+// DUNGEON MASTER: THE HUNT — dungeon portfolio view. All owned hideouts + holds.
 
 (function () {
   'use strict';
 
   function render(el) {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     const dungeons = s.dungeons;
 
     el.innerHTML = `
@@ -16,7 +16,7 @@
 
       <div class="panel">
         <h2>Available hideouts to acquire</h2>
-        ${window.SSDAssets.DUNGEONS
+        ${window.DMTHAssets.DUNGEONS
           .filter(t => !dungeons.some(d => d.templateId === t.id))
           .map(t => {
             const tooltip = `${t.notes || ''}`.replace(/"/g, '&quot;');
@@ -39,7 +39,7 @@
     `;
 
     function renderDungeon(d) {
-      const tpl = window.SSDAssets.getById('dungeon', d.templateId);
+      const tpl = window.DMTHAssets.getById('dungeon', d.templateId);
       return `
         <div class="model-card">
           <div class="model-name">${tpl?.emoji || '⛓️'} ${tpl?.displayName || d.templateId} <span class="muted small">— ${d.locationDescriptor}</span></div>
@@ -49,7 +49,7 @@
           </div>
           <div class="hold-grid">
             ${d.holds.map((h, i) => {
-              const g = h.captiveGirlId ? window.SSDGame.state.getGirl(h.captiveGirlId) : null;
+              const g = h.captiveGirlId ? window.DMTHGame.state.getGirl(h.captiveGirlId) : null;
               return `<div class="hold-slot ${g ? 'filled' : 'empty'}" data-tooltip="${g ? g.name + ' — L' + g.bond.bondLevel + ' Stockholm rating, ' + g.archetypeTemplate + '. Click to enter her hold.' : 'Empty ' + h.holdType + ' hold. Assign a captive on successful hunt.'}">
                 ${g
                   ? `<a href="#room?girl=${g.id}">${g.mood.moodEmoji} ${g.name} <span class="muted small">L${g.bond.bondLevel}</span></a>`
@@ -63,17 +63,17 @@
     }
 
     // Lazy-load any cover images dropped into asset folders
-    if (window.SSDAssetImg) window.SSDAssetImg.decorate(el, 140);
+    if (window.DMTHAssetImg) window.DMTHAssetImg.decorate(el, 140);
 
     el.querySelectorAll('[data-buy]').forEach(b => {
       b.onclick = () => {
         const tplId = b.dataset.buy;
-        const tpl = window.SSDAssets.getById('dungeon', tplId);
-        if (!window.SSDGame.state.spendMoney(tpl.cost, `buy-dungeon:${tplId}`)) {
+        const tpl = window.DMTHAssets.getById('dungeon', tplId);
+        if (!window.DMTHGame.state.spendMoney(tpl.cost, `buy-dungeon:${tplId}`)) {
           alert('Insufficient funds'); return;
         }
         const id = 'dun_' + Date.now().toString(36);
-        window.SSDGame.state.addDungeon({
+        window.DMTHGame.state.addDungeon({
           id,
           templateId: tpl.id,
           displayName: tpl.displayName,
@@ -85,7 +85,7 @@
           locationDescriptor: locationForTemplate(tpl.id),
           purchasedAt: Date.now()
         });
-        window.SSDRouter.handle();
+        window.DMTHRouter.handle();
       };
     });
   }
@@ -105,5 +105,5 @@
     return map[tplId] || 'unspecified location';
   }
 
-  window.SSDRouter.register('dungeon', render);
+  window.DMTHRouter.register('dungeon', render);
 })();

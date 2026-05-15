@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — procedural girl generator.
+// DUNGEON MASTER: THE HUNT — procedural girl generator.
 // Template + seed → GirlProfile with persistent visualIdentity for Pollinations consistency.
 
 (function () {
@@ -153,13 +153,13 @@
     const drugShuffled = [...pool.drugsPool].sort(() => r() - 0.5);
     for (let i = 0; i < Math.min(drugCount, drugShuffled.length); i++) drugs.push(drugShuffled[i]);
 
-    const voiceId = window.SSDVoices.pickVoiceForArchetype(archetype, seed);
+    const voiceId = window.DMTHVoices.pickVoiceForArchetype(archetype, seed);
 
     // Roll captiveAffect from per-archetype weighted distribution. Third persona overlay
     // describing RESPONSE TO CAPTIVITY (mute / cusser / fighter / submissive / agreeable /
     // bargainer / catatonic). Orthogonal to archetype.
-    const captiveAffect = (window.SSDTemplates?.rollCaptiveAffect)
-      ? window.SSDTemplates.rollCaptiveAffect(archetype, r)
+    const captiveAffect = (window.DMTHTemplates?.rollCaptiveAffect)
+      ? window.DMTHTemplates.rollCaptiveAffect(archetype, r)
       : 'agreeable';
 
     return {
@@ -180,7 +180,7 @@
       // lastFedAt + lastWateredAt are seeded to the current game-clock timestamp so the
       // grace-period model in tickStaminaHealth starts the 5-day/3-day countdown from
       // capture time, not from epoch.
-      body: { arousal: 14, wetness: 8, cumLoad: 0, bruises: 0, high: 0, stamina: 70, health: 100, activeDrugs: [], pose: 'seated, knees together', outfitState: 'intact', lastFedAt: window.SSDGame?.gameClock?.now() ?? 0, lastWateredAt: window.SSDGame?.gameClock?.now() ?? 0 },
+      body: { arousal: 14, wetness: 8, cumLoad: 0, bruises: 0, high: 0, stamina: 70, health: 100, activeDrugs: [], pose: 'seated, knees together', outfitState: 'intact', lastFedAt: window.DMTHGame?.gameClock?.now() ?? 0, lastWateredAt: window.DMTHGame?.gameClock?.now() ?? 0 },
       mood: { mood: 'terrified', moodEmoji: '😱', history: [] },
       stats,
       bond: { bondLevel: 0, bondXP: 0, bondDebt: 0, milestones: [] },
@@ -245,8 +245,8 @@
     return pick(pool, r);
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.girlGen = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.girlGen = Object.freeze({
     generate,
     ARCHETYPE_POOLS
   });

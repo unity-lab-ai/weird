@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — dungeon ops: room upgrades + capacity expansions.
+// DUNGEON MASTER: THE HUNT — dungeon ops: room upgrades + capacity expansions.
 // Wires the 10 per-room upgrade tracks + the per-dungeon capacityUpgrades chain.
 
 (function () {
@@ -25,7 +25,7 @@
   };
 
   function getHold(dungeonId, holdIdx) {
-    const d = window.SSDGame.state.getDungeon(dungeonId);
+    const d = window.DMTHGame.state.getDungeon(dungeonId);
     if (!d) throw new Error('no such dungeon');
     const h = d.holds[holdIdx];
     if (!h) throw new Error('no such hold');
@@ -45,7 +45,7 @@
     const nextTier = currentTier + 1;
     const cost = track.tierCosts[nextTier];
 
-    const ok = window.SSDGame.state.spendMoney(cost, `upgrade:${trackKey}:${dungeonId}:${holdIdx}:L${nextTier}`);
+    const ok = window.DMTHGame.state.spendMoney(cost, `upgrade:${trackKey}:${dungeonId}:${holdIdx}:L${nextTier}`);
     if (!ok) throw new Error('insufficient funds');
 
     const newHolds = dungeon.holds.slice();
@@ -53,26 +53,26 @@
       ...hold,
       upgrades: { ...(hold.upgrades || {}), [trackKey]: nextTier }
     };
-    window.SSDGame.state.updateDungeon(dungeonId, { holds: newHolds });
+    window.DMTHGame.state.updateDungeon(dungeonId, { holds: newHolds });
     return { ok: true, track: trackKey, newTier: nextTier, cost };
   }
 
   // --- Capacity expansion ---
   function nextCapacityUpgrade(dungeon) {
-    const tpl = window.SSDAssets.getById('dungeon', dungeon.templateId);
+    const tpl = window.DMTHAssets.getById('dungeon', dungeon.templateId);
     if (!tpl || !Array.isArray(tpl.capacityUpgrades)) return null;
     return tpl.capacityUpgrades.find(u => u.atSlots > dungeon.capacity) || null;
   }
 
   function expandCapacity(dungeonId) {
-    const dungeon = window.SSDGame.state.getDungeon(dungeonId);
+    const dungeon = window.DMTHGame.state.getDungeon(dungeonId);
     if (!dungeon) throw new Error('no such dungeon');
     const next = nextCapacityUpgrade(dungeon);
     if (!next) throw new Error('dungeon already at max capacity for this template');
-    const ok = window.SSDGame.state.spendMoney(next.cost, `expand-capacity:${dungeonId}:${next.atSlots}`);
+    const ok = window.DMTHGame.state.spendMoney(next.cost, `expand-capacity:${dungeonId}:${next.atSlots}`);
     if (!ok) throw new Error('insufficient funds');
 
-    const tpl = window.SSDAssets.getById('dungeon', dungeon.templateId);
+    const tpl = window.DMTHAssets.getById('dungeon', dungeon.templateId);
     const newHolds = dungeon.holds.slice();
     while (newHolds.length < next.atSlots) {
       newHolds.push({
@@ -84,7 +84,7 @@
         expansionNote: next.describedAs
       });
     }
-    window.SSDGame.state.updateDungeon(dungeonId, {
+    window.DMTHGame.state.updateDungeon(dungeonId, {
       capacity: next.atSlots,
       holds: newHolds,
       lastExpansion: { at: next.atSlots, cost: next.cost, describedAs: next.describedAs, ts: Date.now() }
@@ -92,8 +92,8 @@
     return { ok: true, newCapacity: next.atSlots, cost: next.cost, note: next.describedAs };
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.dungeonOps = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.dungeonOps = Object.freeze({
     UPGRADE_TRACKS, getUpgradeLevel, upgrade,
     nextCapacityUpgrade, expandCapacity
   });

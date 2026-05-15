@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — asset catalog.
+// DUNGEON MASTER: THE HUNT — asset catalog.
 // Authoritative data for every asset in the game: locations, items, dungeons, rooms, facilities.
 // Each entry has:
 //   id           — stable ID (also the folder name under assets/<category>/<id>/)
@@ -859,7 +859,7 @@
       )
   };
 
-  window.SSDAssets = Object.freeze({
+  window.DMTHAssets = Object.freeze({
     LOCATIONS, ITEMS, DUNGEONS, ROOMS, FACILITIES,
     ALL,
     STARTER_TOWN_PLOT,

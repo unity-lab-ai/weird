@@ -1,27 +1,27 @@
-// SEX SLAVE DUNGEON — hunt / outside world page.
+// DUNGEON MASTER: THE HUNT — hunt / outside world page.
 
 (function () {
   'use strict';
 
   function render(el, params) {
     const stage = params.stage || 'map';
-    if (stage === 'map')       { window.SSDRouter.go('town'); return; }   // redirect to the plot page
+    if (stage === 'map')       { window.DMTHRouter.go('town'); return; }   // redirect to the plot page
     if (stage === 'location') return renderLocation(el, params);
     if (stage === 'approach') return renderApproach(el, params);
   }
 
   function renderLocation(el, params) {
     const locId = params.loc;
-    const loc = window.SSDAssets.getById('location', locId);
+    const loc = window.DMTHAssets.getById('location', locId);
     if (!loc) { el.innerHTML = `<p>unknown location</p>`; return; }
-    const encounters = window.SSDGame.hunt.rollEncounters(locId, 3);
-    const inv = window.SSDGame.state.current.inventory;
+    const encounters = window.DMTHGame.hunt.rollEncounters(locId, 3);
+    const inv = window.DMTHGame.state.current.inventory;
 
     el.innerHTML = `
       <div class="panel">
         <h2>${loc.emoji} ${loc.displayName}</h2>
         <p class="small muted">${loc.notes}</p>
-        <div class="stat-row small"><span>Notoriety</span><b>${window.SSDGame.state.current.wallet.notoriety}</b>
+        <div class="stat-row small"><span>Notoriety</span><b>${window.DMTHGame.state.current.wallet.notoriety}</b>
           <span class="muted">(experience bonus applied to acquisitions)</span></div>
         <a href="#hunt" class="btn-small">← back to map</a>
       </div>
@@ -29,10 +29,10 @@
         <h2>Girls available to acquire</h2>
         <div class="girl-grid">
           ${encounters.map(g => {
-            const archDiff = window.SSDGame.hunt.ARCHETYPE_DIFFICULTY[g.archetypeTemplate] ?? 0.5;
+            const archDiff = window.DMTHGame.hunt.ARCHETYPE_DIFFICULTY[g.archetypeTemplate] ?? 0.5;
             const captureTools = ['rohypnol','chloroform','ether','ketamine','duct-tape','rope','zip-ties','handcuffs'].filter(id => inv[id] > 0);
             const bestOdds = captureTools.length === 0 ? null : Math.max(...captureTools.map(tid =>
-              window.SSDGame.hunt.previewCaptureOdds({ girl: g, toolId: tid, locationId: locId }).successP
+              window.DMTHGame.hunt.previewCaptureOdds({ girl: g, toolId: tid, locationId: locId }).successP
             ));
             const oddsLabel = bestOdds === null ? 'no tool owned' : `${Math.round(bestOdds * 100)}% best odds`;
             return `
@@ -60,14 +60,14 @@
     `;
 
     // Stash current roll in module state so approach page can find them
-    window._SSD_lastEncounters = encounters;
-    window._SSD_lastLocationId = locId;
+    window._DMTH_lastEncounters = encounters;
+    window._DMTH_lastLocationId = locId;
 
     el.querySelectorAll('[data-approach]').forEach(b => {
-      b.onclick = () => window.SSDRouter.go('hunt', { stage: 'approach', girl: b.dataset.approach, loc: locId });
+      b.onclick = () => window.DMTHRouter.go('hunt', { stage: 'approach', girl: b.dataset.approach, loc: locId });
     });
     el.querySelectorAll('[data-walk]').forEach(b => {
-      b.onclick = () => window.SSDRouter.go('hunt');
+      b.onclick = () => window.DMTHRouter.go('hunt');
     });
 
     // Make the whole card clickable — click anywhere on a girl card to approach her
@@ -77,7 +77,7 @@
         // Ignore clicks on inner buttons (they have their own handlers)
         if (ev.target.closest('button, a')) return;
         const id = card.querySelector('[data-approach]')?.dataset.approach;
-        if (id) window.SSDRouter.go('hunt', { stage: 'approach', girl: id, loc: locId });
+        if (id) window.DMTHRouter.go('hunt', { stage: 'approach', girl: id, loc: locId });
       };
     });
 
@@ -95,7 +95,7 @@
 
         const situation = `hunt-encounter-${locId}`;
         try {
-          const result = await window.SSDGame.imaging.generateFor(g, { situation, locationId: locId });
+          const result = await window.DMTHGame.imaging.generateFor(g, { situation, locationId: locId });
           if (result && result.url) {
             slot.innerHTML = `<img src="${result.url}" alt="${g.name}" class="gen-img hunt-thumb" onerror="this.outerHTML='<div class=\\'small muted\\'>(image blocked — click to approach anyway)</div>';" />`;
           } else {
@@ -108,248 +108,187 @@
     })();
   }
 
-  // 4-stage capture progress-bar UI. Player assigns one tool per stage
-  // (Approach / Engage / Subdue / Secure) from inventory, clicks "Begin Attempt", and the four
-  // stages resolve via `window.SSDGame.capture.runAttempt()` with animated progress bars.
+  // Simple single-tool capture UI with escalating wrangle. Player picks one item per
+  // attempt; each failed attempt escalates her struggle (calm → suspicious → fighting →
+  // screaming → running). Chance multiplier drops per tier; at tier 4 (running) the
+  // encounter ends and she escapes. Player gets ~4 attempts max, fewer with cheap tools.
   function renderApproach(el, params) {
-    const encounters = window._SSD_lastEncounters || [];
+    const encounters = window._DMTH_lastEncounters || [];
     const girl = encounters.find(g => g.id === params.girl);
     const locId = params.loc;
     if (!girl) { el.innerHTML = `<p>encounter expired — <a href="#hunt">back to map</a></p>`; return; }
-    const inv = window.SSDGame.state.current.inventory;
-    const locName = window.SSDAssets.getById('location', locId)?.displayName;
+    const locName = window.DMTHAssets.getById('location', locId)?.displayName;
+    const cap = window.DMTHGame.capture;
 
-    const cap = window.SSDGame.capture;
-    const archResist = cap.getArchetypeResistance(girl.archetypeTemplate);
+    // Encounter-scoped wrangle state — survives re-renders of the picker, resets if
+    // the user navigates away.
+    let escalationTier = 0;
+    const attemptHistory = [];   // [{toolId, outcome, roll, chance}]
 
-    // Build per-stage eligible-tool option lists. Pre-select the best-stat tool per stage.
-    const stageLoadout = {};
-    for (const stageKey of cap.STAGES) {
-      const eligible = cap.eligibleToolsForStage(stageKey);
-      if (eligible.length === 0) {
-        stageLoadout[stageKey] = null;
-      } else {
-        // Pre-select tool with highest stage stat.
-        eligible.sort((a, b) => (cap.getToolStages(b)[stageKey] || 0) - (cap.getToolStages(a)[stageKey] || 0));
-        stageLoadout[stageKey] = eligible[0];
-      }
-    }
+    function rerender() {
+      const tools = cap.eligibleSimpleTools();
+      const suspicionNow = window.DMTHGame.state.current?.wallet?.suspicionByLocation?.[locId] || 0;
+      const tierMul = cap.escalationMultiplier(escalationTier);
+      const tierLabel = cap.escalationLabel(escalationTier);
+      const tierEmoji = ['😐','😟','😠','😱','💨'][escalationTier] || '·';
+      const tierColor = ['','','warn','danger','danger'][escalationTier] || '';
 
-    function renderStageLoadoutRow(stageKey) {
-      const eligible = cap.eligibleToolsForStage(stageKey);
-      const label = cap.STAGE_LABELS[stageKey];
-      const desc = cap.STAGE_DESCRIPTIONS[stageKey];
-      const resistance = archResist[stageKey] || 25;
-      if (eligible.length === 0) {
-        // Consistency with the populated branch's tooltip
-        return `
-          <div class="capture-stage-row" data-tooltip="${label}: ${desc}. No qualifying tool in inventory for this stage — visit the shop OR pick a different target whose archetype has lower ${stageKey} resistance.">
-            <div class="capture-stage-head"><b>${label}</b> <span class="muted small">— ${desc}</span></div>
-            <div class="capture-stage-body"><span class="danger small">no tool in inventory for this stage — <a href="#shop">shop →</a></span></div>
-            <div class="capture-stage-foot small muted">${girl.name}'s ${stageKey} resistance: <b>${resistance}</b></div>
-          </div>
-        `;
-      }
-      const optionsHtml = eligible.map(id => {
-        const item = window.SSDAssets.getById('item', id);
-        const stat = cap.getToolStages(id)[stageKey] || 0;
-        const isSelected = stageLoadout[stageKey] === id;
-        return `<option value="${id}"${isSelected ? ' selected' : ''}>${item.emoji} ${item.displayName} — stage stat ${stat} (have ${inv[id]})</option>`;
-      }).join('');
-      return `
-        <div class="capture-stage-row" data-stage="${stageKey}" data-tooltip="${label}: ${desc}. Stage clears at progress ≥ ${cap.STAGE_CLEAR_THRESHOLD}%. Pick a tool whose stage stat beats her resistance.">
-          <div class="capture-stage-head"><b>${label}</b> <span class="muted small">— ${desc}</span></div>
-          <div class="capture-stage-body">
-            <select class="inline-select capture-tool-select" data-stage-key="${stageKey}" data-tooltip="Pick the tool to use for this stage. Single-use tools (rohypnol/chloroform/ether/ketamine/tranquilizer/duct-tape/rope/zip-ties) consume on attempt. Multi-use (pipe/handcuffs/shackles/harness) survive.">${optionsHtml}</select>
-          </div>
-          <div class="capture-stage-foot small muted" data-tooltip="Her per-stage resistance from her archetype. Beat this number with toolStageBonus×2 + playerSkill - locationDifficulty - witnessPenalty + RNG.">${girl.name}'s ${stageKey} resistance: <b>${resistance}</b></div>
-        </div>
-      `;
-    }
+      const toolCards = tools.length === 0
+        ? `<p class="small danger">No capture tools in inventory. <a href="#shop">Shop →</a></p>`
+        : tools.map(t => {
+            const item = window.DMTHAssets.getById('item', t.id);
+            const adjChance = Math.max(0.05, t.chance * tierMul);
+            const pct = Math.round(adjChance * 100);
+            const colorClass = pct >= 90 ? 'highgreen' : pct >= 70 ? '' : pct >= 60 ? 'warn' : 'danger';
+            return `
+              <button class="btn-small simple-capture-btn" data-tool="${t.id}" data-tooltip="${item?.notes || ''}" style="display:flex;align-items:center;gap:8px;padding:10px 14px;">
+                <span style="font-size:1.4rem;">${item?.emoji || '🔧'}</span>
+                <span style="flex:1;text-align:left;">
+                  <b>${item?.displayName || t.id}</b><br>
+                  <span class="small muted">have ×${t.owned} · base ${Math.round(t.chance * 100)}% × ${tierLabel} ${Math.round(tierMul * 100)}%</span>
+                </span>
+                <span class="bar-fill ${colorClass}" style="padding:4px 10px;border-radius:4px;font-weight:700;">${pct}%</span>
+              </button>
+            `;
+          }).join('');
 
-    function renderProgressMeter(stageKey, progress = 0, cleared = false, toolId = null) {
-      const label = cap.STAGE_LABELS[stageKey];
-      const item = toolId ? window.SSDAssets.getById('item', toolId) : null;
-      const toolBadge = item ? `<span class="capture-tool-badge">${item.emoji}</span>` : '<span class="muted">—</span>';
-      const cls = cleared ? 'cleared' : (progress > 0 ? 'in-progress' : 'idle');
-      return `
-        <div class="capture-progress-row ${cls}" data-progress-stage="${stageKey}">
-          <div class="capture-progress-label">${label} ${toolBadge}</div>
-          <div class="capture-progress-bar-wrap">
-            <div class="capture-progress-bar" style="width: ${progress}%"></div>
-            <span class="capture-progress-pct">${progress}%${cleared ? ' ✓' : ''}</span>
-          </div>
-        </div>
-      `;
-    }
-
-    const playerSkillNow = cap.getPlayerSkill();
-    const suspicionNow = window.SSDGame.state.current?.wallet?.suspicionByLocation?.[locId] || 0;
-
-    el.innerHTML = `
-      <div class="panel">
-        <h2>Approach: ${moodEmoji(girl)} ${girl.name}</h2>
-        <p class="small muted">${girl.backstoryFragment}</p>
-        <div class="stat-row small"><span>Archetype</span><b>${girl.archetypeTemplate}</b></div>
-        <div class="stat-row small"><span>Defiance / Intelligence</span><b>${girl.stats.defiance} / ${girl.stats.intelligence}</b></div>
-        <div class="stat-row small"><span>Stamina / Pain tolerance</span><b>${girl.stats.stamina} / ${girl.stats.painTolerance}</b></div>
-        <div class="stat-row small"><span>Player skill (notoriety XP)</span><b>${playerSkillNow}/30</b></div>
-        <div class="stat-row small"><span>Location suspicion</span><b class="${suspicionNow > 5 ? 'warn' : ''}">${suspicionNow}</b></div>
-        <div class="btn-row">
-          <a href="#hunt?stage=location&loc=${locId}" class="btn-small">← back</a>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2>Talk first</h2>
-        <div class="btn-col">
-          <button data-action="talk" class="btn-small" data-tooltip="Ollama-narrated first-encounter scene from her POV. Low commitment — informs your read on her archetype before you decide to take her.">💬 Open with a line (low commitment)</button>
-          <button data-action="walk" class="btn-small" data-tooltip="Leave the encounter. No cost, no notoriety, no inventory loss.">🚪 Walk away</button>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2>Capture loadout — pick one tool per stage</h2>
-        <p class="small muted">Each stage needs its own qualifying tool. Spam-one-tool doesn't work — you have to plan the loadout. Stage clears at ≥ ${cap.STAGE_CLEAR_THRESHOLD}% progress. Any stage failing = girl escapes.</p>
-        <div class="capture-stage-grid">
-          ${cap.STAGES.map(renderStageLoadoutRow).join('')}
-        </div>
-        <div class="btn-row">
-          <button data-action="begin-attempt" class="btn-primary btn-danger" data-tooltip="Fire the 4-stage attempt sequence. Single-use tools consume per-stage. Witness roll fires once at attempt start. Failure = wariness+1 on girl + suspicion bump + notoriety bump if witnessed.">⚡ Begin 4-stage capture attempt</button>
-        </div>
-      </div>
-
-      <div id="result"></div>
-    `;
-
-    el.querySelector('[data-action="talk"]').onclick = async () => {
-      const resultEl = el.querySelector('#result');
-      resultEl.innerHTML = `<div class="panel"><p class="small muted">${girl.name} turns to look at you…</p></div>`;
-      await runSceneNarration({
-        girl, sceneKey: 'first_encounter', sceneVars: { LOCATION: locName },
-        userText: '', resultEl, heading: `${girl.name} says:`
-      });
-    };
-    el.querySelector('[data-action="walk"]').onclick = () => window.SSDRouter.go('hunt');
-
-    // Live update stageLoadout when player changes a per-stage tool select.
-    el.querySelectorAll('.capture-tool-select').forEach(sel => {
-      sel.onchange = () => { stageLoadout[sel.dataset.stageKey] = sel.value; };
-    });
-
-    el.querySelector('[data-action="begin-attempt"]').onclick = async () => {
-      const beginBtn = el.querySelector('[data-action="begin-attempt"]');
-      beginBtn.disabled = true;
-      beginBtn.textContent = '⚡ Resolving 4 stages…';
-
-      // Validate: at least one stage must have a tool assigned. If ALL stages are null,
-      // there's nothing to attempt. (Empty stages will auto-fail.)
-      const anyAssigned = cap.STAGES.some(k => stageLoadout[k]);
-      if (!anyAssigned) {
-        beginBtn.disabled = false;
-        beginBtn.textContent = '⚡ Begin 4-stage capture attempt';
-        alert('Assign at least one tool to a stage before attempting.');
-        return;
-      }
-
-      const result = window.SSDGame.capture.runAttempt({
-        girl,
-        toolPerStage: stageLoadout,
-        locationId: locId
-      });
-
-      // Build the progress-bar visualization area
-      const resultEl = el.querySelector('#result');
-      const heading = result.outcome === 'success'
-        ? '🎯 ACQUIRED — full 4-stage capture successful'
-        : `❌ ATTEMPT FAILED — stalled at ${cap.STAGE_LABELS[result.failedAtStage] || result.failedAtStage}`;
-      const witnessNote = result.witness ? `<p class="danger small">⚠️ A witness saw the attempt — full -30 progress penalty applied to every stage</p>` : '';
-
-      resultEl.innerHTML = `
-        <div class="panel">
-          <h3>${heading}</h3>
-          ${witnessNote}
-          <div class="capture-progress-grid">
-            ${cap.STAGES.map(k => {
-              const stageData = result.stages.find(s => s.stageKey === k);
-              return renderProgressMeter(k, 0, false, stageData?.toolId);   // start at 0, animate up
+      const historyHtml = attemptHistory.length === 0 ? '' : `
+        <div class="small muted" style="margin-top:10px;">
+          <b>Misses this encounter:</b>
+          <ul style="margin:4px 0 0;padding-left:20px;">
+            ${attemptHistory.map((a, i) => {
+              const it = window.DMTHAssets.getById('item', a.toolId);
+              return `<li>#${i+1} ${it?.emoji || ''} ${it?.displayName || a.toolId} → rolled ${Math.round(a.roll * 100)} vs ${Math.round(a.chance * 100)}% — ${a.outcome.toUpperCase()}</li>`;
             }).join('')}
-          </div>
-          <div class="capture-mech-summary small muted" id="capture-mech-summary"></div>
-          <div class="log"><div class="log-entry assistant streaming"><b>${girl.name}:</b> <span id="acquire-narr"></span></div></div>
+          </ul>
         </div>
       `;
 
-      // Animate the progress bars filling sequentially
-      for (const stageData of result.stages) {
-        const meterEl = resultEl.querySelector(`[data-progress-stage="${stageData.stageKey}"]`);
-        if (!meterEl) continue;
-        await animateProgressBar(meterEl, stageData.progress, stageData.cleared);
-        // Insert per-stage summary line after each meter resolves
-        const sumDiv = document.createElement('div');
-        sumDiv.className = 'capture-stage-summary small';
-        sumDiv.innerHTML = window.SSDGame.capture.summarizeStage(stageData);
-        if (stageData.reason) {
-          sumDiv.innerHTML += ` <span class="muted">(${stageData.reason})</span>`;
-        }
-        resultEl.querySelector('#capture-mech-summary').appendChild(sumDiv);
-        if (!stageData.cleared) break;   // failure stops the animation
-      }
+      el.innerHTML = `
+        <div class="panel">
+          <h2>Approach: ${moodEmoji(girl)} ${girl.name}</h2>
+          <p class="small muted">${girl.backstoryFragment}</p>
+          <div class="stat-row small"><span>Archetype</span><b>${girl.archetypeTemplate}</b></div>
+          <div class="stat-row small"><span>Location</span><b>${locName}</b></div>
+          <div class="stat-row small"><span>Location suspicion</span><b class="${suspicionNow > 5 ? 'warn' : ''}">${suspicionNow}</b></div>
+          <div class="btn-row">
+            <a href="#hunt?stage=location&loc=${locId}" class="btn-small">← back</a>
+          </div>
+        </div>
 
-      // Mechanical consequences summary
-      const consElEl = resultEl.querySelector('#capture-mech-summary');
-      const consequences = result.consequences || {};
-      if (consequences.suspicionDelta) consElEl.insertAdjacentHTML('beforeend',
-        `<div class="stat-row small"><span>Location suspicion</span><b class="warn">+${consequences.suspicionDelta}</b></div>`);
-      if (consequences.notorietyDelta) consElEl.insertAdjacentHTML('beforeend',
-        `<div class="stat-row small"><span>Notoriety</span><b class="warn">+${consequences.notorietyDelta}</b></div>`);
-      if (consequences.warinessDelta)  consElEl.insertAdjacentHTML('beforeend',
-        `<div class="stat-row small"><span>${girl.name} wariness</span><b class="warn">+${consequences.warinessDelta} (next attempt harder)</b></div>`);
-      if (result.consumed?.length) {
-        result.consumed.forEach(c => {
-          const item = window.SSDAssets.getById('item', c.toolId);
-          consElEl.insertAdjacentHTML('beforeend',
-            `<div class="stat-row small"><span>Consumed</span><b>${item?.emoji || ''} ${item?.displayName || c.toolId} ×${c.count}</b></div>`);
+        <div class="panel">
+          <h2>Talk first</h2>
+          <div class="btn-col">
+            <button data-action="talk" class="btn-small" data-tooltip="Ollama-narrated first-encounter scene from her POV. Low commitment.">💬 Open with a line (low commitment)</button>
+            <button data-action="walk" class="btn-small" data-tooltip="Leave the encounter. No cost, no notoriety, no inventory loss.">🚪 Walk away</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Capture</h2>
+          <div class="stat-row" style="margin-bottom:10px;"><span>Her state</span><b class="${tierColor}">${tierEmoji} ${tierLabel.toUpperCase()} · chance × ${Math.round(tierMul * 100)}%</b></div>
+          <p class="small muted">Pick a tool. Cheap items 50-60%, mid-tier 70-80%, heavy sedatives 90-100%. Each miss escalates her struggle and tightens the odds. After 4 misses she breaks free and runs.</p>
+          <div class="btn-col" style="gap:6px;">
+            ${toolCards}
+          </div>
+          ${historyHtml}
+        </div>
+
+        <div id="result"></div>
+      `;
+
+      el.querySelector('[data-action="talk"]').onclick = async () => {
+        const resultEl = el.querySelector('#result');
+        resultEl.innerHTML = `<div class="panel"><p class="small muted">${girl.name} turns to look at you…</p></div>`;
+        await runSceneNarration({
+          girl, sceneKey: 'first_encounter', sceneVars: { LOCATION: locName },
+          userText: '', resultEl, heading: `${girl.name} says:`
         });
-      }
+      };
+      el.querySelector('[data-action="walk"]').onclick = () => window.DMTHRouter.go('hunt');
 
-      // Ollama scene narration — pick the scene per outcome + which stage failed
-      let sceneKey, sceneTool;
-      if (result.outcome === 'success') {
-        sceneKey = 'acquire_success';
-        // Pick the most impactful tool from the run for the narration (highest stage stat)
-        sceneTool = pickHeroToolFromStages(result.stages);
-      } else {
-        sceneKey = result.witness ? 'acquire_critical_fail' : 'acquire_fail';
-        sceneTool = result.stages.find(s => s.toolId)?.toolId || null;
-      }
-      const sceneToolItem = sceneTool ? window.SSDAssets.getById('item', sceneTool) : null;
-      await runSceneNarration({
-        girl, sceneKey,
-        sceneVars: { LOCATION: locName, TOOL: sceneToolItem?.displayName || 'mixed approach' },
-        userText: '',
-        injectInto: resultEl.querySelector('#acquire-narr')
+      el.querySelectorAll('.simple-capture-btn').forEach(btn => {
+        btn.onclick = async () => {
+          const toolId = btn.dataset.tool;
+          el.querySelectorAll('.simple-capture-btn').forEach(b => { b.disabled = true; });
+          const result = cap.simpleAttempt({ girl, toolId, locationId: locId, escalationTier });
+
+          const item = window.DMTHAssets.getById('item', toolId);
+          const resultEl = el.querySelector('#result');
+
+          if (result.outcome === 'success' || result.outcome === 'success-no-room') {
+            const heading = result.outcome === 'success'
+              ? `<h3>🎯 ACQUIRED — ${item?.emoji} ${item?.displayName} landed</h3>`
+              : `<h3>⚠️ CAUGHT BUT NO ROOM</h3><p class="warn small">${result.error || 'no open holds in active dungeon'} — upgrade or buy a dungeon first.</p>`;
+            resultEl.innerHTML = `
+              <div class="panel">
+                ${heading}
+                <div class="stat-row small"><span>Rolled</span><b>${Math.round(result.roll * 100)}</b> vs <b>${Math.round(result.chance * 100)}%</b></div>
+                <div class="log"><div class="log-entry assistant streaming"><b>${girl.name}:</b> <span id="acquire-narr"></span></div></div>
+              </div>
+            `;
+            await runSceneNarration({
+              girl, sceneKey: result.outcome === 'success' ? 'acquire_success' : 'acquire_partial_fail',
+              sceneVars: { LOCATION: locName, TOOL: item?.displayName || toolId },
+              userText: '',
+              injectInto: resultEl.querySelector('#acquire-narr')
+            });
+            if (result.outcome === 'success' && result.escort) {
+              const sceneVars = window.DMTHGame.hunt.composeSceneVars({
+                girl, toolId, locationId: locId, dungeonId: result.escort.dungeonId
+              });
+              await playTransitionSequence({ resultEl, girl, sceneVars });
+              const followup = document.createElement('div');
+              followup.className = 'btn-row';
+              followup.innerHTML = `<a href="#room?girl=${girl.id}" class="btn-primary">Enter her hold →</a>`;
+              resultEl.querySelector('.panel').appendChild(followup);
+            }
+            return;
+          }
+
+          if (result.outcome === 'escaped') {
+            attemptHistory.push({ toolId, outcome: 'miss', roll: result.roll, chance: result.chance });
+            escalationTier = result.escalationTier;
+            resultEl.innerHTML = `
+              <div class="panel">
+                <h3>💨 SHE GOT AWAY</h3>
+                <p class="small">${cap.escalationNarration(escalationTier)}</p>
+                <div class="stat-row small"><span>Notoriety</span><b class="warn">+${result.notorietyDelta || 2}</b></div>
+                <div class="log"><div class="log-entry assistant streaming"><b>${girl.name}:</b> <span id="acquire-narr"></span></div></div>
+                <div class="btn-row" style="margin-top:10px;">
+                  <a href="#hunt?stage=location&loc=${locId}" class="btn-small">← back to location</a>
+                  <a href="#hunt" class="btn-small">map</a>
+                </div>
+              </div>
+            `;
+            await runSceneNarration({
+              girl, sceneKey: 'acquire_fail',
+              sceneVars: { LOCATION: locName, TOOL: item?.displayName || toolId },
+              userText: '',
+              injectInto: resultEl.querySelector('#acquire-narr')
+            });
+            return;
+          }
+
+          // Plain miss — she escalates but encounter continues.
+          attemptHistory.push({ toolId, outcome: 'miss', roll: result.roll, chance: result.chance });
+          escalationTier = result.escalationTier;
+          const struggleLine = cap.escalationNarration(escalationTier) || 'she pulls back';
+          resultEl.innerHTML = `
+            <div class="panel">
+              <h3>❌ MISSED — ${item?.emoji} ${item?.displayName} didn't connect</h3>
+              <div class="stat-row small"><span>Rolled</span><b>${Math.round(result.roll * 100)}</b> vs <b>${Math.round(result.chance * 100)}%</b></div>
+              <div class="stat-row small"><span>Her state</span><b class="warn">${cap.escalationLabel(escalationTier).toUpperCase()} — ${struggleLine}</b></div>
+              <p class="small muted">Try again with a different tool. The longer this drags on the harder it gets.</p>
+            </div>
+          `;
+          // Re-render the picker with updated odds + history (after a short beat).
+          setTimeout(rerender, 1200);
+        };
       });
+    }
 
-      // On success — escort + 4-beat transition sequence
-      if (result.outcome === 'success') {
-        const escortResult = window.SSDGame.hunt.escortToHold(girl);
-        const sceneVars = window.SSDGame.hunt.composeSceneVars({
-          girl, toolId: sceneTool, locationId: locId, dungeonId: escortResult.dungeonId
-        });
-        await playTransitionSequence({ resultEl, girl, sceneVars });
-        const followup = document.createElement('div');
-        followup.className = 'btn-row';
-        followup.innerHTML = `<a href="#room?girl=${girl.id}" class="btn-primary">Enter her hold →</a>`;
-        resultEl.querySelector('.panel').appendChild(followup);
-      } else {
-        // Failure path — offer back-to-hunt + walk away
-        const followup = document.createElement('div');
-        followup.className = 'btn-row';
-        followup.innerHTML = `<a href="#hunt?stage=location&loc=${locId}" class="btn-small">← back to location (next encounter)</a> <a href="#hunt" class="btn-small">map</a>`;
-        resultEl.querySelector('.panel').appendChild(followup);
-      }
-    };
+    rerender();
   }
 
   // Animate one progress bar from 0% to its final value over ~600ms.
@@ -414,8 +353,8 @@
       logEl.appendChild(beatDiv);
       const spanEl = beatDiv.querySelector('span');
       try {
-        const system = window.SSDTemplates.buildSystemPrompt(girl, 'sexy', beat.key, sceneVars);
-        const { raw, parsed } = await window.SSDGame.ollama.chatStream({
+        const system = window.DMTHTemplates.buildSystemPrompt(girl, 'sexy', beat.key, sceneVars);
+        const { raw, parsed } = await window.DMTHGame.ollama.chatStream({
           system,
           messages: [{ role: 'user', content: '(play out this beat in first person from her POV)' }],
           onChunk: (chunk, full) => {
@@ -426,7 +365,7 @@
         spanEl.textContent = (parsed.cleanText || raw).trim();
         beatDiv.classList.remove('streaming');
         // Append to girl's turn log so she remembers her own narration
-        window.SSDGame.state.appendTurn(girl.id, 'assistant', `[${beat.heading}] ${spanEl.textContent}`);
+        window.DMTHGame.state.appendTurn(girl.id, 'assistant', `[${beat.heading}] ${spanEl.textContent}`);
       } catch (err) {
         spanEl.textContent = `(Ollama unreachable — beat skipped: ${err.message})`;
         beatDiv.classList.remove('streaming');
@@ -437,13 +376,13 @@
   // Run a scene narration — calls Ollama with the scene template, streams text into a DOM target.
   async function runSceneNarration({ girl, sceneKey, sceneVars, userText = '', resultEl, heading, injectInto }) {
     try {
-      const system = window.SSDTemplates.buildSystemPrompt(girl, 'sexy', sceneKey, sceneVars);
+      const system = window.DMTHTemplates.buildSystemPrompt(girl, 'sexy', sceneKey, sceneVars);
       let target = injectInto;
       if (!target && resultEl) {
         resultEl.innerHTML = `<div class="panel"><h3>${heading || girl.name}</h3><div class="log"><div class="log-entry assistant streaming"><b>${girl.name}:</b> <span id="narr-txt"></span></div></div></div>`;
         target = resultEl.querySelector('#narr-txt');
       }
-      const { raw, parsed } = await window.SSDGame.ollama.chatStream({
+      const { raw, parsed } = await window.DMTHGame.ollama.chatStream({
         system,
         messages: [{ role: 'user', content: userText || `(Master initiates the scene — narrate from your POV.)` }],
         onChunk: (chunk, full) => {
@@ -466,5 +405,5 @@
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
 
-  window.SSDRouter.register('hunt', render);
+  window.DMTHRouter.register('hunt', render);
 })();

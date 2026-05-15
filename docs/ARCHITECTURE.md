@@ -35,7 +35,7 @@
 
 ## Overview
 
-**Title: SEX SLAVE DUNGEON** (Gee verbatim 2026-04-21).
+**Title: DUNGEON MASTER: THE HUNT** (Gee verbatim 2026-04-21).
 
 **Genre:** persistent "city builder" like game — dungeon harem evil taboo. Hunt your prey with purchased tools and items. (Gee verbatim 2026-04-21.)
 
@@ -980,7 +980,7 @@ The user goes *"huntinG"* (Gee verbatim) by picking a location from the outside 
 
 ### Capture-as-progress-bar mechanic pattern (REFORMULATED + SHIPPED 2026-05-14)
 
-Engine lives in `js/game/capture.js` exposing `SSDGame.capture` with:
+Engine lives in `js/game/capture.js` exposing `DMTHGame.capture` with:
 - `STAGES = ['approach','engage','subdue','secure']` + `STAGE_LABELS` + `STAGE_DESCRIPTIONS`
 - `STAGE_CLEAR_THRESHOLD = 60` (stages clear at progress ≥ 60%)
 - `SINGLE_USE_TOOLS` set (chemicals + duct-tape/rope/zip-ties consume per-stage)
@@ -993,12 +993,12 @@ Engine lives in `js/game/capture.js` exposing `SSDGame.capture` with:
 
 Per-tool stage profile lives on each capture tool in `js/assets/catalog.js` as `captureStages: { approach, engage, subdue, secure }` (0-50 per stage).
 
-Per-archetype stage resistance lives in `js/game/hunt.js` as `ARCHETYPE_CAPTURE_RESISTANCE` const, exposed on `SSDGame.hunt`. 11 archetypes mapped.
+Per-archetype stage resistance lives in `js/game/hunt.js` as `ARCHETYPE_CAPTURE_RESISTANCE` const, exposed on `DMTHGame.hunt`. 11 archetypes mapped.
 
 UI lives in `js/ui/hunt-view.js` `renderApproach`. Per-stage tool dropdown filtered by `eligibleToolsForStage`, "Begin Attempt" button triggers `runAttempt`, 4 stacked progress bars animate sequentially via `animateProgressBar` (~600ms each). Cleared bars go green; failed gray. Per-stage summary + consequences inline. CSS classes in `css/game.css`: `.capture-stage-grid`, `.capture-stage-row`, `.capture-progress-row`, `.capture-progress-bar`, `.cleared`, `.failed`.
 
 Outcome resolver hooks:
-- **Stage 4 (Secure) clear → success path** — calls existing `SSDGame.hunt.escortToHold(girl)` to assign her to an open dungeon hold, then `composeSceneVars` + `playTransitionSequence` chain the existing 4-beat capture transition narrative (subdue → transport → arrival → first conscious moment). All reused unchanged from the pre-21.11 implementation.
+- **Stage 4 (Secure) clear → success path** — calls existing `DMTHGame.hunt.escortToHold(girl)` to assign her to an open dungeon hold, then `composeSceneVars` + `playTransitionSequence` chain the existing 4-beat capture transition narrative (subdue → transport → arrival → first conscious moment). All reused unchanged from the pre-21.11 implementation.
 - **Failure path (any stage hits < 60%)** — girl escapes, `girl.wariness +1` (next encounter harder), `wallet.suspicionByLocation[locId] +2` (or +5 if witness present), `notoriety +2` if witness saw it. Witness pool rolls ONCE per attempt and carries through every stage as a flat -30 progress penalty.
 
 Spam dies as a play pattern because tools are stage-specific. Mashing one tool advances ONE meter; the other three stages still need their own qualifying tool. Players plan loadouts. Old `attemptCapture()` in `hunt.js` retained with deprecation comment for backward-compat (external callers / debug utilities); the hunt UI no longer calls it.
@@ -1060,7 +1060,7 @@ Phase-ordering rule: every page lands as text + emoji before any image work. Emo
 ### Persistent city-builder loop pattern
 **Gee verbatim 2026-04-21:** *"the whole thing is a persistant 'city builder' like game but its a dugeon haram evil tabbooo hunt your prey with the purchased tools and items"*.
 
-SEX SLAVE DUNGEON is structurally a city-builder: no linear narrative, no end-of-game, no "beating it". The game is the cycle. Persistent state lives across sessions — the player logs in, picks up where they left off, plays whatever slice of the loop interests them (hunting, building, recording, managing, bonding). Time ticks while the game is open (maintenance ticks, market sale passes, consumable decay). Every system feeds every other system: captured girls produce episodes, episodes produce money, money funds upgrades, upgrades enable harder hunts, harder hunts produce better captures, better captures produce higher-value episodes. The player picks which lever to pull on any given session.
+DUNGEON MASTER: THE HUNT is structurally a city-builder: no linear narrative, no end-of-game, no "beating it". The game is the cycle. Persistent state lives across sessions — the player logs in, picks up where they left off, plays whatever slice of the loop interests them (hunting, building, recording, managing, bonding). Time ticks while the game is open (maintenance ticks, market sale passes, consumable decay). Every system feeds every other system: captured girls produce episodes, episodes produce money, money funds upgrades, upgrades enable harder hunts, harder hunts produce better captures, better captures produce higher-value episodes. The player picks which lever to pull on any given session.
 
 Design-ramp implications:
 - **Never a forced tutorial path.** The first captive (Unity, seeded) arrives pre-installed so the player can taste every system on Day 1 without a gating tutorial.

@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — dev-time env injection (TEMPLATE — committed)
+// DUNGEON MASTER: THE HUNT — dev-time env injection (TEMPLATE — committed)
 //
 // You do NOT need to edit this file by hand. The launchers auto-generate
 // `js/env.local.js` (gitignored) from the `.env` file at the project root:

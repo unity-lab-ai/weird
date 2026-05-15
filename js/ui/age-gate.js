@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON -- 18+ Age verification + Legal acceptance gate.
+// DUNGEON MASTER: THE HUNT -- 18+ Age verification + Legal acceptance gate.
 //
 // Ported from the canonical Unity AI Lab implementation. Same localStorage keys
 // (button18, birthdate, husdh-f978dyh-sdf, legalAccepted, legalAcceptedVersion,
@@ -16,7 +16,7 @@
 (function () {
     'use strict';
 
-    const SSDAgeGate = {
+    const DMTHAgeGate = {
         KEYS: {
             BUTTON_18: 'button18',
             BIRTHDATE: 'birthdate',
@@ -510,11 +510,11 @@
         }
     };
 
-    window.SSDAgeGate = SSDAgeGate;
+    window.DMTHAgeGate = DMTHAgeGate;
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => SSDAgeGate.init());
+        document.addEventListener('DOMContentLoaded', () => DMTHAgeGate.init());
     } else {
-        SSDAgeGate.init();
+        DMTHAgeGate.init();
     }
 })();

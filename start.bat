@@ -1,9 +1,9 @@
 @echo off
-title SEX SLAVE DUNGEON - local launcher
+title DUNGEON MASTER: THE HUNT - local launcher
 
 echo.
 echo ====================================
-echo   SEX SLAVE DUNGEON - local launcher
+echo   DUNGEON MASTER: THE HUNT - local launcher
 echo ====================================
 echo.
 

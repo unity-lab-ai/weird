@@ -1,4 +1,4 @@
-# 🔗 SEX SLAVE DUNGEON — Gameplay Wiki
+# 🔗 DUNGEON MASTER: THE HUNT — Gameplay Wiki
 
 > *persistent city-builder — dungeon harem evil taboo — hunt your prey with the purchased tools and items*
 
@@ -621,7 +621,7 @@ Basic meal / gourmet meal / bottled water 24pk / filtered water 5gal.
 
 ## Adult-character invariant
 
-**Every character in SEX SLAVE DUNGEON is an adult age 18 or older.**
+**Every character in DUNGEON MASTER: THE HUNT is an adult age 18 or older.**
 
 This is enforced in code at multiple layers:
 - `girl-gen.js` ARCHETYPE_POOLS each have `ageRange: [19, ...]` minimums (or [20, ...] for older archetypes)

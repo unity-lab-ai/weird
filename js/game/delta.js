@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — state delta applier.
+// DUNGEON MASTER: THE HUNT — state delta applier.
 // Parses the trailing <delta>{}</delta> from Ollama responses and applies it to a girl.
 
 (function () {
@@ -6,7 +6,7 @@
 
   function applyDelta(girlId, delta) {
     if (!delta) return;
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) return;
 
     // Pre-clamp the delta itself to safe per-turn ranges — defensive against bad model
@@ -47,8 +47,8 @@
     if (typeof delta.bondDebt === 'number') bond.bondDebt = Math.max(0, bond.bondDebt + delta.bondDebt);
 
     // Level up if XP crosses threshold — balancing curve lookup (50/100/150/200/250/340/450/600/800)
-    const nextLevelXP = window.SSDGame.balancing
-      ? window.SSDGame.balancing.xpForLevel(bond.bondLevel + 1)
+    const nextLevelXP = window.DMTHGame.balancing
+      ? window.DMTHGame.balancing.xpForLevel(bond.bondLevel + 1)
       : (bond.bondLevel + 1) * 50;
     const prevLevel = bond.bondLevel;
     if (bond.bondXP >= nextLevelXP && bond.bondLevel < 9) {
@@ -56,8 +56,8 @@
       bond.milestones = [...(bond.milestones || []), `bond-up-L${bond.bondLevel}-${new Date().toISOString()}`];
     }
     // Fire memorial image on level-up (fire-and-forget, optional overlay)
-    if (bond.bondLevel > prevLevel && window.SSDGame.imaging && window.SSDGame.imaging.isAvailable()) {
-      window.SSDGame.imaging.bondMilestone(girlId, bond.bondLevel).catch(() => {});
+    if (bond.bondLevel > prevLevel && window.DMTHGame.imaging && window.DMTHGame.imaging.isAvailable()) {
+      window.DMTHGame.imaging.bondMilestone(girlId, bond.bondLevel).catch(() => {});
     }
 
     // Escape risk recompute from factors
@@ -71,7 +71,7 @@
       0, 1
     );
 
-    window.SSDGame.state.updateGirl(girlId, {
+    window.DMTHGame.state.updateGirl(girlId, {
       body, mood, bond, escape,
       _lastTags: Array.isArray(delta.tags) ? delta.tags : []
     });
@@ -82,12 +82,12 @@
     // AND (b) delta.tags contains at least one VAGINAL_CUM_TAG marker (so BJ / anal /
     // facial / body-shot don't fire conception). Inner gates (bond < 9, no condom, status
     // not already pregnant) live inside pregnancy.attemptConception() — defense in depth.
-    if (window.SSDGame.pregnancy && delta.cumLoad >= 1.0) {
+    if (window.DMTHGame.pregnancy && delta.cumLoad >= 1.0) {
       const tags = Array.isArray(delta.tags) ? delta.tags.map(t => String(t).toLowerCase()) : [];
       const isVaginalCum = tags.some(t => VAGINAL_CUM_TAGS.has(t));
       if (isVaginalCum) {
         try {
-          window.SSDGame.pregnancy.attemptConception(girlId, { conceptionSource: 'organic' });
+          window.DMTHGame.pregnancy.attemptConception(girlId, { conceptionSource: 'organic' });
         } catch (err) {
           console.debug('[pregnancy] conception hook error:', err);
         }
@@ -125,6 +125,6 @@
     return '😶';
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.delta = Object.freeze({ applyDelta, emojiForMood });
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.delta = Object.freeze({ applyDelta, emojiForMood });
 })();

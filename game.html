@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SEX SLAVE DUNGEON — game</title>
+  <title>DUNGEON MASTER: THE HUNT — game</title>
   <meta name="robots" content="noindex,nofollow" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="stylesheet" href="css/landing.css" />
   <link rel="stylesheet" href="css/game.css" />
@@ -94,7 +97,7 @@
   <script src="js/ui/ollama-repair-overlay.js"></script>
 
   <header class="app-chrome">
-    <div class="chrome-brand">SEX SLAVE DUNGEON</div>
+    <div class="chrome-brand">DUNGEON MASTER: THE HUNT</div>
     <nav class="chrome-nav">
       <a href="#dashboard" data-route="dashboard" data-tooltip="Treasury + captive count + film market — your operation at a glance.">🏠 Dashboard</a>
       <a href="#roster" data-route="roster" data-tooltip="Every captive, every escaped girl, every dispatched corpse — the full ledger.">📋 Roster</a>
@@ -109,6 +112,7 @@
     </nav>
     <div class="chrome-clock" id="chrome-clock" data-tooltip="In-game day clock. 1 real second = 1 game minute (24 real min = 1 game day). Captives go 3 game days without water and 5 game days without food before health starts dropping.">Day 1, 00:00</div>
     <div class="chrome-satisfaction" id="chrome-satisfaction" data-tooltip="Player satisfaction (0-100). Sex acts with captives raise it; slow drift down without intimacy. High satisfaction grants a hunting bonus — capture odds get easier the more satisfied you are. Fuck enough and the next catch is much easier.">😐 50</div>
+    <div class="chrome-buzz" id="chrome-buzz" data-tooltip="BUZZ (0-100) — underground word-of-mouth about your dungeons. Bumped by film sales, successful johns, high-bond captives, stress-band streaks. Drains over time between income events. Higher BUZZ = more johns visit your whored-out captives more often. BUZZ 100 = 2× john arrival rate.">🐝 0</div>
     <div class="chrome-money" id="chrome-money" data-tooltip="Liquid cash on hand. Spend on upgrades, captures, abortions, slaves.">$0</div>
     <button class="btn-small" id="chrome-voice" data-tooltip="Toggle Kokoro TTS voice playback on/off.">🔊</button>
     <button class="btn-small btn-danger" id="chrome-new-game" data-tooltip="WIPES your save and starts fresh. Use Settings → Save Slots to keep a copy first.">🔄 New Game</button>
@@ -121,10 +125,10 @@
   <script>
   (async function boot() {
     // Mount router
-    window.SSDRouter.mount(document.getElementById('app'));
+    window.DMTHRouter.mount(document.getElementById('app'));
 
     // Load saved state
-    const loaded = await window.SSDGame.state.load();
+    const loaded = await window.DMTHGame.state.load();
     if (!loaded || !loaded.createdAt) {
       location.hash = '#newgame';
     } else if (!location.hash) {
@@ -133,7 +137,7 @@
 
     // Chrome money + satisfaction sync
     function syncChrome() {
-      const s = window.SSDGame.state.current;
+      const s = window.DMTHGame.state.current;
       document.getElementById('chrome-money').textContent = s ? `$${s.wallet.money.toLocaleString()}` : '$0';
       const satEl = document.getElementById('chrome-satisfaction');
       if (satEl && s) {
@@ -141,16 +145,21 @@
         const emoji = sat >= 80 ? '😈' : sat >= 60 ? '😏' : sat >= 40 ? '😐' : sat >= 20 ? '😒' : '🥶';
         satEl.textContent = `${emoji} ${Math.round(sat)}`;
       }
+      const buzzEl = document.getElementById('chrome-buzz');
+      if (buzzEl && s) {
+        const buzz = typeof s.wallet.buzz === 'number' ? s.wallet.buzz : 0;
+        buzzEl.textContent = `🐝 ${Math.round(buzz)}`;
+      }
     }
     syncChrome();
-    window.SSDGame.state.onChange(syncChrome);
+    window.DMTHGame.state.onChange(syncChrome);
 
     // Running game clock display. 1 real second = 1 game minute, so
     // updating the display once a real second is enough to capture every
     // game-minute boundary. The gameClock module is the source of truth.
     const clockEl = document.getElementById('chrome-clock');
-    if (clockEl && window.SSDGame.gameClock) {
-      const updateClock = () => { clockEl.textContent = window.SSDGame.gameClock.formatNow(); };
+    if (clockEl && window.DMTHGame.gameClock) {
+      const updateClock = () => { clockEl.textContent = window.DMTHGame.gameClock.formatNow(); };
       updateClock();
       setInterval(updateClock, 1000);
     }
@@ -160,27 +169,27 @@
     // repopulate the save store with old state between the wipe and the reload.
     document.getElementById('chrome-new-game').onclick = async () => {
       if (!confirm('Start a new game? This WIPES your current save. Use Settings → Save Slots first if you want to keep a copy.')) return;
-      try { if (window.SSDGame.tick) window.SSDGame.tick.stop(); } catch {}
-      try { if (window.SSDVoiceQueue) window.SSDVoiceQueue.cancel(); } catch {}
-      try { window.SSDGame.state._nuking = true; } catch {}
-      await window.SSDStorage.wipeAll();
-      for (const k of Object.keys(localStorage)) if (k.startsWith('ssd_') && k !== 'ssd_pollinations_key' && k !== 'ssd_ollama_endpoint' && k !== 'ssd_ollama_model' && k !== 'ssd_kokoro_voice') localStorage.removeItem(k);
+      try { if (window.DMTHGame.tick) window.DMTHGame.tick.stop(); } catch {}
+      try { if (window.DMTHVoiceQueue) window.DMTHVoiceQueue.cancel(); } catch {}
+      try { window.DMTHGame.state._nuking = true; } catch {}
+      await window.DMTHStorage.wipeAll();
+      for (const k of Object.keys(localStorage)) if (k.startsWith('dmth_') && k !== 'dmth_pollinations_key' && k !== 'dmth_ollama_endpoint' && k !== 'dmth_ollama_model' && k !== 'dmth_kokoro_voice') localStorage.removeItem(k);
       location.hash = '#newgame';
       location.reload();
     };
 
     // First route handle
-    window.SSDRouter.handle();
+    window.DMTHRouter.handle();
 
     // Balancing tweak after load
-    if (window.SSDGame.balancing) window.SSDGame.balancing.applyBalancing();
+    if (window.DMTHGame.balancing) window.DMTHGame.balancing.applyBalancing();
 
     // Start the tick engine
-    window.SSDGame.tick.start();
+    window.DMTHGame.tick.start();
 
     // === Voice (Kokoro TTS) ===
     // Voice toggle — persists in localStorage. Default: on.
-    const VOICE_KEY = 'ssd_voice_on';
+    const VOICE_KEY = 'dmth_voice_on';
     function voiceOn() { return localStorage.getItem(VOICE_KEY) !== 'off'; }
     function setVoice(on) {
       localStorage.setItem(VOICE_KEY, on ? 'on' : 'off');
@@ -189,11 +198,11 @@
       btn.title = on ? 'Voice ON — click to mute' : 'Voice OFF — click to enable';
       // Going OFF mid-response should stop whatever's playing immediately,
       // not let the queue finish + then stop.
-      if (!on && window.SSDVoiceQueue) window.SSDVoiceQueue.cancel();
+      if (!on && window.DMTHVoiceQueue) window.DMTHVoiceQueue.cancel();
     }
     setVoice(voiceOn());
     document.getElementById('chrome-voice').onclick = () => setVoice(!voiceOn());
-    window.SSDIsVoiceOn = voiceOn;   // global so room.js can check before speaking
+    window.DMTHIsVoiceOn = voiceOn;   // global so room.js can check before speaking
 
     // Auto-check Ollama health on game boot — if the active model's weights
     // were nuked since landing (Storage Sense, manual cleanup, partial pull),
@@ -202,10 +211,10 @@
     // Kokoro load.  Silent when everything is healthy.
     (async () => {
       try {
-        if (window.SSDOllamaRepairOverlay) {
+        if (window.DMTHOllamaRepairOverlay) {
           // Small delay so the boot UI renders first
           await new Promise(r => setTimeout(r, 800));
-          await window.SSDOllamaRepairOverlay.autoCheck();
+          await window.DMTHOllamaRepairOverlay.autoCheck();
         }
       } catch (err) {
         console.debug('[ollama-autocheck] failed silently:', err);
@@ -217,22 +226,22 @@
     // fast.  Non-blocking — game keeps loading.
     (async () => {
       const btn = document.getElementById('chrome-voice');
-      if (!window.SSDKokoro) return;
-      if (window.SSDKokoro.isReady()) return;
+      if (!window.DMTHKokoro) return;
+      if (window.DMTHKokoro.isReady()) return;
       if (!voiceOn()) return;
       btn.textContent = '⏳';
       btn.title = 'Loading Kokoro voice model…';
       try {
-        await window.SSDKokoro.ensureLoaded((p) => {
+        await window.DMTHKokoro.ensureLoaded((p) => {
           const pct = Math.round((p?.progress || 0) * 100);
           btn.title = `Loading voice ${pct}%…`;
         });
         setVoice(true);
-        if (window.SSDNotify) window.SSDNotify.show('🔊 Kokoro voice ready', { type: 'success', durationMs: 2000 });
+        if (window.DMTHNotify) window.DMTHNotify.show('🔊 Kokoro voice ready', { type: 'success', durationMs: 2000 });
       } catch (err) {
         btn.textContent = '🔇';
         btn.title = 'Kokoro failed to load: ' + err.message;
-        if (window.SSDNotify) window.SSDNotify.show('🔇 Voice unavailable: ' + err.message, { type: 'error' });
+        if (window.DMTHNotify) window.DMTHNotify.show('🔇 Voice unavailable: ' + err.message, { type: 'error' });
       }
     })();
   })();

@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — running in-game day clock.
+// DUNGEON MASTER: THE HUNT — running in-game day clock.
 //
 // Time model:
 //   1 real second  = 1  game minute
@@ -23,7 +23,7 @@
   let anchorRealMs = null;
 
   function ensureSeed() {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     if (!s) return null;
     if (typeof s.gameMinutes !== 'number') {
       s.gameMinutes = 0;
@@ -104,8 +104,8 @@
     return h === 0 ? `${d}d` : `${d}d ${h}h`;
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.gameClock = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.gameClock = Object.freeze({
     now,
     advanceFromTick,
     daysSince,

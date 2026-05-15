@@ -1,14 +1,14 @@
-// SEX SLAVE DUNGEON — slave market page.
+// DUNGEON MASTER: THE HUNT — slave market page.
 
 (function () {
   'use strict';
 
   function render(el) {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     if (!s.slaveMarket.available || s.slaveMarket.available.length === 0) {
-      window.SSDGame.slaveMarket.refreshAvailable();
+      window.DMTHGame.slaveMarket.refreshAvailable();
     }
-    const listed = s.slaveMarket.listed.map(l => ({ ...l, girl: window.SSDGame.state.getGirl(l.girlId) })).filter(x => x.girl);
+    const listed = s.slaveMarket.listed.map(l => ({ ...l, girl: window.DMTHGame.state.getGirl(l.girlId) })).filter(x => x.girl);
     const available = s.slaveMarket.available;
     const sales = s.slaveMarket.recentSales.slice(-10).reverse();
 
@@ -64,20 +64,20 @@
       </div>
     `;
 
-    el.querySelector('#refresh-market').onclick = () => { window.SSDGame.slaveMarket.refreshAvailable(); window.SSDRouter.handle(); };
+    el.querySelector('#refresh-market').onclick = () => { window.DMTHGame.slaveMarket.refreshAvailable(); window.DMTHRouter.handle(); };
     el.querySelectorAll('[data-unlist]').forEach(b => {
-      b.onclick = () => { window.SSDGame.slaveMarket.unlistForSale(b.dataset.unlist); window.SSDRouter.handle(); };
+      b.onclick = () => { window.DMTHGame.slaveMarket.unlistForSale(b.dataset.unlist); window.DMTHRouter.handle(); };
     });
     el.querySelectorAll('[data-buy]').forEach(b => {
       b.onclick = () => {
         try {
-          const r = window.SSDGame.slaveMarket.buyFromNpc(parseInt(b.dataset.buy, 10));
+          const r = window.DMTHGame.slaveMarket.buyFromNpc(parseInt(b.dataset.buy, 10));
           alert(`Purchased. Escorted to hold ${r.holdIdx + 1}.`);
-          window.SSDRouter.handle();
+          window.DMTHRouter.handle();
         } catch (e) { alert(e.message); }
       };
     });
   }
 
-  window.SSDRouter.register('slave-market', render);
+  window.DMTHRouter.register('slave-market', render);
 })();

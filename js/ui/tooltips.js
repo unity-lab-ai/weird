@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — universal tooltip engine.
+// DUNGEON MASTER: THE HUNT — universal tooltip engine.
 // Concise tooltips attached to every interactive element across every page.
 //
 // Auto-binds every element with a `data-tooltip="..."` attribute. Hover (200ms delay)
@@ -205,7 +205,7 @@
     init();
   }
 
-  window.SSDTooltips = Object.freeze({
+  window.DMTHTooltips = Object.freeze({
     register,
     show,
     hide
