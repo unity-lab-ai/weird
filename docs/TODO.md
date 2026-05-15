@@ -10,9 +10,9 @@
 
 ---
 
-## 🟢 ACTIVE BACKLOG — empty (BUG.22-25 batch shipped, all chat/prompt/vital regressions cleared)
+## 🟢 ACTIVE BACKLOG — empty (BUG.31 shipped, body stat bars now refresh live on every applyAction mutation)
 
-_Below: history of the just-shipped batch, kept here briefly before the next TODO-template-out cycle._
+_Below: history of prior batches, kept here briefly before the next TODO-template-out cycle._
 
 ### Gee's directive (verbatim 2026-05-14) — chat selection + Unity prompt-leak + third-person Master narration + day-1 death + universal rule:
 
@@ -109,6 +109,7 @@ After commit lands:
 
 | Date | Session focus | Commit |
 |---|---|---|
+| 2026-05-14 | **BUG.31** — static body-stats regression. Gee verbatim: *"the girls's stats are static and never change at all wtf is this shit"*. Root cause: `state.onChange` listener in `js/ui/room.js` only called `renderLog()` since the BUG.22 chat-selection fix — the body stat bars (Arousal / Wetness / Cum L / Bruises / High / Stamina / Health) sat as one-shot interpolated strings in the initial `el.innerHTML` template and never refreshed even though `applyAction` correctly mutated `girl.body.*`. Fix: extracted body-stats HTML into a `renderBodyStatsHTML()` function reading fresh state, wrapped the section in `<div id="body-stats-panel">`, extended the state.onChange listener to refresh that container's innerHTML on every mutation. Pure display, no event-handler rebinding, tooltips auto-bind via document-level delegation. | (this commit) |
 | 2026-05-14 | `feature/BUGStwo` backfill — 15 shipped fixes documented retroactively (commits `ccacbe7` → `5c9a8e2`): fix(chat) anchor Unity's reply to specific act / fix(stats+pregnancy+cumLoad) applyId on every quick-action + always-visible pregnancy panel + cumLoad drain & bonus / feat(capture) simple one-tool flow with escalating wrangle / fix(tts) Kokoro to Web Worker / fix(image) drop 'non-pregnant' negation / fix(tts+pregnancy) speak asterisk actions aloud / fix(chat) stop truncating Unity's response / fix(tranq) flat 4-min knockout / fix(image) trim sex-lock minimal female-positive / fix(image) sex-lock positive-only no negation / fix(voice+image) louder bond-driven emotions + female sex-lock / fix(chat+tts) kill duplicate bubble + single-shot TTS short replies / fix(landing-settings) write into #settings-body-inline / fix(landing-settings) FULL NUKE button on landing / fix(settings) try/catch render + cache-control meta. **Doc-only repair of LAW — DOCS BEFORE PUSH drift; code unchanged.** | (this commit, doc-only) |
 | 2026-05-14 | Full rebrand — "SEX SLAVE DUNGEON" → "DUNGEON MASTER: THE HUNT" across every player-visible string + programmatic identifier. 22 `SSD*` globals → `DMTH*`, 11 `ssd_*` localStorage keys → `dmth_*`, IDB name `sex_slave_dungeon` → `dungeon_master_the_hunt`. FINALIZED archive untouched per LAW. | (this commit) |
 | 2026-05-14 | BUG.22-25 batch — chat text selection survives state.onChange (selection guard + incremental append + CSS user-select), system-prompt rule-bullet regurgitation scrub, third-person Master-action asterisk narration scrub + SPEECH-FIRST RULE rewrite (universal across all girls), Unity day-1 death fix (Ollama-hallucinated health delta stripped, vitals sole-source-of-truth to action-effects) | `566c989` |
