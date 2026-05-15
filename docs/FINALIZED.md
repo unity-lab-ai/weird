@@ -13,6 +13,66 @@
 
 ---
 
+## 2026-05-14 — Session: BUGStwo.36 — landing-page onboarding polish + Kokoro Load button fix
+
+### Gee verbatim 2026-05-14 (one main quote + two follow-up directives):
+
+> *"the site being hosted on github is serving up the game(i didnt really know that would happen) but hey can we get it to work through the users browser to their PC with GPU webgpu compute or something: ✗ Ollama reachable / ✗ Model present: dolphin-mistral:7b / ✓ Model weights — unknown / ✗ Kokoro TTS loaded / ✓ Save storage ready / ✗ Pollinations key (images, optional)"*
+>
+> *"it still uses polliantions tho"*
+>
+> *"ther is a kokoror load button but it doesnt work"*
+
+### Decision
+
+Asked via `AskUserQuestion` for backend strategy. Gee picked **Option D — stay Ollama-only, polish onboarding**. No new LLM backend (no Web-LLM / no Pollinations text primary / no WebGPU pivot). Architecture stays local-Ollama-only for full privacy + no cloud + no WebGPU dependency. Pollinations remains in use for images + STT (optional but real per Gee follow-up).
+
+### Implementation
+
+**Landing-page status panel** (`js/ui/landing.js` `renderStatus`):
+
+- **"Next step" top-of-panel callout** — surfaces the highest-priority failing prereq with a "👉 Next: …" headline + concrete detail + "Jump to fix ↓" button that smooth-scrolls to the relevant setup card. Visitor sees what to do without scrolling. Five hierarchical states: (1) install Ollama OR enable CORS, (2) pull the model, (3) repair broken model weights, (4) load Kokoro TTS, (5) storage unavailable (Private Browsing).
+
+- **CORS-distinct failure messaging** — the #1 silent failure mode for GitHub Pages → localhost is "Ollama is running but my browser can't reach it because OLLAMA_ORIGINS isn't set." Probe returns `not-reachable-or-cors`; the next-step callout now distinguishes "install Ollama" from "enable CORS" so visitors who DID install Ollama don't get told to install it again.
+
+- **Model-weights row hidden when prereqs aren't met** — previously `"✓ Model weights — unknown"` rendered as a green pill with a confusing "unknown" label whenever Ollama wasn't reachable (because the health probe couldn't run). Now the entire row only renders when `ollamaOk && modelOk`. When prereqs fail, the row disappears entirely instead of misleading.
+
+- **Status-row labels improved** — each failing pill now describes the FIX instead of restating the failure. Examples:
+  - Old: `✗ Ollama reachable` → New: `✗ Ollama not reachable (install it OR set OLLAMA_ORIGINS=*)`
+  - Old: `✗ Model present: dolphin-mistral:7b` → New: `✗ Model not pulled: dolphin-mistral:7b (~4GB) — pull it below`
+  - Old: `✗ Kokoro TTS loaded` → New: `✗ Kokoro TTS not loaded — click Load below`
+
+**Kokoro Load button fixed** (`js/setup/kokoro.js` + `js/ui/landing.js` `renderKokoroSetup`):
+
+- **Root cause #1 — `loading` flag never reset on rejection.** `ensureLoaded` set `loading = true` at the top, then returned early or threw without resetting. The render loop saw `loading=true` and replaced the Load button with a 0% progress bar that never advanced. User saw no button, no error, no way to retry.
+- **Root cause #2 — `worker.onerror` didn't reset `loading=false`.** A worker crash trapped subsequent retry attempts on the "already loading" wait-path which polled forever with the same error.
+- **Root cause #3 — silent worker failures had no timeout.** If the worker spawned but `import(cdnUrl)` hung (CDN blocked, WASM-fetch stuck, HuggingFace model fetch frozen), neither `'ready'` nor `'error'` ever fired. The await promise hung forever.
+- **Root cause #4 — error span was only rendered when NOT loading.** When `loading` was stuck-true, the error span was never created, so even if `lastError` was set, the user couldn't see it.
+
+**Fixes:**
+
+1. `ensureLoaded` wrapped in `try { … } finally { loading = false; emit(); }` so the flag is always reset on any exit path (success, rejection, throw).
+2. `worker.onerror` now sets `loading = false` in addition to `lastError`.
+3. New `WORKER_INIT_TIMEOUT_MS = 60_000` — if neither `'ready'` nor `'error'` arrives within 60 seconds, the worker is terminated and `loadMainThread(onProgress)` runs as fallback. Silent worker failures now produce a recoverable state.
+4. `renderKokoroSetup` reads `window.DMTHKokoro.getError()` regardless of loading state. When idle + error, the button renders as "Retry Kokoro Load" with the error message in a styled callout below. When loading + error, the progress bar shows alongside the error so it doesn't disappear into a stuck 0% bar.
+5. Button label includes the timeout context: "Web Worker init runs with a 60-second safety timeout. If it stalls, the loader falls back to main-thread synthesis automatically."
+
+### Files touched
+
+- **`js/ui/landing.js`** — `renderStatus` rewritten with next-step callout + hidden weights row + CORS-distinct labels + jump-to-fix smooth scroll; `renderKokoroSetup` rewritten with always-visible error state + Retry label + timeout note.
+- **`js/setup/kokoro.js`** — `ensureLoaded` wrapped in try/finally for loading-flag safety; `worker.onerror` resets loading; new `WORKER_INIT_TIMEOUT_MS` constant + timeout handler that falls back to main-thread load; worker teardown on failure.
+
+### Verification gates
+
+- Open the GitHub Pages site without Ollama installed → top of status panel shows "👉 Next: Install Ollama on your machine" with a "Jump to fix ↓" button that scrolls down to the Ollama setup card with install commands.
+- Install Ollama BUT don't set OLLAMA_ORIGINS → next-step callout shows "👉 Next: Install Ollama or enable CORS for this site" instead of generic "install Ollama."
+- The "✓ Model weights — unknown" row no longer appears when Ollama isn't reachable.
+- Click "Load Kokoro TTS" with CDN reachable → model loads, button transitions to "Kokoro loaded — ready to speak".
+- Click "Load Kokoro TTS" with worker init failing (network block / etc.) → after 60 seconds the loader falls back to main-thread synthesis automatically. If main-thread also fails, the button reverts to "Retry Kokoro Load" with the error message visible.
+- Clicking Retry after a failure works → loading flag was properly reset.
+
+---
+
 ## 2026-05-14 — Session: BUGStwo.32-35 — action-button stat tooltips + BUZZ meter + john cadence visibility + postmortem use (with image template + dead-state narration TTS)
 
 ### Gee verbatim 2026-05-14 (one quote with four discrete asks, plus two follow-up additions):
