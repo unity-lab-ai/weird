@@ -109,14 +109,26 @@
   // When running standalone (e.g., a local clone of this repo not on the Unity AI Lab site)
   // the Worker route is OFF and image gen falls back to direct Pollinations + user-supplied
   // pk_ key from the Settings panel.
+  // Worker-route selection has three tiers, in priority order:
+  //   1. Explicit localStorage flag — user toggle on the Settings panel:
+  //        - 'on'  → force Worker route
+  //        - 'off' → force direct Pollinations + user pk_ key
+  //   2. Hostname auto-detect — when no explicit flag, unityailab.com hosts default
+  //      to Worker route (the Worker's CORS allows that origin).
+  //   3. Default off — everywhere else falls back to direct Pollinations + pk_ key.
+  //
+  // Note on CORS: the production Worker only allows Origin: https://unityailab.com.
+  // If a user flips the toggle ON from localhost or another origin, requests will
+  // be blocked by CORS until the Worker's allowed-origins list includes that host.
   function detectUnityLabWorker() {
     if (typeof window === 'undefined' || !window.location) return false;
+    try {
+      const flag = window.localStorage && window.localStorage.getItem('dmth_use_unity_worker');
+      if (flag === 'on')  return true;
+      if (flag === 'off') return false;
+    } catch {}
     const h = (window.location.hostname || '').toLowerCase();
-    // Worker CORS only allows the production unityailab.com origin. Other hosts
-    // (unity-lab-ai.github.io standalone, localhost dev) fall back to the direct
-    // Pollinations endpoint + user-supplied pk_ key via the Settings paste box.
-    return h === 'unityailab.com'
-        || h === 'www.unityailab.com';
+    return h === 'unityailab.com' || h === 'www.unityailab.com';
   }
   const POLLINATIONS = {
     apiKey: pick('dmth_pollinations_key', 'POLLINATIONS_API_KEY', ''),
@@ -171,13 +183,16 @@
   };
 
   // Expose globally — non-module scripts can read window.DMTHConfig.
+  // detectUnityLabWorker is exported so the landing-page Settings toggle can re-evaluate
+  // the resolved value (localStorage flag > hostname auto) after the user flips it.
   window.DMTHConfig = Object.freeze({
     OLLAMA,
     KOKORO,
     POLLINATIONS,
     STORAGE,
     GAME,
-    DEV
+    DEV,
+    detectUnityLabWorker
   });
 
   if (DEV.mode) {
