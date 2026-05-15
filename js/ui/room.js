@@ -638,6 +638,13 @@
             if (window.DMTHTemplates?.scrubMasterAsteriskNarration) {
               view = window.DMTHTemplates.scrubMasterAsteriskNarration(view);
             }
+            if (window.DMTHTemplates?.scrubPlaintextDeltaTail) {
+              // Strip plaintext delta tails (arousal:+10; wetness:-25; ...) the model
+              // sometimes emits instead of the <delta>...</delta> envelope. Final-pass
+              // extractDelta also parses + strips, but doing it streaming keeps the
+              // leak from rendering visibly mid-bubble.
+              view = window.DMTHTemplates.scrubPlaintextDeltaTail(view);
+            }
             txtEl.textContent = view;
             logEl.scrollTop = logEl.scrollHeight;
           }
