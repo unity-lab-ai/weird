@@ -1,4 +1,4 @@
-# 🛠 SETUP-README — SEX SLAVE DUNGEON
+# 🛠 SETUP-README — DUNGEON MASTER: THE HUNT
 
 > Technical setup, deployment, troubleshooting, and architecture diagrams.
 
@@ -138,7 +138,7 @@ Then open `http://localhost:8000` in your browser.
 ```bash
 git init
 git add .
-git commit -m "SEX SLAVE DUNGEON initial"
+git commit -m "DUNGEON MASTER: THE HUNT initial"
 git branch -M main
 git remote add origin https://github.com/<you>/<repo>.git
 git push -u origin main
@@ -404,7 +404,7 @@ Ollama streaming response
   │     └─► clean text → strip asterisk actions
   │              │
   │              ▼
-  │       SSDVoiceQueue.enqueue(text, voiceId, speed)
+  │       DMTHVoiceQueue.enqueue(text, voiceId, speed)
   │              │
   │              ├─► splitSentences() on `. ! ? …`
   │              │
@@ -558,7 +558,7 @@ Browsers block audio playback until the page receives at least one user gesture.
 
 ```js
 // In DevTools console:
-indexedDB.deleteDatabase('SSDSave')
+indexedDB.deleteDatabase('dungeon_master_the_hunt')
 location.reload()
 ```
 

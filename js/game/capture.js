@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — multi-stage capture engine.
+// DUNGEON MASTER: THE HUNT — multi-stage capture engine.
 // Replaces the prior single-tool-single-roll capture model with a 4-stage progress-bar
 // attempt sequence (Approach → Engage → Subdue → Secure) where each stage has its own
 // 0-100% progress meter driven by the selected tool's per-stage stats vs the girl-archetype's
@@ -51,18 +51,18 @@
 
   function getToolStages(toolId) {
     if (!toolId) return DEFAULT_TOOL_STAGES;
-    const item = window.SSDAssets.getById('item', toolId);
+    const item = window.DMTHAssets.getById('item', toolId);
     return item?.captureStages || DEFAULT_TOOL_STAGES;
   }
 
   function getArchetypeResistance(archetypeId) {
-    const reg = window.SSDGame.hunt.ARCHETYPE_CAPTURE_RESISTANCE;
+    const reg = window.DMTHGame.hunt.ARCHETYPE_CAPTURE_RESISTANCE;
     return reg?.[archetypeId] || DEFAULT_RESISTANCE;
   }
 
   // Tools in player inventory that have non-zero stat for the given stage.
   function eligibleToolsForStage(stageKey) {
-    const inv = window.SSDGame.state.current.inventory || {};
+    const inv = window.DMTHGame.state.current.inventory || {};
     return CAPTURE_TOOL_IDS.filter(id => {
       if (!inv[id] || inv[id] < 1) return false;
       const stages = getToolStages(id);
@@ -73,7 +73,7 @@
   // Player skill scales with notoriety (experience proxy) — same as existing previewCaptureOdds
   // notorietyBonus pattern. 0-30 cap so player skill never dominates the math.
   function getPlayerSkill() {
-    const notoriety = window.SSDGame.state.current?.wallet?.notoriety || 0;
+    const notoriety = window.DMTHGame.state.current?.wallet?.notoriety || 0;
     return Math.min(30, Math.round(notoriety * 0.4));
   }
 
@@ -81,8 +81,8 @@
   // higher location suspicion = more likely. Witness flag carries through every stage
   // as a flat -30 progress penalty (makes the attempt much harder once spotted).
   function rollWitness({ locationId }) {
-    const exposure = window.SSDGame.hunt.LOCATION_EXPOSURE?.[locationId] || 0;
-    const suspicion = window.SSDGame.state.current?.wallet?.suspicionByLocation?.[locationId] || 0;
+    const exposure = window.DMTHGame.hunt.LOCATION_EXPOSURE?.[locationId] || 0;
+    const suspicion = window.DMTHGame.state.current?.wallet?.suspicionByLocation?.[locationId] || 0;
     const chance = Math.max(0, Math.min(0.6, exposure + suspicion * 0.04));
     return Math.random() < chance;
   }
@@ -113,7 +113,7 @@
     const stages = getToolStages(toolId);
     const toolBonus = stages[stageKey] || 0;
     const resistance = getArchetypeResistance(girl.archetypeTemplate)[stageKey] || 25;
-    const exposure = window.SSDGame.hunt.LOCATION_EXPOSURE?.[locationId] || 0;
+    const exposure = window.DMTHGame.hunt.LOCATION_EXPOSURE?.[locationId] || 0;
     const locDifficulty = exposure * 100;
     const witnessPenalty = witness ? 30 : 0;
     const rng = Math.random() * 20 - 5;
@@ -158,7 +158,7 @@
     // inventory BEFORE resolution math fires. Guards against UI-engine desync race
     // (state mutated between render and attempt-fire). For non-single-use tools the
     // engine relies on UI eligibleToolsForStage filtering, which is render-time-only.
-    const inv = window.SSDGame.state.current?.inventory || {};
+    const inv = window.DMTHGame.state.current?.inventory || {};
     const required = {};
     for (const stageKey of STAGES) {
       const tid = toolPerStage?.[stageKey];
@@ -203,12 +203,12 @@
       consumeCounts[stage.toolId] = (consumeCounts[stage.toolId] || 0) + 1;
     }
     for (const [toolId, count] of Object.entries(consumeCounts)) {
-      const ok = window.SSDGame.state.consumeItem(toolId, count);
+      const ok = window.DMTHGame.state.consumeItem(toolId, count);
       if (ok) consumed.push({ toolId, count });
     }
 
     const outcome = failedAtStage ? 'failed' : 'success';
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     const consequences = { suspicionDelta: 0, notorietyDelta: 0, warinessDelta: 0 };
 
     if (outcome === 'failed') {
@@ -217,7 +217,7 @@
       if (witness) {
         susBump = 5;
         consequences.notorietyDelta = 2;
-        window.SSDGame.state.addNotoriety(2);
+        window.DMTHGame.state.addNotoriety(2);
       }
       consequences.suspicionDelta = susBump;
       s.wallet.suspicionByLocation[locationId] = sus + susBump;
@@ -236,18 +236,121 @@
     };
   }
 
+  // --- Simple single-tool capture path ---
+  //
+  // Pick one item, click, roll vs a flat per-tool success chance. 50% for cheapest
+  // tools, scaling up to 100% guaranteed for the heaviest sedatives. No per-stage
+  // dropdowns, no resistance math, no witness penalty stack — just one die roll.
+  //
+  // Tools NOT in this table can't be used to capture. The shop sells everything
+  // here under "Hunting tools".
+  const SIMPLE_CAPTURE_CHANCE = Object.freeze({
+    'duct-tape':    0.50,
+    'zip-ties':     0.55,
+    'rope':         0.55,
+    'pipe':         0.60,
+    'handcuffs':    0.70,
+    'shackles':     0.75,
+    'harness':      0.80,
+    'rohypnol':     0.85,
+    'chloroform':   0.90,
+    'tranquilizer': 0.95,
+    'ether':        0.95,
+    'ketamine':     1.00
+  });
+
+  function getSimpleCaptureChance(toolId) {
+    return SIMPLE_CAPTURE_CHANCE[toolId] || 0;
+  }
+
+  function eligibleSimpleTools() {
+    const inv = window.DMTHGame.state.current?.inventory || {};
+    return Object.entries(SIMPLE_CAPTURE_CHANCE)
+      .filter(([id]) => (inv[id] || 0) > 0)
+      .map(([id, chance]) => ({ id, chance, owned: inv[id] }))
+      .sort((a, b) => a.chance - b.chance);
+  }
+
+  // --- Wrangle escalation ---
+  //
+  // Each failed tool attempt during an encounter bumps the escalation tier. The girl's
+  // struggle escalates and subsequent tool chances are multiplied down. At tier 4 (the
+  // ESCAPE tier), she breaks free and the encounter ends. The player gets ~4 attempts
+  // before she's gone — earlier with cheap tools.
+  //
+  //   tier 0 (calm)        — no penalty, first contact
+  //   tier 1 (suspicious)  — chance × 0.85 after 1 miss
+  //   tier 2 (fighting)    — chance × 0.70 after 2 misses
+  //   tier 3 (screaming)   — chance × 0.55 after 3 misses
+  //   tier 4 (running)     — encounter ends, she escapes
+  const ESCALATION_MULTIPLIERS = [1.00, 0.85, 0.70, 0.55];
+  const ESCALATION_LABELS = ['calm', 'suspicious', 'fighting', 'screaming', 'running'];
+  const ESCAPE_TIER = 4;
+  const ESCALATION_NARRATION = [
+    null,
+    "she shoves you off, eyes wide, looking around for help",
+    "she's swinging — fists flying, scrambling backward, knocking shit over",
+    "she's screaming for help, kicking free, trying to crawl away",
+    "she breaks free and bolts — gone before you can grab her again"
+  ];
+
+  function escalationLabel(tier) { return ESCALATION_LABELS[Math.min(tier, ESCAPE_TIER)]; }
+  function escalationMultiplier(tier) { return ESCALATION_MULTIPLIERS[tier] || 0; }
+  function escalationNarration(tier) { return ESCALATION_NARRATION[Math.min(tier, ESCAPE_TIER)]; }
+
+  // Roll a single-tool capture. On success, escort the girl to the active dungeon's
+  // first open hold via hunt.js. On failure, bump location suspicion AND the encounter's
+  // escalation tier. The caller (UI) decides what to do with the new tier — typically
+  // re-render the picker with adjusted odds, or end the encounter if tier >= ESCAPE_TIER.
+  function simpleAttempt({ girl, toolId, locationId, escalationTier = 0 }) {
+    if (escalationTier >= ESCAPE_TIER) {
+      return { outcome: 'escaped', escalationTier, reason: 'already-escaped' };
+    }
+    const base = SIMPLE_CAPTURE_CHANCE[toolId];
+    if (!base) return { outcome: 'fail', reason: 'tool-not-capture-grade', escalationTier };
+    const inv = window.DMTHGame.state.current.inventory;
+    if (!inv[toolId] || inv[toolId] < 1) return { outcome: 'fail', reason: 'no-tool', escalationTier };
+
+    window.DMTHGame.state.consumeItem(toolId, 1);
+
+    const mul = ESCALATION_MULTIPLIERS[escalationTier] || 0;
+    const chance = Math.max(0.05, base * mul);
+
+    const roll = Math.random();
+    if (roll < chance) {
+      try {
+        const escort = window.DMTHGame.hunt.escortToHold(girl);
+        return { outcome: 'success', toolId, baseChance: base, chance, roll, escort, escalationTier };
+      } catch (err) {
+        return { outcome: 'success-no-room', toolId, baseChance: base, chance, roll, error: err.message, escalationTier };
+      }
+    }
+
+    // Miss — bump suspicion + bump escalation tier.
+    const s = window.DMTHGame.state.current;
+    const sus = s.wallet.suspicionByLocation[locationId] || 0;
+    s.wallet.suspicionByLocation[locationId] = sus + 1;
+    const newTier = escalationTier + 1;
+    if (newTier >= ESCAPE_TIER) {
+      // She gets away — bigger notoriety hit since she'll talk
+      window.DMTHGame.state.addNotoriety(2);
+      return { outcome: 'escaped', toolId, baseChance: base, chance, roll, suspicionDelta: 1, escalationTier: newTier, notorietyDelta: 2 };
+    }
+    return { outcome: 'miss', toolId, baseChance: base, chance, roll, suspicionDelta: 1, escalationTier: newTier };
+  }
+
   // Compose a human-readable summary of one stage outcome — used by UI for inline feedback.
   function summarizeStage(stageResult) {
     if (!stageResult) return '(no result)';
     if (!stageResult.toolId) return `${STAGE_LABELS[stageResult.stageKey]}: ${stageResult.reason}`;
-    const tool = window.SSDAssets.getById('item', stageResult.toolId);
+    const tool = window.DMTHAssets.getById('item', stageResult.toolId);
     const toolName = tool?.displayName || stageResult.toolId;
     const status = stageResult.cleared ? '✓ cleared' : '✗ failed';
     return `${STAGE_LABELS[stageResult.stageKey]} — ${tool?.emoji || ''}${toolName} → ${stageResult.progress}% ${status}`;
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.capture = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.capture = Object.freeze({
     STAGES,
     STAGE_LABELS,
     STAGE_DESCRIPTIONS,
@@ -263,6 +366,16 @@
     rollWitness,
     resolveStage,
     runAttempt,
-    summarizeStage
+    summarizeStage,
+    SIMPLE_CAPTURE_CHANCE,
+    ESCALATION_MULTIPLIERS,
+    ESCALATION_LABELS,
+    ESCAPE_TIER,
+    getSimpleCaptureChance,
+    eligibleSimpleTools,
+    simpleAttempt,
+    escalationLabel,
+    escalationMultiplier,
+    escalationNarration
   });
 })();

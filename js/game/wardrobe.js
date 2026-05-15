@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — wardrobe system. Buy outfits from shop, equip/unequip, content-value multiplier.
+// DUNGEON MASTER: THE HUNT — wardrobe system. Buy outfits from shop, equip/unequip, content-value multiplier.
 
 (function () {
   'use strict';
@@ -333,14 +333,14 @@
 
   // Buy an outfit for a specific girl — adds to her wardrobe.
   function buyForGirl(girlId, outfitId) {
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) throw new Error('no such girl');
     const outfit = getById(outfitId);
     if (!outfit) throw new Error('no such outfit');
     if ((girl.wardrobe || []).some(w => w.id === outfitId)) {
       throw new Error('she already owns this outfit');
     }
-    const ok = window.SSDGame.state.spendMoney(outfit.price, `wardrobe:${outfitId}:${girlId}`);
+    const ok = window.DMTHGame.state.spendMoney(outfit.price, `wardrobe:${outfitId}:${girlId}`);
     if (!ok) throw new Error('insufficient funds');
     const newWardrobe = [...(girl.wardrobe || []), {
       id: outfit.id,
@@ -351,12 +351,12 @@
       multiplier: outfit.multiplier,
       acquiredAt: Date.now()
     }];
-    window.SSDGame.state.updateGirl(girlId, { wardrobe: newWardrobe });
+    window.DMTHGame.state.updateGirl(girlId, { wardrobe: newWardrobe });
     return { ok: true, outfit };
   }
 
   function equip(girlId, outfitId) {
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) throw new Error('no such girl');
     // Built-in pseudo-outfits (NUDE_PSEUDO + NO_WARDROBE_PSEUDO + CONDOM_PSEUDO) are
     // always equippable without buying. Auto-add to wardrobe array if missing so legacy
@@ -370,7 +370,7 @@
     // Condom-on requires consuming one `condom` from inventory at equip time so
     // the catalog item drives a real supply economy. Without a condom in inventory, fail.
     if (outfitId === CONDOM_PSEUDO_ID) {
-      const ok = window.SSDGame.state.consumeItem('condom', 1);
+      const ok = window.DMTHGame.state.consumeItem('condom', 1);
       if (!ok) throw new Error('no condom in inventory — buy from shop');
     }
     let wardrobe = girl.wardrobe || [];
@@ -387,7 +387,7 @@
     if (outfitId === CONDOM_PSEUDO_ID) {
       patch.previousOutfit = girl.currentOutfit || 'default';
     }
-    window.SSDGame.state.updateGirl(girlId, patch);
+    window.DMTHGame.state.updateGirl(girlId, patch);
     return { ok: true };
   }
 
@@ -408,8 +408,8 @@
     return current?.multiplier || 1.0;
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.wardrobe = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.wardrobe = Object.freeze({
     OUTFITS, catalog, getById, buyForGirl, equip, derobe, stripEverything,
     currentMultiplier, builtIns, isNude,
     NUDE_PSEUDO_ID, NUDE_PSEUDO,

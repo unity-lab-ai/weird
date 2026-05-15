@@ -1,5 +1,5 @@
-// SEX SLAVE DUNGEON — central game state. Reactive, IDB-backed.
-// Every subsystem reads/writes through SSDGame.state.*. Mutations emit 'change' events
+// DUNGEON MASTER: THE HUNT — central game state. Reactive, IDB-backed.
+// Every subsystem reads/writes through DMTHGame.state.*. Mutations emit 'change' events
 // for UI refresh. Persisted atomically after every mutation.
 
 (function () {
@@ -18,7 +18,14 @@
       // Player satisfaction meter (0-100). Sex acts with captives raise it; slow per-tick
       // decay drops it without intimacy. High satisfaction grants a hunting bonus —
       // capture odds get easier the more satisfied the player is.
-      playerSatisfaction: 50
+      playerSatisfaction: 50,
+      // BUZZ meter (0-100). Underground word-of-mouth about the operator's dungeons —
+      // distinct from `notoriety` which is cop-heat. Bumped by film sales, successful
+      // john completions, high-bond captives in the roster, stress-band streaks. Drained
+      // by time-decay between income events, failed encounters, captive deaths. Drives
+      // a buzzMul = 1 + (buzz/100) on whore-out john arrival rate — BUZZ 100 doubles
+      // the johns coming through. Visible as chrome-bar 🐝 BUZZ badge.
+      buzz: 0
     },
 
     inventory: {},                 // { [itemId]: qty }
@@ -61,7 +68,7 @@
   let loaded = false;
 
   async function load() {
-    const stored = await window.SSDStorage.save.get('main');
+    const stored = await window.DMTHStorage.save.get('main');
     state = stored && stored.version === DEFAULT_STATE.version
       ? Object.assign({}, DEFAULT_STATE, stored)
       : null;
@@ -74,8 +81,8 @@
     // Refuse to save while a wipe is in progress. Without this, an in-flight tick-driven
     // mutate() between wipeAll() and location.reload() would repopulate the save store
     // with the old state, defeating "fresh slate".
-    if (window.SSDGame?.state?._nuking) return;
-    await window.SSDStorage.save.put('main', state);
+    if (window.DMTHGame?.state?._nuking) return;
+    await window.DMTHStorage.save.put('main', state);
   }
 
   function initNew(opts = {}) {
@@ -83,9 +90,9 @@
     state.createdAt = Date.now();
     state.mode = opts.mode || 'normal';
     if (state.mode === 'sandbox') {
-      state.wallet.money = window.SSDConfig.GAME.sandboxMoney;
+      state.wallet.money = window.DMTHConfig.GAME.sandboxMoney;
     } else {
-      state.wallet.money = window.SSDConfig.GAME.startingMoney;
+      state.wallet.money = window.DMTHConfig.GAME.startingMoney;
     }
     return state;
   }
@@ -123,6 +130,14 @@
     });
   }
   function getSatisfaction() { return typeof state?.wallet?.playerSatisfaction === 'number' ? state.wallet.playerSatisfaction : 50; }
+  function addBuzz(delta, reason) {
+    mutate(s => {
+      const cur = typeof s.wallet.buzz === 'number' ? s.wallet.buzz : 0;
+      s.wallet.buzz = Math.max(0, Math.min(100, cur + delta));
+      s.wallet._lastBuzzEvent = { delta, reason, at: Date.now() };
+    });
+  }
+  function getBuzz() { return typeof state?.wallet?.buzz === 'number' ? state.wallet.buzz : 0; }
 
   // inventory
   function addItem(itemId, qty = 1) {
@@ -254,13 +269,14 @@
   // tick
   function bumpTick() { mutate(s => { s.tickCount++; }); }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.state = {
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.state = {
     get current() { return state; },
     isLoaded: () => loaded,
     load, save, initNew, onChange,
     addMoney, spendMoney, addNotoriety,
     addSatisfaction, getSatisfaction,
+    addBuzz, getBuzz,
     addItem, consumeItem,
     addDungeon, updateDungeon, getDungeon,
     addGirl, updateGirl, getGirl, removeGirl,

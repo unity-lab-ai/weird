@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — image history gallery view.
+// DUNGEON MASTER: THE HUNT — image history gallery view.
 // Past images viewable, downloadable, openable fullscreen in a lightbox.
 //
 // Per-girl gallery showing every past generated image. Thumbnails grid → click for
@@ -10,7 +10,7 @@
 
   function render(el, params) {
     const girlId = params.girl;
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) {
       el.innerHTML = `<div class="panel"><p>no such girl · <a href="#roster">Roster</a></p></div>`;
       return;
@@ -151,5 +151,5 @@
     };
   }
 
-  window.SSDRouter.register('gallery', render);
+  window.DMTHRouter.register('gallery', render);
 })();

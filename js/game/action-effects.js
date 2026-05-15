@@ -1,4 +1,4 @@
-// SEX SLAVE DUNGEON — central per-action stat-impact spec.
+// DUNGEON MASTER: THE HUNT — central per-action stat-impact spec.
 // Every actionable button (sex, drugs, violence, care) carries its own stamina/health/
 // mood/arousal/bondXP delta envelope. Some heal, some hurt, some drain stamina, some
 // rebuild it. This file is the single source of truth for those deltas.
@@ -76,8 +76,12 @@
       notes: 'Massage — major stamina + health restore, modest bond.'
     },
     'love-bathe-her': {
-      stamina: +10, health: +8, mood: +6, bondXP: +4, bondDebt: -2, satisfaction: +2,
-      notes: 'Bathe her — strong health + stamina rebuild, real intimacy.'
+      stamina: +10, health: +8, mood: +6, bondXP: +4, bondDebt: -2, cumLoad: -3, satisfaction: +2,
+      notes: 'Bathe her — strong health + stamina rebuild, real intimacy. Drains cumLoad in the bath.'
+    },
+    'wipe-down': {
+      stamina: +2, health: +1, mood: +3, bondXP: +1, bondDebt: -1, cumLoad: -2, satisfaction: +1,
+      notes: 'Wipe her down — drains accumulated cum. Faster than a full bath, less recovery.'
     },
     'love-feed-by-hand': {
       stamina: +8, health: +5, mood: +7, bondXP: +5, bondDebt: -2, satisfaction: +2,
@@ -231,6 +235,13 @@
     'john-degrader': {
       stamina: -10, health: -2, mood: -15, cumLoad: +0.8, bondDebt: +8,
       notes: 'Degrader john — mood and bond destruction.'
+    },
+    // Postmortem-john — no body shifts apply meaningfully to a corpse (stamina/health/
+    // mood are already terminal). cumLoad still accrues so recordings still get the
+    // "ruined" multiplier; satisfaction registers for the player.
+    'john-postmortem': {
+      stamina: 0, health: 0, mood: 0, cumLoad: +1.0, bondDebt: 0, satisfaction: +1,
+      notes: 'Postmortem use — body inert. cumLoad accrues; no other vital shifts apply on a corpse.'
     }
   });
 
@@ -247,7 +258,7 @@
       console.warn(`[action-effects] unknown action: ${actionId}`);
       return { ok: false, reason: 'unknown action' };
     }
-    const girl = window.SSDGame.state.getGirl(girlId);
+    const girl = window.DMTHGame.state.getGirl(girlId);
     if (!girl) return { ok: false, reason: 'no such girl' };
 
     const strainMul = opts.strain ? 1.5 : 1.0;
@@ -271,8 +282,8 @@
     // game-clock timestamps so the grace-period
     // model in tickStaminaHealth resets. Any action id starting with 'feed-'
     // touches lastFedAt; any starting with 'water-' touches lastWateredAt.
-    if (window.SSDGame.gameClock) {
-      const now = window.SSDGame.gameClock.now();
+    if (window.DMTHGame.gameClock) {
+      const now = window.DMTHGame.gameClock.now();
       if (actionId.startsWith('feed-')) body.lastFedAt = now;
       if (actionId.startsWith('water-')) body.lastWateredAt = now;
     }
@@ -311,35 +322,53 @@
       bond.bondDebt = Math.max(0, (bond.bondDebt ?? 0) + d);
     }
 
-    if (action.notoriety && window.SSDGame.state.addNotoriety) {
-      window.SSDGame.state.addNotoriety(action.notoriety);
+    if (action.notoriety && window.DMTHGame.state.addNotoriety) {
+      window.DMTHGame.state.addNotoriety(action.notoriety);
     }
 
     // Player satisfaction — every action sexualizes; the meter reads action.satisfaction.
     // John actions intentionally have satisfaction=0 in their spec (proxied service, not
     // direct intimacy). Mercy / passive ticks have 0 too. Hunting bonus draws from this
     // meter via hunt.previewCaptureOdds.
-    if (action.satisfaction && window.SSDGame.state.addSatisfaction) {
-      window.SSDGame.state.addSatisfaction(action.satisfaction, actionId);
+    if (action.satisfaction && window.DMTHGame.state.addSatisfaction) {
+      window.DMTHGame.state.addSatisfaction(action.satisfaction, actionId);
     }
 
-    window.SSDGame.state.updateGirl(girlId, { body, bond, mood });
+    window.DMTHGame.state.updateGirl(girlId, { body, bond, mood });
     return { ok: true, action, strain: !!opts.strain };
   }
 
-  // Lookup the cost summary for tooltip rendering. Returns a short string like
-  // "stamina -8 · health 0 · bond +2" suitable for inline tooltips.
+  // Lookup the compact cost summary for tooltip rendering. Returns a short tight
+  // string suitable for hover tooltips:
+  //   "ST-8 · MD+3 · AR+12 · WT+15 · CL+0.6 · BX+2 · SAT+3"
+  // Codes:
+  //   ST=stamina, HP=health, MD=mood, AR=arousal, WT=wetness, BR=bruises, CL=cumLoad,
+  //   BX=bondXP, BD=bondDebt, NT=notoriety, SAT=satisfaction
+  const COST_CODES = {
+    stamina: 'ST', health: 'HP', mood: 'MD', arousal: 'AR', wetness: 'WT',
+    bruises: 'BR', cumLoad: 'CL', bondXP: 'BX', bondDebt: 'BD',
+    notoriety: 'NT', satisfaction: 'SAT'
+  };
   function previewCost(actionId) {
     const a = ACTIONS[actionId];
     if (!a) return '';
     const parts = [];
-    for (const k of ['stamina', 'health', 'mood', 'arousal', 'wetness', 'bruises', 'cumLoad', 'bondXP', 'bondDebt']) {
+    for (const k of Object.keys(COST_CODES)) {
       if (a[k] != null && a[k] !== 0) {
         const sign = a[k] > 0 ? '+' : '';
-        parts.push(`${k} ${sign}${a[k]}`);
+        parts.push(`${COST_CODES[k]}${sign}${a[k]}`);
       }
     }
     return parts.join(' · ');
+  }
+
+  // Build a complete tooltip line combining a human-readable label + the cost preview.
+  // Used by every UI surface that needs "what does this button do + what stats it shifts"
+  // hover info. Returns just the label when the action isn't in the ACTIONS catalog.
+  function tooltipForAction(actionId, label) {
+    const cost = previewCost(actionId);
+    if (!label) return cost ? `📊 ${cost}` : '';
+    return cost ? `${label}\n📊 ${cost}` : label;
   }
 
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -389,16 +418,16 @@
   const FOOD_AUTOCONSUME_DAYS = 2.5;    // half the 5-day food grace
   const WATER_AUTOCONSUME_DAYS = 1.5;   // half the 3-day water grace
   function tickStaminaHealth() {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     if (!s) return;
-    const clock = window.SSDGame.gameClock;
+    const clock = window.DMTHGame.gameClock;
     for (const girl of s.roster) {
       if (girl.encounterState !== 'captive') continue;
       const body = { ...(girl.body || {}) };
       const bruises = body.bruises || 0;
 
       // Look up the hold once — used for self-serve consumption + plumbing check.
-      const dungeon = window.SSDGame.state.getDungeon(girl.assignedDungeonId);
+      const dungeon = window.DMTHGame.state.getDungeon(girl.assignedDungeonId);
       const holdIdx = girl.assignedHoldIdx ?? 0;
       const hold = dungeon?.holds?.[holdIdx];
       const toiletTier = hold?.upgrades?.toilet ?? 0;
@@ -434,7 +463,7 @@
 
       if (holdDirty && dungeon) {
         const newHolds = dungeon.holds.map((h, i) => i === holdIdx ? holdPatch : h);
-        window.SSDGame.state.updateDungeon(dungeon.id, { holds: newHolds });
+        window.DMTHGame.state.updateDungeon(dungeon.id, { holds: newHolds });
       }
 
       // ── Drain evaluation ────────────────────────────────────────────────
@@ -503,14 +532,14 @@
         unlockedTier = 2;
       }
 
-      window.SSDGame.state.updateGirl(girl.id, { body, bonuses, _lastStaminaReasons: reasons });
+      window.DMTHGame.state.updateGirl(girl.id, { body, bonuses, _lastStaminaReasons: reasons });
 
       if (payout > 0) {
-        window.SSDGame.state.addMoney(payout);
-        if (window.SSDNotify) {
+        window.DMTHGame.state.addMoney(payout);
+        if (window.DMTHNotify) {
           const label = unlockedTier === 2 ? '⚡ SUPER STRESS BONUS' : '💢 STRESS BONUS';
           const mul = unlockedTier === 2 ? STRESS_TIER_2_FILM_MUL : STRESS_TIER_1_FILM_MUL;
-          window.SSDNotify.show(`${label} — ${girl.name} kept tense for ${unlockedTier === 2 ? 15 : 5} days. +$${payout.toLocaleString()} + ${mul}× film multiplier on her recordings.`, { type: 'success', durationMs: 6000 });
+          window.DMTHNotify.show(`${label} — ${girl.name} kept tense for ${unlockedTier === 2 ? 15 : 5} days. +$${payout.toLocaleString()} + ${mul}× film multiplier on her recordings.`, { type: 'success', durationMs: 6000 });
         }
       }
     }
@@ -523,7 +552,7 @@
   // diagnostic breakdown for tooltip display.
   //
   // The john-resolver should call this when computing per-encounter pay:
-  //   const { multiplier } = SSDGame.actionEffects.johnHappinessForGirl(girl);
+  //   const { multiplier } = DMTHGame.actionEffects.johnHappinessForGirl(girl);
   //   const finalPay = basePay * multiplier;
   function johnHappinessForGirl(girl) {
     if (!girl) return { multiplier: 1.0, breakdown: {} };
@@ -571,12 +600,14 @@
     };
   }
 
-  window.SSDGame = window.SSDGame || {};
-  window.SSDGame.actionEffects = Object.freeze({
+  window.DMTHGame = window.DMTHGame || {};
+  window.DMTHGame.actionEffects = Object.freeze({
     ACTIONS,
     STAMINA_THRESHOLD_FOR_STRAIN,
+    COST_CODES,
     applyAction,
     previewCost,
+    tooltipForAction,
     tickStaminaHealth,
     johnHappinessForGirl
   });

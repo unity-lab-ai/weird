@@ -1,10 +1,10 @@
-// SEX SLAVE DUNGEON — propositioner inbox page (business sim).
+// DUNGEON MASTER: THE HUNT — propositioner inbox page (business sim).
 
 (function () {
   'use strict';
 
   function render(el) {
-    const s = window.SSDGame.state.current;
+    const s = window.DMTHGame.state.current;
     const inbox = s.propositioners.inbox;
     const active = s.propositioners.active;
     const completed = s.propositioners.completed.slice(-20).reverse();
@@ -36,16 +36,16 @@
         <h2>Completed (${completed.length})</h2>
         ${completed.length === 0 ? `<p class="muted small">No completions yet.</p>` :
           `<ul class="small">${completed.map(p => `
-            <li>${new Date(p.completedAt).toLocaleString()} — <b>${p.clientName}</b> + ${window.SSDGame.state.getGirl(p.girlId)?.name || p.girlId} · satisfaction ${Math.round((p.outcome?.satisfaction || 0) * 100)}% · +$${p.outcome?.revenue || 0}${p.outcome?.riskTrigger ? ' · ⚠️ BAD ACTOR' : ''}</li>
+            <li>${new Date(p.completedAt).toLocaleString()} — <b>${p.clientName}</b> + ${window.DMTHGame.state.getGirl(p.girlId)?.name || p.girlId} · satisfaction ${Math.round((p.outcome?.satisfaction || 0) * 100)}% · +$${p.outcome?.revenue || 0}${p.outcome?.riskTrigger ? ' · ⚠️ BAD ACTOR' : ''}</li>
           `).join('')}</ul>`
         }
       </div>
     `;
 
     el.querySelector('#force-roll').onclick = () => {
-      const p = window.SSDGame.propositioner.rollPropositioner();
-      window.SSDGame.state.enqueuePropositioner(p);
-      window.SSDRouter.handle();
+      const p = window.DMTHGame.propositioner.rollPropositioner();
+      window.DMTHGame.state.enqueuePropositioner(p);
+      window.DMTHRouter.handle();
     };
 
     el.querySelectorAll('[data-accept]').forEach(b => {
@@ -53,35 +53,35 @@
         const propId = b.dataset.accept;
         const girlId = el.querySelector(`[data-pick-girl-for="${propId}"]`)?.value;
         if (!girlId) { alert('Pick a girl first'); return; }
-        window.SSDGame.propositioner.acceptWithGirl(propId, girlId);
-        window.SSDRouter.handle();
+        window.DMTHGame.propositioner.acceptWithGirl(propId, girlId);
+        window.DMTHRouter.handle();
       };
     });
     el.querySelectorAll('[data-reject]').forEach(b => {
       b.onclick = () => {
-        window.SSDGame.state.rejectPropositioner(b.dataset.reject);
-        window.SSDRouter.handle();
+        window.DMTHGame.state.rejectPropositioner(b.dataset.reject);
+        window.DMTHRouter.handle();
       };
     });
     el.querySelectorAll('[data-resolve]').forEach(b => {
       b.onclick = async () => {
         const propId = b.dataset.resolve;
         const prop = s.propositioners.active.find(p => p.id === propId);
-        const girlSnapshot = prop ? JSON.parse(JSON.stringify(window.SSDGame.state.getGirl(prop.girlId))) : null;
+        const girlSnapshot = prop ? JSON.parse(JSON.stringify(window.DMTHGame.state.getGirl(prop.girlId))) : null;
 
-        const out = window.SSDGame.propositioner.resolveEngagement(propId);
+        const out = window.DMTHGame.propositioner.resolveEngagement(propId);
 
         // Ollama narration of the scene
         let narration = null;
         if (girlSnapshot && prop) {
           try {
-            const system = window.SSDTemplates.buildSystemPrompt(girlSnapshot, 'sexy', 'proposition_scene', {
+            const system = window.DMTHTemplates.buildSystemPrompt(girlSnapshot, 'sexy', 'proposition_scene', {
               CLIENT_NAME: prop.clientName,
               DURATION: prop.terms.durationMinutes,
               ACTS: prop.terms.actsPermitted.join(', '),
               QUIRKS: (prop.quirks || []).join(', ') || 'neutral'
             });
-            const { raw, parsed } = await window.SSDGame.ollama.chatStream({
+            const { raw, parsed } = await window.DMTHGame.ollama.chatStream({
               system,
               messages: [{ role: 'user', content: '(narrate the booking from your first-person POV)' }]
             });
@@ -90,7 +90,7 @@
         }
 
         const msg = `Engagement resolved — satisfaction ${Math.round(out.satisfaction*100)}%, revenue $${out.revenue}.${out.riskTrigger ? ' ⚠️ BAD ACTOR — notoriety spiked.' : ''}`;
-        if (window.SSDNotify) window.SSDNotify.show(msg, { type: out.riskTrigger ? 'error' : 'success' });
+        if (window.DMTHNotify) window.DMTHNotify.show(msg, { type: out.riskTrigger ? 'error' : 'success' });
 
         if (narration) {
           const narrPanel = document.createElement('div');
@@ -98,13 +98,13 @@
           narrPanel.innerHTML = `<h3>${girlSnapshot.name} on the ${prop.clientName} booking</h3><div class="log"><div class="log-entry assistant"><b>${girlSnapshot.name}:</b> ${narration.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</div></div>`;
           el.insertBefore(narrPanel, el.firstChild);
         }
-        window.SSDRouter.handle();
+        window.DMTHRouter.handle();
       };
     });
 
     function renderPendingCard(p) {
       const captives = s.roster.filter(g => g.encounterState === 'captive');
-      const matchScores = captives.map(g => ({ g, s: window.SSDGame.propositioner.matchScore(g, p) })).sort((a, b) => b.s - a.s);
+      const matchScores = captives.map(g => ({ g, s: window.DMTHGame.propositioner.matchScore(g, p) })).sort((a, b) => b.s - a.s);
       const danger = p.quirks.some(q => ['dangerous','bad-actor'].includes(q));
       const generous = p.quirks.includes('generous');
       return `
@@ -130,7 +130,7 @@
       `;
     }
     function renderActiveCard(p) {
-      const g = window.SSDGame.state.getGirl(p.girlId);
+      const g = window.DMTHGame.state.getGirl(p.girlId);
       const timeLeft = Math.max(0, Math.round((p.endsAt - Date.now()) / 60000));
       return `
         <div class="prop-card">
@@ -144,5 +144,5 @@
     }
   }
 
-  window.SSDRouter.register('propositioners', render);
+  window.DMTHRouter.register('propositioners', render);
 })();
