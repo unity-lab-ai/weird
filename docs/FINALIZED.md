@@ -13,6 +13,63 @@
 
 ---
 
+## 2026-05-14 — Session: BUGStwo.39 — room.js syntax error blocked the entire BUGStwo.38 hotfix from loading
+
+### Gee verbatim 2026-05-14 (post-hotfix-deploy test):
+
+> *"same problem cant open the main card for any girls mainly my starting on 'Unity' : Uncaught SyntaxError: missing ) after argument list"*
+
+### Diagnosis — REAL root cause
+
+`Uncaught SyntaxError: missing ) after argument list` at line 368 of `js/ui/room.js`. The mdma + acid drug-button tooltips used `\\'` (literal backslash + apostrophe) when I meant `\'` (escaped apostrophe). In a single-quoted JS string, `\\` is an escaped backslash and `'` terminates the string — so the JS parser saw the string end early, then hit bare identifiers like `i love you` and threw.
+
+The error was introduced in BUGStwo.36 when the drug button tooltips were refactored to use a `dt(id, label)` helper that passes the label as a single-quoted JS string argument. The two affected lines:
+
+```js
+dt('drug-mdma', 'Share a molly. Emotional flooding, \\'i love you\\' leak, glowing skin. 4-hour curve.')
+dt('drug-acid', 'Tab of acid. Things-aren\\'t-real perception, blown pupils, time dilation. 10-hour curve.')
+```
+
+Because `room.js` failed to parse, NONE of its module body executed — so the BUGStwo.38 migration + body-stats hardening from commit `8aa4cef` was correct in `state.js` and `dungeon-view.js` but couldn't help because `room.js` itself never loaded, and the room route registration at the bottom of the file (`window.DMTHRouter.register('room', render)`) never ran. Clicking a girl's hold did nothing because the room route didn't exist.
+
+### Fix
+
+Switched both strings to double-quoted JS strings so the apostrophes work without escaping:
+
+```js
+dt('drug-mdma', "Share a molly. Emotional flooding, 'i love you' leak, glowing skin. 4-hour curve.")
+dt('drug-acid', "Tab of acid. Things-aren't-real perception, blown pupils, time dilation. 10-hour curve.")
+```
+
+### Why I missed it on the BUGStwo.36 commit
+
+The HTML attribute context (`data-tooltip="..."`) wraps the call in double quotes. The OUTER template literal uses backticks. The INNER string was single-quoted because the previous version had unescaped apostrophes that worked fine inline. When I added the `escapeHtml(dt(...))` wrapper, the inner literal type changed from "inside a backtick template" to "single-quoted argument inside a function call", but I escape-pattern'd the apostrophes wrong (`\\'` instead of `\'`).
+
+Should have run `node --check js/ui/room.js` before shipping. Adding that to my checklist going forward.
+
+### Lesson + future safeguard
+
+Run `node --check` on every modified JS file before committing. JS template-literal nesting + string-quote escaping is exactly the kind of thing a syntax-only static check catches in 50ms that a code review can miss.
+
+### Files touched
+
+- **`js/ui/room.js`** — 2 lines changed (mdma + acid drug tooltips, single → double quoted strings).
+
+### Verification gates
+
+- `node --check js/ui/room.js` exits with 0.
+- All 14 JS files modified in this BUGStwo session parse cleanly.
+- After hard-refresh, the room module loads and:
+  - The state.js migration from `8aa4cef` fires on load (logs `[state-migrate] repaired girl_unity name`)
+  - Clicking Unity's hold opens her room with body bars rendered
+  - Drug tooltips show with stat-delta previews on hover
+
+### Note on unrelated 404s
+
+Console shows separate 404s for `assets/manifest.json` and `assets/locations/street/cover.png` — these are pre-existing non-blocking asset-loader probes (the loader tries to discover optional cover images that aren't shipped). Not in scope for this hotfix; not blocking gameplay.
+
+---
+
 ## 2026-05-14 — Session: BUGStwo.38 — production regression hotfix (hold-click broken + `Unity_seed` display-name leak)
 
 ### Gee verbatim 2026-05-14 (post-deploy testing on `main`):
