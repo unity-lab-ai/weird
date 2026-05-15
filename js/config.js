@@ -112,11 +112,11 @@
   function detectUnityLabWorker() {
     if (typeof window === 'undefined' || !window.location) return false;
     const h = (window.location.hostname || '').toLowerCase();
+    // Worker CORS only allows the production unityailab.com origin. Other hosts
+    // (unity-lab-ai.github.io standalone, localhost dev) fall back to the direct
+    // Pollinations endpoint + user-supplied pk_ key via the Settings paste box.
     return h === 'unityailab.com'
-        || h === 'www.unityailab.com'
-        || h === 'unity-lab-ai.github.io'
-        || h === 'localhost'
-        || h === '127.0.0.1';
+        || h === 'www.unityailab.com';
   }
   const POLLINATIONS = {
     apiKey: pick('dmth_pollinations_key', 'POLLINATIONS_API_KEY', ''),
